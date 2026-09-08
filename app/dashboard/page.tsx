@@ -594,7 +594,7 @@ export default function DashboardPage() {
                       type="text"
                       value={pairPhone}
                       onChange={(e) => setPairPhone(e.target.value)}
-                      placeholder="e.g. 919876543210 (digits only)"
+                      placeholder="Country code + phone (e.g. 15550192834)"
                       className="w-full px-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm font-mono text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
                     />
                   </div>

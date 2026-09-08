@@ -114,13 +114,13 @@ export default function LandingPage() {
               <div className="bg-zinc-900 border border-zinc-800 text-zinc-200 px-3.5 py-2.5 rounded-xl rounded-tl-sm text-xs max-w-md">
                 Hello, do you have any appointments available this Friday afternoon?
               </div>
-              <span className="text-[10px] font-mono text-zinc-600 mt-1">Client • +91 98765 43210 • 14:32</span>
+              <span className="text-[10px] font-mono text-zinc-600 mt-1">Customer • +1 (555) 019-2834 • 14:32</span>
             </div>
 
             {/* AI Agent Response */}
             <div className="flex flex-col items-end">
               <div className="bg-zinc-800 text-zinc-100 border border-zinc-700/60 px-3.5 py-2.5 rounded-xl rounded-tr-sm text-xs max-w-md">
-                Hello! Yes, we have slots open this Friday at 2:30 PM and 4:15 PM with Dr. Sharma. Would you like me to book one of those for you?
+                Hello! Yes, we have openings available this Friday at 2:30 PM and 4:15 PM. Would you like me to reserve one of those for you?
               </div>
               <span className="text-[10px] font-mono text-zinc-500 mt-1 flex items-center gap-1.5">
                 <span className="text-emerald-400">AI Auto-Reply</span>
@@ -215,7 +215,7 @@ export default function LandingPage() {
             Transparent plans for every business size
           </h2>
           <p className="mt-1 text-xs sm:text-sm text-zinc-400">
-            Scale from a single salon or clinic to hundreds of client numbers.
+            Scale from a single operational line to hundreds of enterprise numbers.
           </p>
         </div>
 

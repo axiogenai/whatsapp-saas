@@ -46,19 +46,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleDemoLogin = (demoName: string, demoTenant: string) => {
-    const user = {
-      id: `usr_${demoTenant}`,
-      email: `${demoTenant}@axiogen.in`,
-      name: demoName,
-      businessName: demoName,
-      tenantId: demoTenant,
-      createdAt: new Date().toISOString(),
-    };
-    setStoredUser(user);
-    router.push('/dashboard');
-  };
-
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans selection:bg-zinc-800 selection:text-white">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
@@ -130,7 +117,7 @@ export default function LoginPage() {
                 type="text"
                 value={customTenant}
                 onChange={(e) => setCustomTenant(e.target.value)}
-                placeholder="e.g. apex-clinic or xyz"
+                placeholder="e.g. workspace-id"
                 className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs font-mono text-zinc-300 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
               />
               <p className="text-[11px] text-zinc-500 mt-1">
@@ -157,32 +144,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Quick Demo Accounts */}
-          <div className="pt-4 border-t border-zinc-800/80">
-            <span className="block text-[11px] font-mono text-zinc-500 uppercase tracking-wider mb-2.5">
-              1-Click Demo Workspaces
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleDemoLogin('Apex Dental Clinic', 'apex-dental')}
-                className="p-2 rounded-lg bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-left transition-colors cursor-pointer"
-              >
-                <span className="block text-xs font-medium text-zinc-200">Apex Dental</span>
-                <span className="text-[10px] font-mono text-zinc-500">apex-dental</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDemoLogin('Summit Real Estate', 'summit-realty')}
-                className="p-2 rounded-lg bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-left transition-colors cursor-pointer"
-              >
-                <span className="block text-xs font-medium text-zinc-200">Summit Realty</span>
-                <span className="text-[10px] font-mono text-zinc-500">summit-realty</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="pt-3 text-center">
+          <div className="pt-3 text-center border-t border-zinc-800/80">
             <span className="text-xs text-zinc-500">Need a workspace? </span>
             <Link href="/signup" className="text-xs font-medium text-zinc-300 hover:text-white">
               Create an account

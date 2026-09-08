@@ -15,7 +15,7 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const tenantSlug = businessName.trim() ? slugify(businessName) : 'my-business';
+  const tenantSlug = businessName.trim() ? slugify(businessName) : 'workspace-id';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,7 +92,7 @@ export default function SignUpPage() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Aditya Sharma"
+                  placeholder="Full name"
                   className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
                 />
               </div>
@@ -109,7 +109,7 @@ export default function SignUpPage() {
                   required
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
-                  placeholder="Apex Dental Clinic"
+                  placeholder="Company name"
                   className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
                 />
               </div>
@@ -129,7 +129,7 @@ export default function SignUpPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="aditya@clinic.com"
+                  placeholder="name@company.com"
                   className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
                 />
               </div>
