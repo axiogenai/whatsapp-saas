@@ -38,13 +38,12 @@ import { getStoredUser, setStoredUser, clearStoredUser } from '@/lib/auth';
 import { TenantUser } from '@/lib/types';
 import { AdminTenant, AdminTransaction } from '@/lib/admin-store';
 
-const DEFAULT_ADMIN_KEY = 'axiogen_admin_2026';
-
 export default function AdminPage() {
   const router = useRouter();
 
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<TenantUser | null>(null);
   const [passcode, setPasscode] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -80,15 +79,12 @@ export default function AdminPage() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  // 1. Check if currently logged in user is admin
+  // 1. Check if currently logged in user is admin or has admin cookie
   useEffect(() => {
     const user = getStoredUser();
-    const cleanEmail = (user?.email || '').toLowerCase().trim();
-    const isAdmin =
-      user?.isAdmin === true ||
-      cleanEmail === 'aditay26patil@gmail.com' ||
-      cleanEmail === 'aditya26patil@gmail.com' ||
-      (typeof document !== 'undefined' && document.cookie.includes('wa_is_admin=true'));
+    setCurrentUser(user);
+    const hasAdminCookie = typeof document !== 'undefined' && document.cookie.includes('wa_is_admin=true');
+    const isAdmin = Boolean(user?.isAdmin || hasAdminCookie);
 
     if (isAdmin) {
       setIsAuthenticated(true);
@@ -96,13 +92,11 @@ export default function AdminPage() {
     setCheckingAuth(false);
   }, []);
 
-  // 2. Fetch Admin Data
+  // 2. Fetch Admin Data dynamically from API
   const fetchAdminData = useCallback(async () => {
     setLoadingData(true);
     try {
-      const res = await fetch(`/api/admin/overview?key=${DEFAULT_ADMIN_KEY}`, {
-        headers: { 'x-admin-key': DEFAULT_ADMIN_KEY },
-      });
+      const res = await fetch('/api/admin/overview');
       if (res.ok) {
         const data = await res.json();
         setKpis(data.kpis);
@@ -123,15 +117,25 @@ export default function AdminPage() {
     }
   }, [isAuthenticated, fetchAdminData]);
 
-  // Master Passcode Login
-  const handlePasscodeLogin = (e: React.FormEvent) => {
+  // Master Passcode Login via Server Verification
+  const handlePasscodeLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcode.trim() === DEFAULT_ADMIN_KEY || passcode.trim() === 'admin123') {
-      setIsAuthenticated(true);
-      document.cookie = 'wa_is_admin=true; path=/; max-age=2592000; SameSite=Lax';
-      showToast('Super Admin access granted.', 'success');
-    } else {
-      setAuthError('Incorrect admin master passcode.');
+    setAuthError(null);
+    try {
+      const res = await fetch('/api/admin/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passcode }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsAuthenticated(true);
+        showToast('Super Admin access granted.', 'success');
+      } else {
+        setAuthError(data.error || 'Incorrect admin master passcode.');
+      }
+    } catch {
+      setAuthError('Verification request failed. Please check connection.');
     }
   };
 
@@ -143,7 +147,6 @@ export default function AdminPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-key': DEFAULT_ADMIN_KEY,
         },
         body: JSON.stringify({ tenantId, plan: newPlan }),
       });
@@ -169,7 +172,6 @@ export default function AdminPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-key': DEFAULT_ADMIN_KEY,
         },
         body: JSON.stringify({ tenantId, addCredits: credits }),
       });
@@ -190,7 +192,6 @@ export default function AdminPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-key': DEFAULT_ADMIN_KEY,
         },
         body: JSON.stringify({ tenantId, resetQuota: true }),
       });
@@ -317,7 +318,7 @@ export default function AdminPage() {
                 href="/login"
                 className="inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium"
               >
-                <span>Log in as aditay26patil@gmail.com</span>
+                <span>Sign in with owner account</span>
                 <ChevronRight className="w-3 h-3" />
               </Link>
             </div>
@@ -362,7 +363,7 @@ export default function AdminPage() {
               </span>
             </div>
             <p className="text-[10px] text-zinc-500 font-mono">
-              Signed in as aditay26patil@gmail.com
+              Signed in as {currentUser?.name ? `${currentUser.name} (${currentUser.email})` : currentUser?.email || 'Platform Super Admin'}
             </p>
           </div>
         </div>

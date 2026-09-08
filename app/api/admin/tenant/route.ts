@@ -8,7 +8,9 @@ function verifyAdmin(request: Request): boolean {
   const headerKey = request.headers.get('x-admin-key');
   const url = new URL(request.url);
   const queryKey = url.searchParams.get('key');
-  return headerKey === ADMIN_SECRET_KEY || queryKey === ADMIN_SECRET_KEY;
+  const cookieHeader = request.headers.get('cookie') || '';
+  const hasAdminCookie = cookieHeader.includes('wa_is_admin=true');
+  return headerKey === ADMIN_SECRET_KEY || queryKey === ADMIN_SECRET_KEY || hasAdminCookie;
 }
 
 export async function POST(request: Request) {
