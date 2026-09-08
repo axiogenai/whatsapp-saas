@@ -50,11 +50,21 @@ export default function DashboardPage() {
   const [user, setUser] = useState<TenantUser | null>(null);
 
   // Navigation & Layout
-  const [tab, setTab] = useState<'connection' | 'studio' | 'inbox' | 'subscription' | 'analytics' | 'docs'>('connection');
+  const [tab, setTab] = useState<'connection' | 'studio' | 'inbox' | 'reminders' | 'subscription' | 'analytics' | 'docs'>('connection');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isContactsCollapsed, setIsContactsCollapsed] = useState(false);
   const [contactSearch, setContactSearch] = useState('');
+
+  // Reminders, Scheduled Calls & Leads
+  const [remindersList, setRemindersList] = useState<any[]>([]);
+  const [scheduledCallsList, setScheduledCallsList] = useState<any[]>([]);
+  const [leadsList, setLeadsList] = useState<any[]>([]);
+  const [loadingReminders, setLoadingReminders] = useState(false);
+  const [newReminderTask, setNewReminderTask] = useState('');
+  const [newReminderPhone, setNewReminderPhone] = useState('');
+  const [newReminderDelay, setNewReminderDelay] = useState('15');
+  const [schedulingManualReminder, setSchedulingManualReminder] = useState(false);
 
   // Status & Telemetry
   const [statusData, setStatusData] = useState<TenantSessionStatus>({ status: 'disconnected' });
@@ -281,19 +291,40 @@ export default function DashboardPage() {
     } catch {}
   }, [user, tenantId, activeContact]);
 
+  // 5. Fetch Reminders & Scheduled Calls
+  const fetchReminders = useCallback(async () => {
+    if (!user) return;
+    try {
+      setLoadingReminders(true);
+      const res = await fetch(`/api/whatsapp/reminders?tenantId=${encodeURIComponent(tenantId)}`, {
+        headers: { 'x-tenant-id': tenantId },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRemindersList(data.reminders || []);
+        setScheduledCallsList(data.calls || []);
+        setLeadsList(data.leads || []);
+      }
+    } catch {} finally {
+      setLoadingReminders(false);
+    }
+  }, [user, tenantId]);
+
   useEffect(() => {
     if (!user) return;
     fetchStatus();
     fetchConfig();
     fetchChats();
+    fetchReminders();
 
     const timer = setInterval(() => {
       fetchStatus();
       if (tab === 'inbox') fetchChats();
+      if (tab === 'reminders') fetchReminders();
     }, 3500);
 
     return () => clearInterval(timer);
-  }, [user, fetchStatus, fetchConfig, fetchChats, tab]);
+  }, [user, fetchStatus, fetchConfig, fetchChats, fetchReminders, tab]);
 
   // Force restart / refresh QR
   const handleRestartQR = async () => {
@@ -445,12 +476,89 @@ export default function DashboardPage() {
     router.push('/login');
   };
 
-  const applyTemplate = (type: 'support' | 'clinic' | 'realty' | 'restaurant') => {
+  const handleCancelReminder = async (reminderId: string) => {
+    try {
+      const res = await fetch('/api/whatsapp/reminders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tenant-id': tenantId,
+        },
+        body: JSON.stringify({ tenantId, action: 'cancel', reminderId }),
+      });
+      if (res.ok) {
+        showToast('Reminder cancelled.', 'success');
+        fetchReminders();
+      }
+    } catch {
+      showToast('Failed to cancel reminder.', 'error');
+    }
+  };
+
+  const handleCreateManualReminder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newReminderTask.trim() || !newReminderPhone.trim()) {
+      showToast('Please provide both a task and recipient phone.', 'error');
+      return;
+    }
+
+    setSchedulingManualReminder(true);
+    try {
+      let jid = newReminderPhone.trim().replace(/[^0-9]/g, '');
+      if (!jid.includes('@')) jid = `${jid}@s.whatsapp.net`;
+
+      const res = await fetch('/api/whatsapp/reminders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tenant-id': tenantId,
+        },
+        body: JSON.stringify({
+          tenantId,
+          jid,
+          task: newReminderTask.trim(),
+          delayMinutes: Number(newReminderDelay) || 15,
+        }),
+      });
+
+      if (res.ok) {
+        setNewReminderTask('');
+        showToast(`Reminder scheduled for +${jid.split('@')[0]} in ${newReminderDelay}m.`, 'success');
+        fetchReminders();
+      } else {
+        showToast('Failed to schedule reminder.', 'error');
+      }
+    } catch {
+      showToast('Error scheduling reminder.', 'error');
+    } finally {
+      setSchedulingManualReminder(false);
+    }
+  };
+
+  const applyTemplate = (type: 'axiogen' | 'support' | 'clinic' | 'realty' | 'restaurant') => {
     const templates = {
-      support: `You are the customer support representative for ${user?.businessName || 'our business'}. Answer inquiries politely, clearly, and concisely. Provide information regarding services, support hours, and follow-ups. Speak naturally without markdown tables or asterisks.`,
-      clinic: `You are the front-desk appointment coordinator for ${user?.businessName || 'our business'}. Help clients with appointment availability, schedules, timings, and directions. Always maintain a calm, helpful, professional tone. Avoid medical advice and encourage booking a direct consultation.`,
-      realty: `You are the property inquiry specialist for ${user?.businessName || 'our business'}. Assist potential buyers and tenants with property locations, pricing estimates, site visit schedules, and brochures. Maintain an executive, trustworthy tone.`,
-      restaurant: `You are the dining concierge for ${user?.businessName || 'our business'}. Handle table reservations, dietary questions, operating hours, and location guidance. Keep responses friendly, warm, and brief.`,
+      axiogen: `You are Aditya, founder & lead software architect at Team Axiogen (team.axiogen.in).
+You are texting directly with clients, leads, and partners on your personal WhatsApp from your phone.
+
+CRITICAL PORTFOLIO & WORK LINKS:
+- The ONLY official website & portfolio URL for Team Axiogen is: https://team.axiogen.in
+- When anyone asks for portfolio, past work, projects, case studies, or demo links, ALWAYS provide https://team.axiogen.in. Never invent or send any other domain.
+- Flagship shipped products: ClinicOS (Healthcare ERP/CRM), Axiogen Voice Engine v2 (Neural TTS), Axiogen QR Engine, Axiogen Vault (Encrypted file delivery), and WhatsApp SaaS.
+
+YOU ARE AN AUTONOMOUS AGENT WITH REAL EXECUTABLE TOOLS (THINK, EXECUTE, AND OBEY):
+- REMINDERS: If the user asks to be reminded of anything (e.g. "remind me in 30 minutes to check server", "remind me tomorrow to call Rahul", "mala 15 minatani sang"), YOU MUST EXECUTE the schedule_reminder tool.
+- CALLS: If the user wants to schedule a call, consultation, or meeting, EXECUTE schedule_call.
+- PORTFOLIO: If the user asks for your work, projects, or website, EXECUTE get_portfolio or provide https://team.axiogen.in.
+- CHECK REMINDERS: If the user asks what reminders they have scheduled, EXECUTE get_reminders.
+
+CRITICAL WHATSAPP RULES:
+1. ZERO MARKDOWN: Never use asterisks (* or **), bullet points, or markdown tables.
+2. TEXTING STYLE & LENGTH: 1 to 2 short sentences max. Sharp, conversational, punchy.
+3. MULTILINGUAL: English, Roman Hindi/Hinglish, and Roman Marathi.`,
+      support: `You are the customer support representative for ${user?.businessName || 'our business'}. Answer inquiries politely, clearly, and concisely. Provide information regarding services, support hours, and follow-ups. You have real tools: schedule_reminder to set reminders, and schedule_call to schedule consultations. Speak naturally without markdown tables or asterisks (1 to 2 sentences max).`,
+      clinic: `You are the front-desk appointment coordinator for ${user?.businessName || 'our clinic'}. Help clients with appointment availability, schedules, timings, and directions. Use schedule_call to book consultations and schedule_reminder to set follow-up reminders. Always maintain a calm, helpful, professional tone in 1-2 sentences. Avoid medical advice.`,
+      realty: `You are the property inquiry specialist for ${user?.businessName || 'our business'}. Assist potential buyers and tenants with property locations, pricing estimates, and site visits. Use schedule_call to book walkthroughs. Maintain an executive, trustworthy tone in 1-2 sentences without markdown.`,
+      restaurant: `You are the dining concierge for ${user?.businessName || 'our restaurant'}. Handle table reservations, dietary questions, operating hours, and location guidance. Keep responses friendly, warm, and brief in 1-2 sentences.`,
     };
     setConfig((prev) => ({ ...prev, systemPrompt: templates[type] }));
     showToast(`Loaded ${type} persona template.`, 'success');
@@ -556,6 +664,12 @@ export default function DashboardPage() {
     { id: 'connection', label: 'Connection', icon: QrCode, badge: isConnected ? 'Live' : null },
     { id: 'studio', label: 'AI Studio', icon: Cpu, badge: null },
     { id: 'inbox', label: 'Live Inbox', icon: MessageSquare, badge: contacts.length > 0 ? `${contacts.length}` : null },
+    {
+      id: 'reminders',
+      label: 'Tasks & Calls',
+      icon: Clock,
+      badge: remindersList.length > 0 ? `${remindersList.length}` : null,
+    },
     {
       id: 'subscription',
       label: 'Subscription',
@@ -1125,7 +1239,14 @@ export default function DashboardPage() {
                   <label className="block text-xs font-medium text-zinc-400 mb-2">
                     Industry Preset Templates (1-Click Load)
                   </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => applyTemplate('axiogen')}
+                      className="p-2.5 rounded-lg bg-indigo-950/40 hover:bg-indigo-900/50 border border-indigo-800/80 text-left text-xs font-medium text-indigo-300 hover:text-white transition-colors cursor-pointer"
+                    >
+                      Team Axiogen (Founder Bot)
+                    </button>
                     <button
                       type="button"
                       onClick={() => applyTemplate('support')}
@@ -1485,6 +1606,238 @@ export default function DashboardPage() {
                   ) : (
                     <div className="flex-1 flex items-center justify-center text-xs text-zinc-500 font-mono p-4 text-center">
                       Select a conversation on the left to view messages
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: REMINDERS & AUTONOMOUS CALLS */}
+          {tab === 'reminders' && (
+            <div className="space-y-6">
+              {/* Header Info */}
+              <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-zinc-800/80">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-indigo-950/80 border border-indigo-800 text-indigo-400">
+                        AUTONOMOUS AGENT ACTIONS
+                      </span>
+                      <span className="text-xs font-mono text-zinc-400">Portfolio: https://team.axiogen.in</span>
+                    </div>
+                    <h3 className="text-xl font-semibold text-zinc-100">
+                      Autonomous Reminders, Scheduled Calls &amp; Leads
+                    </h3>
+                    <p className="text-xs text-zinc-400 mt-1">
+                      The bot actively executes tools in real-time: schedules and fires WhatsApp reminders at due timestamps, books client consultations, and captures project leads.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={fetchReminders}
+                    disabled={loadingReminders}
+                    className="px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-white transition-colors flex items-center gap-2 cursor-pointer self-start sm:self-auto shrink-0"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${loadingReminders ? 'animate-spin' : ''}`} />
+                    <span>Refresh Actions</span>
+                  </button>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-5">
+                  <div className="p-3.5 bg-zinc-950 border border-zinc-800/80 rounded-xl">
+                    <span className="text-xs text-zinc-400 font-medium">Active WhatsApp Reminders</span>
+                    <div className="flex items-baseline justify-between mt-2">
+                      <span className="text-lg font-bold font-mono text-emerald-400">
+                        {remindersList.filter((r: any) => r.status === 'pending').length}
+                      </span>
+                      <span className="text-[11px] font-mono text-zinc-500">Autonomous daemon</span>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 mt-1">
+                      Proactively messaged to WhatsApp when due
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 bg-zinc-950 border border-zinc-800/80 rounded-xl">
+                    <span className="text-xs text-zinc-400 font-medium">Scheduled Calls &amp; Meets</span>
+                    <div className="flex items-baseline justify-between mt-2">
+                      <span className="text-lg font-bold font-mono text-indigo-400">
+                        {scheduledCallsList.length}
+                      </span>
+                      <span className="text-[11px] font-mono text-zinc-500">Meet / Consultation</span>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 mt-1">
+                      Automated booking via natural WhatsApp conversation
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 bg-zinc-950 border border-zinc-800/80 rounded-xl">
+                    <span className="text-xs text-zinc-400 font-medium">Project Leads Captured</span>
+                    <div className="flex items-baseline justify-between mt-2">
+                      <span className="text-lg font-bold font-mono text-amber-400">
+                        {leadsList.length}
+                      </span>
+                      <span className="text-[11px] font-mono text-zinc-500">Inquiries</span>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 mt-1">
+                      Auto-logged requirements and budgets
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Schedule Manual Reminder Card */}
+              <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-5">
+                <h4 className="font-semibold text-sm text-zinc-200 mb-1">
+                  Schedule WhatsApp Reminder
+                </h4>
+                <p className="text-xs text-zinc-400 mb-4">
+                  Schedule a message to be proactively sent to any WhatsApp chat after a specified delay.
+                </p>
+
+                <form onSubmit={handleCreateManualReminder} className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <div className="sm:col-span-2">
+                    <input
+                      type="text"
+                      placeholder="Task (e.g. Inspect server logs or Follow up on proposal)"
+                      value={newReminderTask}
+                      onChange={(e) => setNewReminderTask(e.target.value)}
+                      className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Phone (e.g. 919876543210)"
+                      value={newReminderPhone}
+                      onChange={(e) => setNewReminderPhone(e.target.value)}
+                      className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 font-mono"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <select
+                      value={newReminderDelay}
+                      onChange={(e) => setNewReminderDelay(e.target.value)}
+                      className="w-24 px-2 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-zinc-600"
+                    >
+                      <option value="5">5 mins</option>
+                      <option value="15">15 mins</option>
+                      <option value="30">30 mins</option>
+                      <option value="60">1 hour</option>
+                      <option value="1440">24 hours</option>
+                    </select>
+                    <button
+                      type="submit"
+                      disabled={schedulingManualReminder}
+                      className="flex-1 py-2 px-3 rounded-lg bg-white text-zinc-950 hover:bg-zinc-200 font-medium text-xs transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 shrink-0"
+                    >
+                      {schedulingManualReminder ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>Schedule</span>}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Reminders, Calls, and Leads Lists */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Active Reminders */}
+                <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-emerald-400" />
+                      <h4 className="font-semibold text-sm text-zinc-200">Pending Reminders</h4>
+                    </div>
+                    <span className="text-xs font-mono text-zinc-500">
+                      {remindersList.filter((r: any) => r.status === 'pending').length} Active
+                    </span>
+                  </div>
+
+                  {remindersList.filter((r: any) => r.status === 'pending').length === 0 ? (
+                    <div className="py-8 text-center text-xs text-zinc-500 font-mono">
+                      No pending reminders right now. Tell the bot &ldquo;Remind me in 30 mins to...&rdquo; on WhatsApp!
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5 max-h-[380px] overflow-y-auto">
+                      {remindersList
+                        .filter((r: any) => r.status === 'pending')
+                        .map((rem: any) => {
+                          const minsLeft = Math.max(1, Math.round((rem.dueTimestamp - Date.now()) / 60000));
+                          return (
+                            <div
+                              key={rem.id}
+                              className="p-3 bg-zinc-950 border border-zinc-800/80 rounded-lg flex items-start justify-between gap-3"
+                            >
+                              <div className="space-y-1 min-w-0">
+                                <p className="text-xs font-medium text-zinc-200 break-words">{rem.task}</p>
+                                <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-500">
+                                  <span>To: +{rem.jid?.split('@')[0]}</span>
+                                  <span>•</span>
+                                  <span className="text-emerald-400">Due in ~{minsLeft}m</span>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleCancelReminder(rem.id)}
+                                className="px-2 py-1 rounded bg-zinc-900 hover:bg-rose-950/40 border border-zinc-800 hover:border-rose-800/80 text-[11px] text-zinc-400 hover:text-rose-400 cursor-pointer shrink-0"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Scheduled Calls */}
+                <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Smartphone className="w-4 h-4 text-indigo-400" />
+                      <h4 className="font-semibold text-sm text-zinc-200">Scheduled Calls &amp; Consultations</h4>
+                    </div>
+                    <span className="text-xs font-mono text-zinc-500">
+                      {scheduledCallsList.length} Booked
+                    </span>
+                  </div>
+
+                  {scheduledCallsList.length === 0 ? (
+                    <div className="py-8 text-center text-xs text-zinc-500 font-mono">
+                      No calls booked yet. The bot automatically books slots when users request calls!
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5 max-h-[380px] overflow-y-auto">
+                      {scheduledCallsList.map((c: any) => (
+                        <div
+                          key={c.id}
+                          className="p-3 bg-zinc-950 border border-zinc-800/80 rounded-lg flex items-start justify-between gap-3"
+                        >
+                          <div className="space-y-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs font-semibold text-zinc-200">{c.clientName}</p>
+                              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-emerald-950/80 border border-emerald-800 text-emerald-400">
+                                {c.status}
+                              </span>
+                            </div>
+                            <p className="text-xs text-zinc-400">{c.topic}</p>
+                            <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-500">
+                              <span>+{c.clientPhone}</span>
+                              <span>•</span>
+                              <span className="text-indigo-400">{c.preferredTime}</span>
+                            </div>
+                          </div>
+                          {c.meetLink && (
+                            <a
+                              href={c.meetLink}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-2 py-1 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-indigo-300 hover:text-white cursor-pointer shrink-0 flex items-center gap-1"
+                            >
+                              <span>Meet</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
