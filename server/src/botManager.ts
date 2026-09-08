@@ -145,6 +145,9 @@ export function isTenantTakeoverActive(tenantId: string, jid: string): boolean {
   if (!expiresAt) return false;
   if (Date.now() > expiresAt) {
     humanTakeovers.delete(key);
+    console.log(
+      `[Takeover] Tenant '${tenantId}': 15m human inactivity cooldown expired for ${jid}. Bot automatically resumed.`
+    );
     return false;
   }
   return true;
@@ -152,13 +155,12 @@ export function isTenantTakeoverActive(tenantId: string, jid: string): boolean {
 
 export function setTenantHumanTakeover(tenantId: string, jid: string, minutes?: number): void {
   const config = getTenantConfig(tenantId);
-  const duration = (minutes ?? config.humanTakeoverCooldownMinutes) * 60 * 1000;
+  const cooldownMin = minutes ?? config.humanTakeoverCooldownMinutes ?? 15;
+  const duration = cooldownMin * 60 * 1000;
   const key = getKey(tenantId, jid);
   humanTakeovers.set(key, Date.now() + duration);
   console.log(
-    `[Takeover] Tenant '${tenantId}': Takeover active for ${jid} for ${
-      minutes ?? config.humanTakeoverCooldownMinutes
-    }m.`
+    `[Takeover] Tenant '${tenantId}': Takeover active for ${jid} for ${cooldownMin}m. Will automatically resume after ${cooldownMin}m if no human message is sent.`
   );
 }
 
@@ -285,16 +287,14 @@ export async function handleTenantIncomingMessage(
   const { jid, fromMe, text, pushName, messageId, isVoice = false } = params;
   const config = getTenantConfig(tenantId);
 
-  // STRICT FILTER: Absolutely ignore WhatsApp status broadcasts / stories and group chats
-  if (
-    !jid ||
-    jid === 'status@broadcast' ||
-    jid.endsWith('@broadcast') ||
-    jid.includes('broadcast') ||
-    jid.includes('status') ||
-    jid.endsWith('@g.us') ||
-    jid.includes('@g.us')
-  ) {
+  // STRICT FILTER: Absolutely ignore channels, newsletters, communities, groups, and broadcasts.
+  // ONLY personal 1-to-1 DMs are processed.
+  const isNewsletter = jid.endsWith('@newsletter') || jid.includes('newsletter');
+  const isGroup = jid.endsWith('@g.us') || jid.includes('@g.us');
+  const isBroadcast = jid.endsWith('@broadcast') || jid.includes('broadcast') || jid.startsWith('status@');
+  const isSystem = jid.startsWith('0@');
+
+  if (isNewsletter || isGroup || isBroadcast || isSystem || (!jid.endsWith('@s.whatsapp.net') && !jid.endsWith('@lid'))) {
     return;
   }
 
@@ -317,8 +317,8 @@ export async function handleTenantIncomingMessage(
 
   // If message was sent manually by business owner from phone
   if (fromMe) {
-    console.log(`[Manual Action] Tenant '${tenantId}' owner texted ${jid}. Pausing bot.`);
-    setTenantHumanTakeover(tenantId, jid);
+    console.log(`[Manual Action] Tenant '${tenantId}' owner texted ${jid}. Pausing bot for 15m.`);
+    setTenantHumanTakeover(tenantId, jid, 15);
     appendMessage(tenantId, jid, 'assistant', cleanText);
     return;
   }

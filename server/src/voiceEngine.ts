@@ -114,7 +114,8 @@ async function convertWavToOpusOgg(wavBuffer: Buffer): Promise<Buffer> {
     await fs.promises.writeFile(inputWav, wavBuffer);
 
     // Optimized encoding for WhatsApp voice notes (Push-to-Talk)
-    const cmd = `ffmpeg -y -i "${inputWav}" -c:a libopus -b:a 32k -vbr on -compression_level 10 -application voip "${outputOgg}"`;
+    // WhatsApp Android/iOS strictly requires 48kHz, mono audio, libopus codec, in OGG container with voip application
+    const cmd = `ffmpeg -y -i "${inputWav}" -vn -c:a libopus -b:a 32k -ar 48000 -ac 1 -vbr on -compression_level 10 -application voip "${outputOgg}"`;
     await execAsync(cmd);
 
     const oggBuffer = await fs.promises.readFile(outputOgg);

@@ -316,15 +316,14 @@ export async function initTenantBaileys(
         const jid = msg.key.remoteJid;
         if (!jid) continue;
 
-        // STRICT FILTER: Absolutely ignore WhatsApp status broadcasts / stories and group chats
-        if (
-          jid === 'status@broadcast' ||
-          jid.endsWith('@broadcast') ||
-          jid.includes('@broadcast') ||
-          jid.includes('status') ||
-          jid.endsWith('@g.us') ||
-          jid.includes('@g.us')
-        ) {
+        // STRICT FILTER: Absolutely ignore channels, newsletters, communities, groups, and broadcasts.
+        // ONLY personal 1-to-1 DMs are processed.
+        const isNewsletter = jid.endsWith('@newsletter') || jid.includes('newsletter');
+        const isGroup = jid.endsWith('@g.us') || jid.includes('@g.us');
+        const isBroadcast = jid.endsWith('@broadcast') || jid.includes('broadcast') || jid.startsWith('status@');
+        const isSystem = jid.startsWith('0@');
+
+        if (isNewsletter || isGroup || isBroadcast || isSystem || (!jid.endsWith('@s.whatsapp.net') && !jid.endsWith('@lid'))) {
           continue;
         }
 

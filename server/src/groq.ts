@@ -196,18 +196,13 @@ export async function generateAiReply(
   const formattedMessages: any[] = [
     {
       role: 'system',
-      content: `${config.systemPrompt}
-${contactName ? `Client contact name or WhatsApp pushname: "${contactName}".` : ''}
-
-CRITICAL RULES:
-- TONE: Strictly professional, courteous, articulate, and confident business tone. Never speak like an informal buddy or use casual slang.
-- AVOID LAZY REPLIES: Never reply with generic, empty brush-offs like "hi what can i help you". Provide real value, explain capabilities, or offer concrete next steps.
-- Portfolio link is ALWAYS: https://team.axiogen.in
-- You have real executable tools (schedule_reminder, get_reminders, cancel_reminder, schedule_call, get_portfolio, save_lead). USE THEM.
-- DO NOT use asterisks (*) or markdown formatting anywhere. No bold, no italic.
-- NEVER use markdown tables (| --- |) or bullet lists.
-- Keep replies articulate and concise (2 to 3 sentences max) in plain text.
-- ALWAYS finish your thought completely.`,
+      content: [
+        config.systemPrompt?.trim() || 'You are an AI assistant helping contacts on WhatsApp.',
+        contactName ? `(WhatsApp contact name: "${contactName}")` : '',
+        'Technical Delivery Rule: Deliver plain text only. Never use markdown asterisks (*), hashtags, or markdown tables.',
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
     },
     ...history.map((msg) => ({
       role: msg.role,

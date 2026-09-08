@@ -60,6 +60,7 @@ export default function DashboardPage() {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isContactsCollapsed, setIsContactsCollapsed] = useState(false);
   const [contactSearch, setContactSearch] = useState('');
+  const [activePreset, setActivePreset] = useState<string | null>(null);
 
   // Reminders, Scheduled Calls & Leads
   const [remindersList, setRemindersList] = useState<any[]>([]);
@@ -94,7 +95,7 @@ export default function DashboardPage() {
     typingDelayMinMs: 800,
     typingDelayMaxMs: 2200,
     debounceWaitMs: 3000,
-    humanTakeoverCooldownMinutes: 30,
+    humanTakeoverCooldownMinutes: 15,
     voiceReplyMode: 'adaptive',
     voicePersona: 'am_adam',
     voiceSpeed: 1.0,
@@ -590,6 +591,7 @@ CRITICAL WHATSAPP RULES:
       restaurant: `You are the dining concierge for ${user?.businessName || 'our restaurant'}. Handle table reservations, dietary questions, operating hours, and location guidance. Keep responses friendly, warm, and brief in 1-2 sentences.`,
     };
     setConfig((prev) => ({ ...prev, systemPrompt: templates[type] }));
+    setActivePreset(type);
     showToast(`Loaded ${type} persona template.`, 'success');
   };
 
@@ -1322,35 +1324,55 @@ CRITICAL WHATSAPP RULES:
                     <button
                       type="button"
                       onClick={() => applyTemplate('axiogen')}
-                      className="p-2.5 rounded-lg bg-indigo-950/40 hover:bg-indigo-900/50 border border-indigo-800/80 text-left text-xs font-medium text-indigo-300 hover:text-white transition-colors cursor-pointer"
+                      className={`p-2.5 rounded-lg text-left text-xs font-medium transition-colors cursor-pointer ${
+                        activePreset === 'axiogen'
+                          ? 'bg-indigo-950/60 border border-indigo-700 text-indigo-200'
+                          : 'bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white'
+                      }`}
                     >
                       Team Axiogen (Founder Bot)
                     </button>
                     <button
                       type="button"
                       onClick={() => applyTemplate('support')}
-                      className="p-2.5 rounded-lg bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-left text-xs font-medium text-zinc-300 hover:text-white transition-colors cursor-pointer"
+                      className={`p-2.5 rounded-lg text-left text-xs font-medium transition-colors cursor-pointer ${
+                        activePreset === 'support'
+                          ? 'bg-indigo-950/60 border border-indigo-700 text-indigo-200'
+                          : 'bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white'
+                      }`}
                     >
                       Customer Support
                     </button>
                     <button
                       type="button"
                       onClick={() => applyTemplate('clinic')}
-                      className="p-2.5 rounded-lg bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-left text-xs font-medium text-zinc-300 hover:text-white transition-colors cursor-pointer"
+                      className={`p-2.5 rounded-lg text-left text-xs font-medium transition-colors cursor-pointer ${
+                        activePreset === 'clinic'
+                          ? 'bg-indigo-950/60 border border-indigo-700 text-indigo-200'
+                          : 'bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white'
+                      }`}
                     >
                       Healthcare / Clinic
                     </button>
                     <button
                       type="button"
                       onClick={() => applyTemplate('realty')}
-                      className="p-2.5 rounded-lg bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-left text-xs font-medium text-zinc-300 hover:text-white transition-colors cursor-pointer"
+                      className={`p-2.5 rounded-lg text-left text-xs font-medium transition-colors cursor-pointer ${
+                        activePreset === 'realty'
+                          ? 'bg-indigo-950/60 border border-indigo-700 text-indigo-200'
+                          : 'bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white'
+                      }`}
                     >
                       Real Estate Agency
                     </button>
                     <button
                       type="button"
                       onClick={() => applyTemplate('restaurant')}
-                      className="p-2.5 rounded-lg bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-left text-xs font-medium text-zinc-300 hover:text-white transition-colors cursor-pointer"
+                      className={`p-2.5 rounded-lg text-left text-xs font-medium transition-colors cursor-pointer ${
+                        activePreset === 'restaurant'
+                          ? 'bg-indigo-950/60 border border-indigo-700 text-indigo-200'
+                          : 'bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white'
+                      }`}
                     >
                       Restaurant / Dining
                     </button>
@@ -1365,7 +1387,10 @@ CRITICAL WHATSAPP RULES:
                   <textarea
                     rows={7}
                     value={config.systemPrompt}
-                    onChange={(e) => setConfig({ ...config, systemPrompt: e.target.value })}
+                    onChange={(e) => {
+                      setConfig({ ...config, systemPrompt: e.target.value });
+                      setActivePreset(null);
+                    }}
                     placeholder="Paste your business details, prices, operating hours, and FAQ..."
                     className="w-full p-3 bg-zinc-950 border border-zinc-800 rounded-lg text-xs leading-relaxed text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 font-mono"
                   />
