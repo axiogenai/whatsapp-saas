@@ -259,7 +259,7 @@ app.post(
 // 10. Axiogen Voice Engine v2 - Live Audio Preview
 app.post(['/api/tts/preview', '/api/tenant/:tenantId/tts/preview'], async (req: Request, res: Response) => {
   const { text, voice, speed } = req.body;
-  const sampleText = text || 'Welcome to Team Axiogen. I am your autonomous WhatsApp assistant.';
+  const sampleText = text || 'Hello! I am your autonomous voice assistant. How can I help you today?';
 
   try {
     const wavBuffer = await synthesizeSpeechWav(sampleText, {
@@ -346,8 +346,8 @@ app.get('/api/admin/tenants', async (req: Request, res: Response) => {
       tenantList.push({
         id: `usr_${tid}`,
         tenantId: tid,
-        businessName: config.businessName || (tid === 'default' ? 'Team Axiogen (Admin)' : 'Team Axiogen (Primary)'),
-        name: config.ownerName || config.botName || (tid === 'default' ? 'Aditya Patil (Admin)' : 'Aditya Patil'),
+        businessName: config.businessName || config.ownerName || `${tid} Workspace`,
+        name: config.ownerName || config.botName || (tid === 'default' ? 'Platform Admin' : 'Aditya Patil'),
         email: config.ownerEmail || 'aditay26patil@gmail.com',
         plan: config.plan || 'free_trial',
         messagesUsed: telemetry.length,

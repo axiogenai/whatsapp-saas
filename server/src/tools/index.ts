@@ -207,14 +207,6 @@ export async function executeTool(
         preferredTime
       );
 
-      // Automatically set a reminder for the founder/owner 10 minutes prior or in 1 hour
-      addReminder(
-        tenantId,
-        jid,
-        `Upcoming scheduled call with ${clientName} (${clientPhone}) at ${preferredTime}: ${topic}`,
-        Date.now() + 60 * 60 * 1000
-      );
-
       return {
         success: true,
         callId: callRecord.id,
@@ -268,14 +260,6 @@ export async function executeTool(
       const budget = args.budget ? String(args.budget) : undefined;
 
       const lead: CapturedLead = saveLead(tenantId, jid, clientName, requirements, budget);
-
-      // Set alert reminder for owner to follow up within 2 hours
-      addReminder(
-        tenantId,
-        jid,
-        `Follow up with lead: ${clientName} (${requirements.slice(0, 50)}...)`,
-        Date.now() + 120 * 60 * 1000
-      );
 
       return {
         success: true,

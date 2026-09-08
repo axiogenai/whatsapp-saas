@@ -1,6 +1,8 @@
+import fs from 'fs';
+import path from 'path';
 import { getTenantConfig } from './config';
 import { generateAiReply, appendMessage } from './groq';
-import { startReminderScheduler, addReminder } from './reminderManager';
+import { startReminderScheduler } from './reminderManager';
 import { synthesizeSpeech } from './voiceEngine';
 
 export interface TelemetryMessage {
@@ -53,8 +55,52 @@ const debounceBuffers = new Map<
 // Call reply timestamps: "tenantId:jid" -> lastReplyTimestamp (prevent spamming on multiple rings)
 const callReplyTimestamps = new Map<string, number>();
 
-// Voice reply counter per contact: "tenantId:jid" -> number of voice notes sent
-const tenantVoiceReplyCounts = new Map<string, number>();
+// Persistent voice reply counter per contact: data/voice-reply-counts.json
+const DATA_DIR = path.resolve(__dirname, '../data');
+const VOICE_COUNTS_FILE = path.join(DATA_DIR, 'voice-reply-counts.json');
+let voiceCountsCache: Record<string, number> | null = null;
+
+function loadVoiceCounts(): Record<string, number> {
+  if (voiceCountsCache) return voiceCountsCache;
+  try {
+    if (fs.existsSync(VOICE_COUNTS_FILE)) {
+      const raw = fs.readFileSync(VOICE_COUNTS_FILE, 'utf-8');
+      voiceCountsCache = JSON.parse(raw) || {};
+      return voiceCountsCache!;
+    }
+  } catch (_) {}
+  voiceCountsCache = {};
+  return voiceCountsCache;
+}
+
+function saveVoiceCounts(counts: Record<string, number>): void {
+  try {
+    const dir = path.dirname(VOICE_COUNTS_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(VOICE_COUNTS_FILE, JSON.stringify(counts, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('[BotManager] Failed to persist voice counts:', err);
+  }
+}
+
+export function normalizeContactId(jid: string): string {
+  return jid.split('@')[0].split(':')[0];
+}
+
+export function getVoiceSentCount(tenantId: string, jid: string): number {
+  const counts = loadVoiceCounts();
+  const key = `${tenantId}:${normalizeContactId(jid)}`;
+  return counts[key] || 0;
+}
+
+export function incrementVoiceSentCount(tenantId: string, jid: string): number {
+  const counts = loadVoiceCounts();
+  const key = `${tenantId}:${normalizeContactId(jid)}`;
+  const next = (counts[key] || 0) + 1;
+  counts[key] = next;
+  saveVoiceCounts(counts);
+  return next;
+}
 
 // Telemetry logs keyed per tenant: tenantId -> TelemetryMessage[] (capped at 100 per tenant)
 const tenantTelemetries = new Map<string, TelemetryMessage[]>();
@@ -224,14 +270,6 @@ export async function handleTenantIncomingCall(
     isBotReply: false,
   });
 
-  // Automatically schedule a reminder to call back
-  addReminder(
-    tenantId,
-    jid,
-    `Follow up with ${jid.split('@')[0]} regarding missed WhatsApp ${callType} call`,
-    Date.now() + 15 * 60 * 1000
-  );
-
   if (!config.autoReplyEnabled) return;
   if (isTenantTakeoverActive(tenantId, jid)) return;
 
@@ -248,10 +286,17 @@ export async function handleTenantIncomingCall(
   const dispatchers = tenantDispatchers.get(tenantId);
   if (!dispatchers) return;
 
+  // Personalized displayName (e.g. "Aditya Patil" / "Aditya") - never hardcode 'Team Axiogen'
+  const displayName =
+    config.ownerName ||
+    config.botName ||
+    (config.businessName && !config.businessName.toLowerCase().includes('team axiogen') ? config.businessName : '') ||
+    'Aditya';
+
   const autoReply =
     tenantId === 'default'
-      ? "Hey! Saw you called just now. I am currently in a client sprint / meeting and cannot pick up right now. What's up? Let me know here, or tell me when you are free and I can schedule a call for us."
-      : `Hello! Thank you for calling ${config.businessName}. We are currently in a consultation and could not take your call. Please leave your message here or let us know a preferred time to connect.`;
+      ? "Hey! Saw you called just now. I am currently tied up and could not pick up right now. What's up? Let me know here, or tell me when you are free and I can schedule a call for us."
+      : `Hello! Thank you for calling ${displayName}. I could not take your call right now. Please leave your message here or let me know a convenient time to connect.`;
 
   // Brief delay before sending
   setTimeout(async () => {
@@ -404,14 +449,13 @@ async function processDebouncedMessage(tenantId: string, jid: string): Promise<v
   // - 'first_two_voice': first 2 bot replies to this contact are voice notes, thereafter text
   // - 'adaptive': replies as voice note if user spoke into mic (voice note)
   // - 'text_only': text only
-  const voiceKey = getKey(tenantId, jid);
-  const voiceSentCount = tenantVoiceReplyCounts.get(voiceKey) || 0;
+  const voiceSentCount = getVoiceSentCount(tenantId, jid);
 
   let shouldSendVoice = false;
   if (config.voiceReplyMode === 'always') {
     shouldSendVoice = true;
   } else if (config.voiceReplyMode === 'first_two_voice') {
-    // First 2 bot replies to this contact are voice notes, thereafter text
+    // Exactly the first 2 bot replies to this contact are voice notes, thereafter text
     shouldSendVoice = voiceSentCount < 2;
   } else if (config.voiceReplyMode === 'text_only') {
     shouldSendVoice = false;
@@ -457,7 +501,7 @@ async function processDebouncedMessage(tenantId: string, jid: string): Promise<v
         await dispatchers.sendAudioMsg(jid, audioBuffer);
         await dispatchers.sendPresence('paused', jid);
 
-        tenantVoiceReplyCounts.set(voiceKey, voiceSentCount + 1);
+        const newCount = incrementVoiceSentCount(tenantId, jid);
 
         addTenantTelemetry(tenantId, {
           id: `bot-voice-${Date.now()}`,
@@ -470,7 +514,7 @@ async function processDebouncedMessage(tenantId: string, jid: string): Promise<v
           isBotReply: true,
         });
 
-        console.log(`[Bot Voice Reply Sent] Tenant '${tenantId}' to ${jid} (count: ${voiceSentCount + 1}): "${aiResponse.substring(0, 60)}..."`);
+        console.log(`[Bot Voice Reply Sent] Tenant '${tenantId}' to ${jid} (voice note ${newCount} of 2 for contact): "${aiResponse.substring(0, 60)}..."`);
         return;
       } else {
         console.warn(`[Voice Fallback] Speech synthesis returned null. Falling back to text message for ${jid}.`);

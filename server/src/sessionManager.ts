@@ -50,6 +50,30 @@ interface ActiveSessionRecord {
 const AUTH_ROOT = path.resolve(__dirname, '../auth_info_baileys');
 const TENANTS_AUTH_DIR = path.join(AUTH_ROOT, 'tenants');
 
+// Active incoming WhatsApp calls tracking: callId -> ActiveCallRecord
+interface ActiveCallRecord {
+  tenantId: string;
+  from: string;
+  isVideo: boolean;
+  accepted: boolean;
+  timestamp: number;
+}
+const activeTenantCalls = new Map<string, ActiveCallRecord>();
+
+// Bot-sent message IDs to prevent echoing back and falsely triggering human takeover
+const recentBotMessageIds = new Set<string>();
+
+export function markBotMessageSent(messageId: string): void {
+  if (!messageId) return;
+  recentBotMessageIds.add(messageId);
+  setTimeout(() => recentBotMessageIds.delete(messageId), 60000);
+}
+
+export function isBotMessageSent(messageId: string): boolean {
+  if (!messageId) return false;
+  return recentBotMessageIds.has(messageId);
+}
+
 // Active sessions map: tenantId -> ActiveSessionRecord
 const sessions = new Map<string, ActiveSessionRecord>();
 
@@ -187,7 +211,8 @@ export async function initTenantBaileys(
     tenantId,
     async (jid: string, text: string) => {
       if (!sock) throw new Error(`Socket not connected for tenant ${tenantId}`);
-      await sock.sendMessage(jid, { text });
+      const sent = await sock.sendMessage(jid, { text });
+      if (sent?.key?.id) markBotMessageSent(sent.key.id);
     },
     async (presence: 'composing' | 'paused' | 'recording', jid: string) => {
       if (!sock) return;
@@ -197,30 +222,75 @@ export async function initTenantBaileys(
     },
     async (jid: string, audioBuffer: Buffer) => {
       if (!sock) throw new Error(`Socket not connected for tenant ${tenantId}`);
-      await sock.sendMessage(jid, {
+      const sent = await sock.sendMessage(jid, {
         audio: audioBuffer,
         mimetype: 'audio/ogg; codecs=opus',
         ptt: true,
       });
+      if (sent?.key?.id) markBotMessageSent(sent.key.id);
     }
   );
 
   sock.ev.on('creds.update', saveCreds);
 
-  // Incoming WhatsApp Call Event Listener (Real Calling Support)
+  // Incoming WhatsApp Call Event Listener (Real-Time Missed Call Support)
+  // Only fires missed call auto-reply if the call was NOT answered/accepted!
   sock.ev.on('call', async (calls: WACallEvent[]) => {
     try {
       for (const call of calls) {
-        if (call.status === 'offer') {
-          const callerJid = call.from;
-          if (callerJid) {
+        const callId = call.id;
+        const callerJid = call.from;
+        const status = call.status;
+
+        console.log(`[Baileys Call] Tenant '${tenantId}': Call ${callId} from ${callerJid} status update: '${status}'`);
+
+        if (status === 'offer' || status === 'ringing') {
+          // Phone is actively ringing. DO NOT send auto-reply yet!
+          activeTenantCalls.set(callId, {
+            tenantId,
+            from: callerJid,
+            isVideo: Boolean(call.isVideo),
+            accepted: false,
+            timestamp: Date.now(),
+          });
+        } else if (status === 'accept') {
+          // Call was answered/picked up by user or contact!
+          const existing = activeTenantCalls.get(callId);
+          if (existing) {
+            existing.accepted = true;
+            console.log(`[Baileys Call] Tenant '${tenantId}': Call ${callId} was ACCEPTED. Suppressing missed call reply.`);
+          }
+        } else if (status === 'timeout' || status === 'reject') {
+          // Call timed out (missed) or was rejected/declined
+          const existing = activeTenantCalls.get(callId);
+          const wasAccepted = existing ? existing.accepted : false;
+          activeTenantCalls.delete(callId);
+
+          if (!wasAccepted && callerJid) {
+            console.log(`[Baileys Call] Tenant '${tenantId}': Call ${callId} ended unaccepted (${status}). Firing missed call handler.`);
             handleTenantIncomingCall(tenantId, {
               jid: callerJid,
-              callId: call.id,
+              callId,
               isVideo: Boolean(call.isVideo),
             }).catch((err) => {
-              console.error(`[Baileys] Error handling incoming call from ${callerJid}:`, err);
+              console.error(`[Baileys] Error handling missed call from ${callerJid}:`, err);
             });
+          }
+        } else if (status === 'terminate') {
+          // Call terminated
+          const existing = activeTenantCalls.get(callId);
+          if (existing) {
+            activeTenantCalls.delete(callId);
+            if (!existing.accepted && existing.from) {
+              console.log(`[Baileys Call] Tenant '${tenantId}': Call ${callId} terminated unanswered. Firing missed call handler.`);
+              handleTenantIncomingCall(tenantId, {
+                jid: existing.from,
+                callId,
+                isVideo: existing.isVideo,
+              }).catch((err) => {
+                console.error(`[Baileys] Error handling missed call from ${existing.from}:`, err);
+              });
+            }
           }
         }
       }
@@ -315,6 +385,12 @@ export async function initTenantBaileys(
       try {
         const jid = msg.key.remoteJid;
         if (!jid) continue;
+
+        const messageId = msg.key.id || `msg-${Date.now()}`;
+        // Skip messages that were dispatched by the bot itself (prevents false human takeover)
+        if (msg.key.fromMe && isBotMessageSent(messageId)) {
+          continue;
+        }
 
         // STRICT FILTER: Absolutely ignore channels, newsletters, communities, groups, and broadcasts.
         // ONLY personal 1-to-1 DMs are processed.
