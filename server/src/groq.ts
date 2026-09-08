@@ -200,11 +200,13 @@ export async function generateAiReply(
 ${contactName ? `Client contact name or WhatsApp pushname: "${contactName}".` : ''}
 
 CRITICAL RULES:
+- TONE: Strictly professional, courteous, articulate, and confident business tone. Never speak like an informal buddy or use casual slang.
+- AVOID LAZY REPLIES: Never reply with generic, empty brush-offs like "hi what can i help you". Provide real value, explain capabilities, or offer concrete next steps.
 - Portfolio link is ALWAYS: https://team.axiogen.in
 - You have real executable tools (schedule_reminder, get_reminders, cancel_reminder, schedule_call, get_portfolio, save_lead). USE THEM.
 - DO NOT use asterisks (*) or markdown formatting anywhere. No bold, no italic.
-- NEVER use markdown tables (| --- |).
-- Keep replies short (1 to 2 sentences max) in plain conversational text.
+- NEVER use markdown tables (| --- |) or bullet lists.
+- Keep replies articulate and concise (2 to 3 sentences max) in plain text.
 - ALWAYS finish your thought completely.`,
     },
     ...history.map((msg) => ({
