@@ -41,6 +41,11 @@ import {
   ExternalLink,
   Receipt,
   Printer,
+  Volume2,
+  Mic,
+  Play,
+  Square,
+  Headphones,
 } from 'lucide-react';
 import { getStoredUser, setStoredUser, clearStoredUser } from '@/lib/auth';
 import { TenantUser, TenantSessionStatus, TenantBotConfig, ChatMessage, ChatContact } from '@/lib/types';
@@ -90,8 +95,16 @@ export default function DashboardPage() {
     typingDelayMaxMs: 2200,
     debounceWaitMs: 3000,
     humanTakeoverCooldownMinutes: 30,
+    voiceReplyMode: 'adaptive',
+    voicePersona: 'am_adam',
+    voiceSpeed: 1.0,
   });
   const [savingConfig, setSavingConfig] = useState(false);
+
+  // Audio / Speech Preview State (Axiogen Voice v2)
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [loadingAudioPreview, setLoadingAudioPreview] = useState(false);
+  const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
 
   // Inbox & Chats
   const [telemetry, setTelemetry] = useState<ChatMessage[]>([]);
@@ -562,6 +575,56 @@ CRITICAL WHATSAPP RULES:
     };
     setConfig((prev) => ({ ...prev, systemPrompt: templates[type] }));
     showToast(`Loaded ${type} persona template.`, 'success');
+  };
+
+  // Live Speech Synthesis Preview via Axiogen Voice Engine v2
+  const handlePreviewVoice = async () => {
+    if (isPlayingAudio && audioPlayer) {
+      audioPlayer.pause();
+      setIsPlayingAudio(false);
+      return;
+    }
+
+    try {
+      setLoadingAudioPreview(true);
+      const res = await fetch('/api/whatsapp/preview-voice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-tenant-id': tenantId,
+        },
+        body: JSON.stringify({
+          text: `Hi, this is ${config.botName || 'Aditya'} from Team Axiogen. Our portfolio is live at team dot axiogen dot in. How can I assist you today?`,
+          voice: config.voicePersona || 'am_adam',
+          speed: config.voiceSpeed || 1.0,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to load audio preview from Axiogen Voice');
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      setAudioPlayer(audio);
+      setIsPlayingAudio(true);
+
+      audio.onended = () => {
+        setIsPlayingAudio(false);
+      };
+      audio.onerror = () => {
+        setIsPlayingAudio(false);
+        showToast('Failed to play voice preview audio', 'error');
+      };
+
+      await audio.play();
+    } catch (err: any) {
+      showToast(err.message || 'TTS preview failed', 'error');
+      setIsPlayingAudio(false);
+    } finally {
+      setLoadingAudioPreview(false);
+    }
   };
 
   const handleInitiatePhonePePayment = async (planToBuy: 'starter' | 'pro' | 'agency') => {
@@ -1323,6 +1386,128 @@ CRITICAL WHATSAPP RULES:
                       onChange={(e) => setConfig({ ...config, botName: e.target.value })}
                       className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-zinc-600"
                     />
+                  </div>
+                </div>
+
+                {/* Axiogen Voice Engine v2 Controls */}
+                <div className="p-4 bg-zinc-950/80 border border-zinc-800/90 rounded-xl space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-zinc-800/80">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-950/60 border border-indigo-800/60 flex items-center justify-center text-indigo-400">
+                        <Volume2 className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-xs text-zinc-100">Axiogen Voice Engine v2</h4>
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-indigo-950 text-indigo-300 border border-indigo-800">
+                            Neural TTS • Push-To-Talk
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-zinc-400">
+                          Enables your WhatsApp bot to speak naturally using high-fidelity 24kHz neural voices.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handlePreviewVoice}
+                      disabled={loadingAudioPreview}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                        isPlayingAudio
+                          ? 'bg-amber-950/60 border-amber-800 text-amber-300 hover:bg-amber-900/60'
+                          : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-zinc-200'
+                      }`}
+                    >
+                      {loadingAudioPreview ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+                          <span>Synthesizing...</span>
+                        </>
+                      ) : isPlayingAudio ? (
+                        <>
+                          <Square className="w-3.5 h-3.5 fill-current" />
+                          <span>Stop Preview</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-3.5 h-3.5 fill-current text-emerald-400" />
+                          <span>Preview Voice</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Voice Mode */}
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                        Voice Reply Mode
+                      </label>
+                      <select
+                        value={config.voiceReplyMode || 'adaptive'}
+                        onChange={(e) => setConfig({ ...config, voiceReplyMode: e.target.value as any })}
+                        className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-zinc-600 cursor-pointer"
+                      >
+                        <option value="adaptive">Adaptive (Voice note if user sent voice)</option>
+                        <option value="always">Always Speak (Voice note for every reply)</option>
+                        <option value="text_only">Text Only (Mute Voice Notes)</option>
+                      </select>
+                      <p className="text-[10px] text-zinc-500 mt-1">
+                        {config.voiceReplyMode === 'always'
+                          ? 'Bot converts all responses into native WhatsApp PTT voice notes.'
+                          : config.voiceReplyMode === 'text_only'
+                          ? 'Bot only responds via text messages.'
+                          : 'Recommended: Responds via voice when client speaks, and text when they text.'}
+                      </p>
+                    </div>
+
+                    {/* Voice Persona */}
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                        Voice Persona &amp; Accent
+                      </label>
+                      <select
+                        value={config.voicePersona || 'am_adam'}
+                        onChange={(e) => setConfig({ ...config, voicePersona: e.target.value })}
+                        className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-zinc-600 cursor-pointer"
+                      >
+                        <option value="am_adam">Adam (Male • Deep, Crisp &amp; Tech Founder - Recommended)</option>
+                        <option value="af_bella">Bella (Female • Warm, Clear &amp; Friendly)</option>
+                        <option value="af_sarah">Sarah (Female • Energetic, Professional)</option>
+                        <option value="bf_emma">Emma (British Female • Sophisticated &amp; Elegant)</option>
+                        <option value="bm_george">George (British Male • Authoritative &amp; Polished)</option>
+                      </select>
+                      <p className="text-[10px] text-zinc-500 mt-1">
+                        Synthesized in real-time by Axiogen Voice Engine v2 at 24,000 Hz.
+                      </p>
+                    </div>
+
+                    {/* Voice Speed */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-medium text-zinc-300">
+                          Speech Speed
+                        </label>
+                        <span className="text-[11px] font-mono text-zinc-400">
+                          {config.voiceSpeed ? config.voiceSpeed.toFixed(1) : '1.0'}x
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.8"
+                        max="1.3"
+                        step="0.05"
+                        value={config.voiceSpeed || 1.0}
+                        onChange={(e) => setConfig({ ...config, voiceSpeed: parseFloat(e.target.value) })}
+                        className="w-full accent-indigo-500 h-1.5 bg-zinc-800 rounded-lg cursor-pointer"
+                      />
+                      <div className="flex justify-between text-[10px] text-zinc-500 mt-1 font-mono">
+                        <span>0.8x (Slower)</span>
+                        <span>1.0x (Natural)</span>
+                        <span>1.3x (Fast)</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
