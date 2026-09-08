@@ -26,6 +26,7 @@ import {
   Settings2,
   Activity,
   Zap,
+  ChevronLeft,
 } from 'lucide-react';
 import { getStoredUser, clearStoredUser } from '@/lib/auth';
 import { TenantUser, TenantSessionStatus, TenantBotConfig, ChatMessage, ChatContact } from '@/lib/types';
@@ -68,6 +69,7 @@ export default function DashboardPage() {
   const [activeContact, setActiveContact] = useState<string | null>(null);
   const [manualText, setManualText] = useState('');
   const [sendingManual, setSendingManual] = useState(false);
+  const [mobileChatView, setMobileChatView] = useState<'contacts' | 'messages'>('contacts');
 
   // Toast
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
@@ -336,7 +338,7 @@ export default function DashboardPage() {
       {/* Toast Notification */}
       {toast && (
         <div
-          className={`fixed top-4 right-4 z-50 px-3.5 py-2 rounded-lg border text-xs font-mono shadow-xl flex items-center gap-2 ${
+          className={`fixed top-4 right-4 z-50 px-3.5 py-2 rounded-lg border text-xs font-mono shadow-xl flex items-center gap-2 max-w-[90vw] ${
             toast.type === 'success'
               ? 'bg-zinc-900 border-zinc-700 text-emerald-400'
               : 'bg-zinc-900 border-rose-800 text-rose-400'
@@ -347,32 +349,30 @@ export default function DashboardPage() {
           ) : (
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
           )}
-          <span>{toast.msg}</span>
+          <span className="truncate">{toast.msg}</span>
         </div>
       )}
 
       {/* Top Header */}
-      <header className="h-14 px-6 border-b border-zinc-800 bg-[#09090b] flex items-center justify-between shrink-0 sticky top-0 z-30">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300">
-              <Bot className="w-4 h-4" />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm text-zinc-100">
-                {user.businessName}
-              </span>
-              <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-zinc-900 text-zinc-400 border border-zinc-800">
-                {tenantId}
-              </span>
-            </div>
+      <header className="h-14 px-3 sm:px-6 border-b border-zinc-800 bg-[#09090b] flex items-center justify-between shrink-0 sticky top-0 z-30">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="w-7 h-7 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 shrink-0">
+            <Bot className="w-4 h-4" />
+          </div>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="font-semibold text-xs sm:text-sm text-zinc-100 truncate max-w-[100px] xs:max-w-[140px] sm:max-w-none">
+              {user.businessName}
+            </span>
+            <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] sm:text-[11px] font-mono bg-zinc-900 text-zinc-400 border border-zinc-800 shrink-0">
+              {tenantId}
+            </span>
           </div>
 
           <div className="h-4 w-px bg-zinc-800 hidden sm:block" />
 
           {/* Connection Status Badge */}
           <div
-            className={`flex items-center gap-2 px-2.5 py-1 rounded-md text-xs font-mono border ${
+            className={`flex items-center gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md text-[11px] sm:text-xs font-mono border shrink-0 ${
               isConnected
                 ? 'bg-emerald-950/30 text-emerald-400 border-emerald-800/60'
                 : statusData.status === 'qr_ready'
@@ -381,7 +381,7 @@ export default function DashboardPage() {
             }`}
           >
             <div
-              className={`w-1.5 h-1.5 rounded-full ${
+              className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                 isConnected
                   ? 'bg-emerald-400 animate-pulse'
                   : statusData.status === 'qr_ready'
@@ -389,17 +389,17 @@ export default function DashboardPage() {
                   : 'bg-zinc-600'
               }`}
             />
-            <span>
+            <span className="whitespace-nowrap">
               {isConnected
-                ? `Active +${statusData.phone}`
+                ? (<><span className="hidden sm:inline">Active </span>+{statusData.phone}</>)
                 : statusData.status === 'qr_ready'
                 ? 'QR Ready'
-                : 'Disconnected'}
+                : 'Offline'}
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <button
             onClick={() => {
               setRefreshing(true);
@@ -424,12 +424,12 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Segmented Tab Navigation */}
-      <div className="border-b border-zinc-800/80 bg-zinc-950 px-6 py-2.5 flex items-center justify-between shrink-0">
-        <div className="inline-flex p-0.5 bg-zinc-900 border border-zinc-800 rounded-lg gap-0.5">
+      {/* Segmented Tab Navigation - Horizontally Scrollable on Mobile without clipping */}
+      <div className="border-b border-zinc-800/80 bg-zinc-950 px-3 sm:px-6 py-2 flex items-center justify-between overflow-x-auto no-scrollbar shrink-0">
+        <div className="inline-flex p-0.5 bg-zinc-900 border border-zinc-800 rounded-lg gap-0.5 shrink-0 flex-nowrap">
           <button
             onClick={() => setTab('connection')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
               tab === 'connection'
                 ? 'bg-zinc-800 text-white shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
@@ -441,19 +441,19 @@ export default function DashboardPage() {
 
           <button
             onClick={() => setTab('studio')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
               tab === 'studio'
                 ? 'bg-zinc-800 text-white shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
             }`}
           >
             <Cpu className="w-3.5 h-3.5" />
-            <span>AI Persona Studio</span>
+            <span>Persona Studio</span>
           </button>
 
           <button
             onClick={() => setTab('inbox')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
               tab === 'inbox'
                 ? 'bg-zinc-800 text-white shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
@@ -470,7 +470,7 @@ export default function DashboardPage() {
 
           <button
             onClick={() => setTab('analytics')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
               tab === 'analytics'
                 ? 'bg-zinc-800 text-white shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
@@ -481,21 +481,21 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        <div className="hidden md:flex items-center gap-2 text-xs font-mono text-zinc-500">
+        <div className="hidden lg:flex items-center gap-2 text-xs font-mono text-zinc-500 shrink-0 ml-4">
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
           <span>macOS Desktop Socket Engine</span>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-6 overflow-y-auto max-w-6xl w-full mx-auto">
+      <main className="flex-1 p-3 sm:p-6 overflow-y-auto max-w-6xl w-full mx-auto">
         {/* TAB 1: WHATSAPP CONNECTION */}
         {tab === 'connection' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Live QR Card */}
-            <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-6 flex flex-col justify-between">
+            <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-4 sm:p-6 flex flex-col justify-between">
               <div>
-                <div className="flex items-center justify-between pb-4 mb-4 border-b border-zinc-800/80">
+                <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-zinc-800/80">
                   <div className="flex items-center gap-2.5">
                     <QrCode className="w-4 h-4 text-zinc-400" />
                     <div>
@@ -515,12 +515,12 @@ export default function DashboardPage() {
                       className="text-xs text-zinc-400 hover:text-zinc-200 flex items-center gap-1 bg-zinc-900 border border-zinc-800 px-2 py-1 rounded cursor-pointer transition-colors"
                     >
                       <RefreshCw className={`w-3 h-3 ${restartingSession ? 'animate-spin' : ''}`} />
-                      <span>Refresh QR</span>
+                      <span className="hidden xs:inline">Refresh QR</span>
                     </button>
                   )}
                 </div>
 
-                <div className="flex flex-col items-center justify-center p-6 bg-zinc-950 border border-zinc-800/80 rounded-lg min-h-[300px]">
+                <div className="flex flex-col items-center justify-center p-4 sm:p-6 bg-zinc-950 border border-zinc-800/80 rounded-lg min-h-[280px]">
                   {isConnected ? (
                     <div className="text-center space-y-3 py-6">
                       <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto">
@@ -534,15 +534,15 @@ export default function DashboardPage() {
                     </div>
                   ) : statusData.qrCodeUrl ? (
                     <div className="space-y-4 text-center">
-                      <div className="p-3 bg-white rounded-lg inline-block shadow-sm">
+                      <div className="p-3 bg-white rounded-lg inline-block shadow-sm max-w-full">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={statusData.qrCodeUrl}
                           alt="WhatsApp Pairing QR"
-                          className="w-52 h-52 object-contain"
+                          className="w-48 h-48 sm:w-52 sm:h-52 max-w-full aspect-square object-contain"
                         />
                       </div>
-                      <div className="text-xs text-zinc-400 space-y-1 font-mono">
+                      <div className="text-xs text-zinc-400 space-y-1 font-mono text-center">
                         <p>1. Open WhatsApp &gt; Settings &gt; Linked Devices</p>
                         <p>2. Tap &quot;Link a Device&quot; &amp; scan this code</p>
                       </div>
@@ -559,7 +559,7 @@ export default function DashboardPage() {
               </div>
 
               {isConnected && (
-                <div className="mt-6 pt-4 border-t border-zinc-800 flex justify-between items-center">
+                <div className="mt-4 pt-3 border-t border-zinc-800 flex justify-between items-center">
                   <span className="text-xs text-zinc-400 font-mono">
                     Device linked
                   </span>
@@ -575,9 +575,9 @@ export default function DashboardPage() {
             </div>
 
             {/* 8-Digit Pairing Code Card */}
-            <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-6 flex flex-col justify-between">
+            <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-4 sm:p-6 flex flex-col justify-between">
               <div>
-                <div className="flex items-center gap-2.5 pb-4 mb-4 border-b border-zinc-800/80">
+                <div className="flex items-center gap-2.5 pb-3.5 mb-4 border-b border-zinc-800/80">
                   <Smartphone className="w-4 h-4 text-zinc-400" />
                   <div>
                     <h3 className="font-semibold text-sm text-zinc-100">8-Digit Pairing Code</h3>
@@ -595,7 +595,7 @@ export default function DashboardPage() {
                       value={pairPhone}
                       onChange={(e) => setPairPhone(e.target.value)}
                       placeholder="e.g. 919876543210 (digits only)"
-                      className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-sm font-mono text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
+                      className="w-full px-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm font-mono text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
                     />
                   </div>
 
@@ -620,12 +620,12 @@ export default function DashboardPage() {
 
                 {/* Generated Code Display */}
                 {generatedPairCode && (
-                  <div className="mt-6 p-4 bg-zinc-950 border border-zinc-800 rounded-lg text-center space-y-2">
+                  <div className="mt-4 p-4 bg-zinc-950 border border-zinc-800 rounded-lg text-center space-y-2">
                     <p className="text-[11px] text-zinc-400 font-mono uppercase tracking-wider">
                       Pairing Code:
                     </p>
                     <div className="flex items-center justify-center gap-3">
-                      <span className="text-2xl font-mono font-bold tracking-widest text-zinc-100">
+                      <span className="text-xl sm:text-2xl font-mono font-bold tracking-widest text-zinc-100">
                         {generatedPairCode}
                       </span>
                       <button
@@ -642,7 +642,7 @@ export default function DashboardPage() {
                       </button>
                     </div>
                     <p className="text-xs text-zinc-400 pt-1">
-                      On your phone: WhatsApp &gt; Linked Devices &gt; Link with phone number instead
+                      On phone: WhatsApp &gt; Linked Devices &gt; Link with phone number
                     </p>
                   </div>
                 )}
@@ -665,9 +665,9 @@ export default function DashboardPage() {
 
         {/* TAB 2: AI PERSONA STUDIO */}
         {tab === 'studio' && (
-          <form onSubmit={handleSaveConfig} className="max-w-3xl space-y-6">
-            <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-6 space-y-5">
-              <div className="flex items-center justify-between pb-4 border-b border-zinc-800/80">
+          <form onSubmit={handleSaveConfig} className="max-w-3xl space-y-5">
+            <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-4 sm:p-6 space-y-5">
+              <div className="flex items-center justify-between pb-3.5 border-b border-zinc-800/80">
                 <div>
                   <h3 className="font-semibold text-sm text-zinc-100">AI Persona &amp; Knowledge Base</h3>
                   <p className="text-xs text-zinc-400">
@@ -675,7 +675,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-zinc-400">Auto-Reply:</span>
+                  <span className="text-xs text-zinc-400 hidden xs:inline">Auto-Reply:</span>
                   <button
                     type="button"
                     onClick={() => setConfig({ ...config, autoReplyEnabled: !config.autoReplyEnabled })}
@@ -691,7 +691,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Natural speech guarantee notice */}
-              <div className="p-3.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 flex items-start gap-2.5">
+              <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 flex items-start gap-2.5">
                 <Zap className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <div className="leading-relaxed">
                   <strong className="text-zinc-100 block mb-0.5 font-medium">Natural Speech Filter:</strong>
@@ -704,13 +704,13 @@ export default function DashboardPage() {
                 <label className="block text-xs font-medium text-zinc-400 mb-2">
                   Quick Industry Templates
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   <button
                     type="button"
                     onClick={() => applyTemplate('support')}
                     className="px-2.5 py-1 rounded-md bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 transition-colors cursor-pointer"
                   >
-                    Customer Support
+                    Support
                   </button>
                   <button
                     type="button"
@@ -731,7 +731,7 @@ export default function DashboardPage() {
                     onClick={() => applyTemplate('restaurant')}
                     className="px-2.5 py-1 rounded-md bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 transition-colors cursor-pointer"
                   >
-                    Restaurant &amp; Dining
+                    Restaurant
                   </button>
                 </div>
               </div>
@@ -751,7 +751,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Bot Parameters Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-1">
                 <div>
                   <label className="block text-xs font-medium text-zinc-400 mb-1">
                     AI Inference Model
@@ -810,7 +810,7 @@ export default function DashboardPage() {
                 <button
                   type="submit"
                   disabled={savingConfig}
-                  className="px-4 py-2 rounded-lg bg-white text-zinc-950 hover:bg-zinc-200 font-medium text-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="w-full sm:w-auto px-4 py-2 rounded-lg bg-white text-zinc-950 hover:bg-zinc-200 font-medium text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {savingConfig ? (
                     <>
@@ -829,12 +829,16 @@ export default function DashboardPage() {
           </form>
         )}
 
-        {/* TAB 3: LIVE INBOX & TAKEOVER */}
+        {/* TAB 3: LIVE INBOX & TAKEOVER - Mobile-Responsive Master-Detail Split */}
         {tab === 'inbox' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 h-[680px] bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden">
-            {/* Contacts Column */}
-            <div className="border-r border-zinc-800 flex flex-col bg-[#09090b] min-h-0">
-              <div className="p-3.5 border-b border-zinc-800 flex items-center justify-between">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-0 h-[620px] sm:h-[680px] bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden">
+            {/* Contacts Column - Hidden on mobile when viewing active chat */}
+            <div
+              className={`border-r border-zinc-800 flex-col bg-[#09090b] min-h-0 ${
+                mobileChatView === 'messages' ? 'hidden md:flex' : 'flex'
+              }`}
+            >
+              <div className="p-3 sm:p-3.5 border-b border-zinc-800 flex items-center justify-between">
                 <h4 className="font-medium text-xs text-zinc-300">
                   Conversations
                 </h4>
@@ -851,7 +855,10 @@ export default function DashboardPage() {
                     return (
                       <button
                         key={c.jid}
-                        onClick={() => setActiveContact(c.jid)}
+                        onClick={() => {
+                          setActiveContact(c.jid);
+                          setMobileChatView('messages');
+                        }}
                         className={`w-full text-left p-2.5 rounded-lg border transition-colors cursor-pointer ${
                           active
                             ? 'bg-zinc-800/60 border-zinc-700 text-white'
@@ -859,7 +866,7 @@ export default function DashboardPage() {
                         }`}
                       >
                         <div className="flex items-center justify-between mb-0.5">
-                          <span className="font-medium text-xs truncate max-w-[130px] text-zinc-200">
+                          <span className="font-medium text-xs truncate max-w-[140px] text-zinc-200">
                             {c.senderName || c.jid.split('@')[0]}
                           </span>
                           {c.isHumanTakeover && (
@@ -876,22 +883,36 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Chat Messages Column */}
-            <div className="md:col-span-2 flex flex-col min-h-0 bg-zinc-950">
+            {/* Chat Messages Column - Hidden on mobile when viewing contacts list */}
+            <div
+              className={`md:col-span-2 flex-col min-h-0 bg-zinc-950 ${
+                mobileChatView === 'contacts' ? 'hidden md:flex' : 'flex'
+              }`}
+            >
               {selectedContactData ? (
                 <>
                   {/* Chat Header */}
-                  <div className="p-3.5 border-b border-zinc-800 flex items-center justify-between bg-[#09090b]">
-                    <div>
-                      <h4 className="font-medium text-xs text-zinc-100">
-                        {selectedContactData.senderName || selectedContactData.jid.split('@')[0]}
-                      </h4>
-                      <p className="text-[11px] font-mono text-zinc-500">
-                        {selectedContactData.jid}
-                      </p>
+                  <div className="p-3 sm:p-3.5 border-b border-zinc-800 flex items-center justify-between bg-[#09090b]">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => setMobileChatView('contacts')}
+                        className="md:hidden p-1.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white shrink-0"
+                        title="Back to conversations"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <div className="min-w-0">
+                        <h4 className="font-medium text-xs text-zinc-100 truncate">
+                          {selectedContactData.senderName || selectedContactData.jid.split('@')[0]}
+                        </h4>
+                        <p className="text-[10px] sm:text-[11px] font-mono text-zinc-500 truncate">
+                          {selectedContactData.jid}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() =>
                           handleTakeover(
@@ -899,19 +920,19 @@ export default function DashboardPage() {
                             selectedContactData.isHumanTakeover ? 'resume' : 'takeover'
                           )
                         }
-                        className={`px-2.5 py-1 rounded text-xs font-mono transition-colors cursor-pointer border ${
+                        className={`px-2 sm:px-2.5 py-1 rounded text-[11px] sm:text-xs font-mono transition-colors cursor-pointer border whitespace-nowrap ${
                           selectedContactData.isHumanTakeover
                             ? 'bg-zinc-900 border-zinc-700 text-emerald-400 hover:bg-zinc-800'
                             : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
                         }`}
                       >
-                        {selectedContactData.isHumanTakeover ? 'Resume AI Bot' : 'Take Over Chat'}
+                        {selectedContactData.isHumanTakeover ? 'Resume AI' : 'Take Over'}
                       </button>
                     </div>
                   </div>
 
                   {/* Message Thread */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#0c0c0e]">
+                  <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 bg-[#0c0c0e]">
                     {activeChatMessages.length === 0 ? (
                       <p className="text-xs text-zinc-500 text-center py-8 font-mono">
                         No message history for this contact.
@@ -925,7 +946,7 @@ export default function DashboardPage() {
                             className={`flex flex-col ${isFromMe ? 'items-end' : 'items-start'}`}
                           >
                             <div
-                              className={`max-w-[75%] p-3 rounded-xl text-xs leading-relaxed ${
+                              className={`max-w-[85%] sm:max-w-[75%] p-2.5 sm:p-3 rounded-xl text-xs leading-relaxed ${
                                 isFromMe
                                   ? 'bg-zinc-800 text-zinc-100 border border-zinc-700/60'
                                   : 'bg-zinc-900 text-zinc-200 border border-zinc-800'
@@ -943,24 +964,24 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Message Input Box */}
-                  <form onSubmit={handleSendManual} className="p-3 border-t border-zinc-800 bg-[#09090b] flex gap-2">
+                  <form onSubmit={handleSendManual} className="p-2.5 sm:p-3 border-t border-zinc-800 bg-[#09090b] flex gap-2">
                     <input
                       type="text"
                       value={manualText}
                       onChange={(e) => setManualText(e.target.value)}
-                      placeholder="Type a manual WhatsApp message to this customer..."
-                      className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
+                      placeholder="Type a manual WhatsApp reply..."
+                      className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs sm:text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
                     />
                     <button
                       type="submit"
                       disabled={sendingManual || !manualText.trim()}
-                      className="px-3.5 py-2 rounded-lg bg-white text-zinc-950 hover:bg-zinc-200 text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      className="px-3 sm:px-3.5 py-2 rounded-lg bg-white text-zinc-950 hover:bg-zinc-200 text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0"
                     >
                       {sendingManual ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
                         <>
-                          <span>Send</span>
+                          <span className="hidden xs:inline">Send</span>
                           <Send className="w-3 h-3" />
                         </>
                       )}
@@ -968,7 +989,7 @@ export default function DashboardPage() {
                   </form>
                 </>
               ) : (
-                <div className="flex-1 flex items-center justify-center text-xs text-zinc-500 font-mono">
+                <div className="flex-1 flex items-center justify-center text-xs text-zinc-500 font-mono p-4 text-center">
                   Select a contact on the left to view messages
                 </div>
               )}
@@ -978,47 +999,47 @@ export default function DashboardPage() {
 
         {/* TAB 4: ANALYTICS */}
         {tab === 'analytics' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl">
-                <span className="text-xs text-zinc-400 font-medium">Total Messages</span>
-                <span className="block text-2xl font-semibold font-mono text-zinc-100 mt-1">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="p-3.5 sm:p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl">
+                <span className="text-[11px] sm:text-xs text-zinc-400 font-medium">Total Messages</span>
+                <span className="block text-xl sm:text-2xl font-semibold font-mono text-zinc-100 mt-1">
                   {telemetry.length}
                 </span>
-                <span className="text-[11px] text-zinc-500 mt-0.5 block">Across all customer chats</span>
+                <span className="text-[10px] sm:text-[11px] text-zinc-500 mt-0.5 block truncate">Across all chats</span>
               </div>
 
-              <div className="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl">
-                <span className="text-xs text-zinc-400 font-medium">Inference Latency</span>
-                <span className="block text-2xl font-semibold font-mono text-emerald-400 mt-1">
+              <div className="p-3.5 sm:p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl">
+                <span className="text-[11px] sm:text-xs text-zinc-400 font-medium">Inference Latency</span>
+                <span className="block text-xl sm:text-2xl font-semibold font-mono text-emerald-400 mt-1">
                   ~850ms
                 </span>
-                <span className="text-[11px] text-zinc-500 mt-0.5 block">Groq LPU hardware</span>
+                <span className="text-[10px] sm:text-[11px] text-zinc-500 mt-0.5 block truncate">Groq LPU speed</span>
               </div>
 
-              <div className="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl">
-                <span className="text-xs text-zinc-400 font-medium">Active Contacts</span>
-                <span className="block text-2xl font-semibold font-mono text-zinc-100 mt-1">
+              <div className="p-3.5 sm:p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl">
+                <span className="text-[11px] sm:text-xs text-zinc-400 font-medium">Active Contacts</span>
+                <span className="block text-xl sm:text-2xl font-semibold font-mono text-zinc-100 mt-1">
                   {contacts.length}
                 </span>
-                <span className="text-[11px] text-zinc-500 mt-0.5 block">Unique phone numbers</span>
+                <span className="text-[10px] sm:text-[11px] text-zinc-500 mt-0.5 block truncate">Unique clients</span>
               </div>
 
-              <div className="p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl">
-                <span className="text-xs text-zinc-400 font-medium">System Uptime</span>
-                <span className="block text-2xl font-semibold font-mono text-zinc-100 mt-1">
+              <div className="p-3.5 sm:p-4 bg-zinc-900/40 border border-zinc-800 rounded-xl">
+                <span className="text-[11px] sm:text-xs text-zinc-400 font-medium">System Uptime</span>
+                <span className="block text-xl sm:text-2xl font-semibold font-mono text-zinc-100 mt-1">
                   99.98%
                 </span>
-                <span className="text-[11px] text-zinc-500 mt-0.5 block">Production systemd runner</span>
+                <span className="text-[10px] sm:text-[11px] text-zinc-500 mt-0.5 block truncate">Systemd service</span>
               </div>
             </div>
 
             {/* Architecture Details */}
-            <div className="p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl space-y-3">
+            <div className="p-4 sm:p-5 bg-zinc-900/40 border border-zinc-800 rounded-xl space-y-3">
               <h4 className="font-semibold text-xs uppercase tracking-wider text-zinc-400">
                 Tenant Architecture Specifications
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono text-zinc-400">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-xs font-mono text-zinc-400">
                 <div className="p-3 bg-zinc-950 border border-zinc-800/80 rounded-lg">
                   <span className="text-zinc-500 block mb-1">Socket Driver:</span>
                   <span className="text-zinc-200">Baileys Multi-File Auth (macOS Desktop)</span>
