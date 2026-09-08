@@ -1,5 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
 import { getTenantConfig, saveTenantConfig } from './config';
 import {
   initTenantBaileys,
@@ -276,6 +278,142 @@ app.post(['/api/tts/preview', '/api/tenant/:tenantId/tts/preview'], async (req: 
   } catch (err: any) {
     console.error('[TTS Preview] Error:', err);
     res.status(500).json({ error: err.message || 'Failed to synthesize speech preview' });
+  }
+});
+
+// 11. Super Admin: List All Real Tenants Dynamically
+app.get('/api/admin/tenants', async (req: Request, res: Response) => {
+  try {
+    const adminKey = (req.headers['x-admin-key'] as string) || (req.query.key as string);
+    if (adminKey !== (process.env.ADMIN_SECRET_KEY || 'axiogen_admin_2026')) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const dataDir = path.resolve(__dirname, '../data');
+    const tenantsDir = path.join(dataDir, 'tenants');
+    const defaultConfigFile = path.join(dataDir, 'bot-config.json');
+    const tenantIds = new Set<string>();
+
+    if (fs.existsSync(defaultConfigFile)) {
+      tenantIds.add('default');
+    }
+
+    if (fs.existsSync(tenantsDir)) {
+      const files = fs.readdirSync(tenantsDir);
+      for (const file of files) {
+        if (file.endsWith('.json')) {
+          tenantIds.add(file.replace('.json', ''));
+        }
+      }
+    }
+
+    const authDir = path.resolve(__dirname, '../auth_info_baileys/tenants');
+    if (fs.existsSync(authDir)) {
+      const authSubdirs = fs.readdirSync(authDir);
+      for (const dir of authSubdirs) {
+        if (!dir.startsWith('.')) {
+          tenantIds.add(dir);
+        }
+      }
+    }
+
+    const tenantList = [];
+
+    for (const tid of tenantIds) {
+      const config = getTenantConfig(tid);
+      const state = getTenantState(tid);
+      const telemetry = getTenantTelemetry(tid);
+      const contacts = getTenantContacts(tid);
+
+      let createdAt = new Date().toISOString();
+      let updatedAt = new Date().toISOString();
+      const filePath = tid === 'default' ? defaultConfigFile : path.join(tenantsDir, `${tid}.json`);
+      if (fs.existsSync(filePath)) {
+        try {
+          const stats = fs.statSync(filePath);
+          createdAt = stats.birthtime.toISOString();
+          updatedAt = stats.mtime.toISOString();
+        } catch {}
+      }
+
+      const connectedPhone = state.connectedPhone || (config.allowedNumbers && config.allowedNumbers[0]) || '';
+      const phoneDisplay = connectedPhone
+        ? (connectedPhone.startsWith('+') ? connectedPhone : `+${connectedPhone}`)
+        : (tid === 'aditaypatil07' ? '+918010127704' : tid === 'default' ? '+917030807704' : '');
+
+      const isConnected = state.status === 'connected' || Boolean(state.connectedPhone);
+
+      tenantList.push({
+        id: `usr_${tid}`,
+        tenantId: tid,
+        businessName: config.businessName || (tid === 'default' ? 'Team Axiogen' : tid),
+        name: config.ownerName || config.botName || (tid === 'default' ? 'Aditya Minchekar' : 'Owner'),
+        email: config.ownerEmail || (tid === 'default' ? 'team@axiogen.in' : `${tid}@axiogen.in`),
+        plan: config.plan || (tid === 'default' ? 'agency' : tid === 'aditaypatil07' ? 'starter' : 'free_trial'),
+        messagesUsed: telemetry.length,
+        trialLimit: config.trialLimit || (config.plan === 'agency' ? 25000 : config.plan === 'starter' ? 1500 : 70),
+        whatsappStatus: isConnected ? 'connected' : (state.status || 'disconnected'),
+        phone: phoneDisplay,
+        contactsCount: contacts.length,
+        createdAt,
+        updatedAt,
+      });
+    }
+
+    res.json({ success: true, tenants: tenantList });
+  } catch (err: any) {
+    console.error('[Admin Tenants API] Error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 12. Super Admin: Sync / Register Tenant
+app.post('/api/admin/sync', (req: Request, res: Response) => {
+  try {
+    const { tenant } = req.body;
+    if (!tenant || !tenant.tenantId) {
+      return res.status(400).json({ success: false, error: 'Missing tenant or tenantId' });
+    }
+
+    const tid = tenant.tenantId;
+    const current = getTenantConfig(tid);
+    const updated = saveTenantConfig(tid, {
+      businessName: tenant.businessName || current.businessName,
+      ownerName: tenant.name || current.ownerName,
+      ownerEmail: tenant.email || current.ownerEmail,
+      plan: tenant.plan || current.plan || 'free_trial',
+      trialLimit: tenant.trialLimit || current.trialLimit || 70,
+    });
+
+    res.json({ success: true, tenant: updated });
+  } catch (err: any) {
+    console.error('[Admin Sync API] Error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 13. Super Admin: Update Tenant Configuration
+app.post('/api/admin/tenant/update', (req: Request, res: Response) => {
+  try {
+    const adminKey = (req.headers['x-admin-key'] as string) || (req.body.adminKey as string);
+    if (adminKey !== (process.env.ADMIN_SECRET_KEY || 'axiogen_admin_2026')) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const { tenantId, plan, trialLimit, businessName, botName } = req.body;
+    if (!tenantId) return res.status(400).json({ success: false, error: 'tenantId is required' });
+
+    const updates: any = {};
+    if (plan) updates.plan = plan;
+    if (trialLimit !== undefined) updates.trialLimit = trialLimit;
+    if (businessName) updates.businessName = businessName;
+    if (botName) updates.botName = botName;
+
+    const updated = saveTenantConfig(tenantId, updates);
+    res.json({ success: true, tenant: updated });
+  } catch (err: any) {
+    console.error('[Admin Tenant Update API] Error:', err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

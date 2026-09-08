@@ -48,6 +48,31 @@ export default function SignUpPage() {
         trialLimit: 70,
       };
 
+      // Automatically register new upcoming tenant into admin platform store
+      try {
+        await fetch('/api/admin/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'tenant',
+            tenant: {
+              id: user.id,
+              tenantId: user.tenantId,
+              businessName: user.businessName,
+              name: user.name,
+              email: user.email,
+              plan: 'free_trial',
+              messagesUsed: 0,
+              trialLimit: 70,
+              whatsappStatus: 'disconnected',
+              phone: '',
+              createdAt: user.createdAt,
+              updatedAt: user.createdAt,
+            },
+          }),
+        });
+      } catch (_) {}
+
       setStoredUser(user);
       router.push('/dashboard');
     } catch (err: any) {

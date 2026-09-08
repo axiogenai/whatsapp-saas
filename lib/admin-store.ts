@@ -44,123 +44,62 @@ function getDataFilePath(filename: string): string {
 let tenantsCache: AdminTenant[] | null = null;
 let transactionsCache: AdminTransaction[] | null = null;
 
-const INITIAL_TENANTS: AdminTenant[] = [
-  {
-    id: 'usr_init_1',
-    tenantId: 'apex-dental-clinic',
-    businessName: 'Apex Dental Clinic',
-    name: 'Dr. Rajesh Sharma',
-    email: 'contact@apexdental.in',
-    plan: 'starter',
-    messagesUsed: 342,
-    trialLimit: 1500,
-    whatsappStatus: 'connected',
-    phone: '+91 98201 44521',
-    createdAt: new Date(Date.now() - 86400000 * 12).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'usr_init_2',
-    tenantId: 'royal-realty-group',
-    businessName: 'Royal Realty Group',
-    name: 'Vikram Mehta',
-    email: 'sales@royalrealty.com',
-    plan: 'pro',
-    messagesUsed: 2180,
-    trialLimit: 8000,
-    whatsappStatus: 'connected',
-    phone: '+91 98110 99882',
-    createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'usr_init_3',
-    tenantId: 'mumbai-spice-kitchen',
-    businessName: 'Mumbai Spice Kitchen',
-    name: 'Ananya Verma',
-    email: 'order@mumbaispice.in',
-    plan: 'free_trial',
-    messagesUsed: 58,
-    trialLimit: 70,
-    whatsappStatus: 'connected',
-    phone: '+91 99203 12890',
-    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'usr_init_4',
-    tenantId: 'urban-fit-studio',
-    businessName: 'Urban Fit Studio',
-    name: 'Karan Patel',
-    email: 'karan@urbanfit.in',
-    plan: 'free_trial',
-    messagesUsed: 70,
-    trialLimit: 70,
-    whatsappStatus: 'disconnected',
-    phone: '',
-    createdAt: new Date(Date.now() - 86400000 * 1).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+const DEMO_TENANT_IDS = new Set([
+  'apex-dental-clinic',
+  'royal-realty-group',
+  'mumbai-spice-kitchen',
+  'urban-fit-studio',
+]);
 
-const INITIAL_TRANSACTIONS: AdminTransaction[] = [
-  {
-    id: 'txn_init_1',
-    merchantTransactionId: 'TXN_starter_apexdental_178881240192',
-    tenantId: 'apex-dental-clinic',
-    businessName: 'Apex Dental Clinic',
-    email: 'contact@apexdental.in',
-    plan: 'starter',
-    amount: 499,
-    gateway: 'phonepe',
-    status: 'SUCCESS',
-    paymentMode: 'PhonePe UPI',
-    createdAt: new Date(Date.now() - 86400000 * 12).toISOString(),
-  },
-  {
-    id: 'txn_init_2',
-    merchantTransactionId: 'TXN_pro_royalrealty_178883910248',
-    tenantId: 'royal-realty-group',
-    businessName: 'Royal Realty Group',
-    email: 'sales@royalrealty.com',
-    plan: 'pro',
-    amount: 999,
-    gateway: 'phonepe',
-    status: 'SUCCESS',
-    paymentMode: 'Google Pay UPI',
-    createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-  },
-];
+function filterDemoTenants(list: AdminTenant[]): AdminTenant[] {
+  return (list || []).filter((t) => t && t.tenantId && !DEMO_TENANT_IDS.has(t.tenantId));
+}
+
+function filterDemoTransactions(list: AdminTransaction[]): AdminTransaction[] {
+  return (list || []).filter(
+    (tx) =>
+      tx &&
+      tx.merchantTransactionId &&
+      !tx.merchantTransactionId.includes('apexdental') &&
+      !tx.merchantTransactionId.includes('royalrealty') &&
+      !DEMO_TENANT_IDS.has(tx.tenantId)
+  );
+}
 
 export function getAdminTenants(): AdminTenant[] {
-  if (tenantsCache) return tenantsCache;
+  if (tenantsCache) return filterDemoTenants(tenantsCache);
   const filePath = getDataFilePath('tenants.json');
   if (fs.existsSync(filePath)) {
     try {
       const content = fs.readFileSync(filePath, 'utf8');
-      tenantsCache = JSON.parse(content);
-      return tenantsCache || [];
+      const parsed = JSON.parse(content);
+      tenantsCache = filterDemoTenants(parsed || []);
+      return tenantsCache;
     } catch {
-      tenantsCache = [...INITIAL_TENANTS];
+      tenantsCache = [];
       return tenantsCache;
     }
   }
-  tenantsCache = [...INITIAL_TENANTS];
-  saveAdminTenants(tenantsCache);
+  tenantsCache = [];
   return tenantsCache;
 }
 
 export function saveAdminTenants(tenants: AdminTenant[]): void {
-  tenantsCache = tenants;
+  const clean = filterDemoTenants(tenants);
+  tenantsCache = clean;
   const filePath = getDataFilePath('tenants.json');
   try {
-    fs.writeFileSync(filePath, JSON.stringify(tenants, null, 2), 'utf8');
+    fs.writeFileSync(filePath, JSON.stringify(clean, null, 2), 'utf8');
   } catch (err) {
     console.error('Failed to write tenants file:', err);
   }
 }
 
 export function recordTenant(tenant: Partial<AdminTenant> & { tenantId: string }): AdminTenant {
+  if (DEMO_TENANT_IDS.has(tenant.tenantId)) {
+    throw new Error('Demo tenant ID blocked.');
+  }
+
   const list = getAdminTenants();
   const existingIdx = list.findIndex((t) => t.tenantId === tenant.tenantId);
 
@@ -196,34 +135,38 @@ export function recordTenant(tenant: Partial<AdminTenant> & { tenantId: string }
 }
 
 export function getAdminTransactions(): AdminTransaction[] {
-  if (transactionsCache) return transactionsCache;
+  if (transactionsCache) return filterDemoTransactions(transactionsCache);
   const filePath = getDataFilePath('transactions.json');
   if (fs.existsSync(filePath)) {
     try {
       const content = fs.readFileSync(filePath, 'utf8');
-      transactionsCache = JSON.parse(content);
-      return transactionsCache || [];
+      const parsed = JSON.parse(content);
+      transactionsCache = filterDemoTransactions(parsed || []);
+      return transactionsCache;
     } catch {
-      transactionsCache = [...INITIAL_TRANSACTIONS];
+      transactionsCache = [];
       return transactionsCache;
     }
   }
-  transactionsCache = [...INITIAL_TRANSACTIONS];
+  transactionsCache = [];
   saveAdminTransactions(transactionsCache);
   return transactionsCache;
 }
 
 export function saveAdminTransactions(txns: AdminTransaction[]): void {
-  transactionsCache = txns;
+  const clean = filterDemoTransactions(txns);
+  transactionsCache = clean;
   const filePath = getDataFilePath('transactions.json');
   try {
-    fs.writeFileSync(filePath, JSON.stringify(txns, null, 2), 'utf8');
+    fs.writeFileSync(filePath, JSON.stringify(clean, null, 2), 'utf8');
   } catch (err) {
     console.error('Failed to write transactions file:', err);
   }
 }
 
-export function recordTransaction(txn: Partial<AdminTransaction> & { merchantTransactionId: string; tenantId: string }): AdminTransaction {
+export function recordTransaction(
+  txn: Partial<AdminTransaction> & { merchantTransactionId: string; tenantId: string }
+): AdminTransaction {
   const list = getAdminTransactions();
   const existingIdx = list.findIndex((t) => t.merchantTransactionId === txn.merchantTransactionId);
 

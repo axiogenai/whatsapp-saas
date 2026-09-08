@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAdminTenants, saveAdminTenants, AdminTenant } from '@/lib/admin-store';
 
 const ADMIN_SECRET_KEY = process.env.ADMIN_SECRET_KEY || 'axiogen_admin_2026';
+const GATEWAY_URL = process.env.NEXT_PUBLIC_WHATSAPP_SAAS_GATEWAY_URL || 'https://api.axiogen.in/whatsapp-saas';
 
 function verifyAdmin(request: Request): boolean {
   const headerKey = request.headers.get('x-admin-key');
@@ -56,6 +57,23 @@ export async function POST(request: Request) {
     updated.updatedAt = new Date().toISOString();
     tenants[idx] = updated;
     saveAdminTenants(tenants);
+
+    // Forward to VM backend gateway
+    try {
+      fetch(`${GATEWAY_URL}/api/admin/tenant/update`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': ADMIN_SECRET_KEY,
+        },
+        body: JSON.stringify({
+          tenantId,
+          plan: updated.plan,
+          trialLimit: updated.trialLimit,
+        }),
+        signal: AbortSignal.timeout(3000),
+      }).catch(() => {});
+    } catch {}
 
     return NextResponse.json({ success: true, tenant: updated });
   } catch (err: any) {

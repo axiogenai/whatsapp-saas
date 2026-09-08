@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { recordTenant, recordTransaction } from '@/lib/admin-store';
 
+const ADMIN_SECRET_KEY = process.env.ADMIN_SECRET_KEY || 'axiogen_admin_2026';
+const GATEWAY_URL = process.env.NEXT_PUBLIC_WHATSAPP_SAAS_GATEWAY_URL || 'https://api.axiogen.in/whatsapp-saas';
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -8,6 +11,20 @@ export async function POST(request: Request) {
 
     if (type === 'tenant' && tenant?.tenantId) {
       const saved = recordTenant(tenant);
+
+      // Asynchronously forward to VM backend database
+      try {
+        fetch(`${GATEWAY_URL}/api/admin/sync`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-key': ADMIN_SECRET_KEY,
+          },
+          body: JSON.stringify({ tenant }),
+          signal: AbortSignal.timeout(3000),
+        }).catch(() => {});
+      } catch {}
+
       return NextResponse.json({ success: true, tenant: saved });
     }
 

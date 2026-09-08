@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getAdminTenants, getAdminTransactions } from '@/lib/admin-store';
+import { getAdminTenants, saveAdminTenants, getAdminTransactions, AdminTenant } from '@/lib/admin-store';
 
 const ADMIN_SECRET_KEY = process.env.ADMIN_SECRET_KEY || 'axiogen_admin_2026';
+const GATEWAY_URL = process.env.NEXT_PUBLIC_WHATSAPP_SAAS_GATEWAY_URL || 'https://api.axiogen.in/whatsapp-saas';
 
 function verifyAdmin(request: Request): boolean {
   const headerKey = request.headers.get('x-admin-key');
@@ -15,7 +16,49 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: 'Unauthorized. Invalid admin secret.' }, { status: 401 });
   }
 
-  const tenants = getAdminTenants();
+  let tenants: AdminTenant[] = getAdminTenants();
+
+  // Query live WhatsApp backend on Oracle VM for real-time tenants & connection statuses
+  try {
+    const vmRes = await fetch(`${GATEWAY_URL}/api/admin/tenants?key=${ADMIN_SECRET_KEY}`, {
+      headers: { 'x-admin-key': ADMIN_SECRET_KEY },
+      signal: AbortSignal.timeout(4000),
+      cache: 'no-store',
+    });
+
+    if (vmRes.ok) {
+      const vmData = await vmRes.json();
+      if (vmData.success && Array.isArray(vmData.tenants)) {
+        const vmTenants: AdminTenant[] = vmData.tenants;
+        const localTenants = getAdminTenants();
+        const mergedMap = new Map<string, AdminTenant>();
+
+        for (const t of vmTenants) {
+          mergedMap.set(t.tenantId, t);
+        }
+
+        for (const loc of localTenants) {
+          if (!mergedMap.has(loc.tenantId)) {
+            mergedMap.set(loc.tenantId, loc);
+          } else {
+            const existing = mergedMap.get(loc.tenantId)!;
+            mergedMap.set(loc.tenantId, {
+              ...existing,
+              name: loc.name || existing.name,
+              email: loc.email || existing.email,
+              businessName: loc.businessName || existing.businessName,
+            });
+          }
+        }
+
+        tenants = Array.from(mergedMap.values());
+        saveAdminTenants(tenants);
+      }
+    }
+  } catch (err) {
+    console.error('[Admin Overview] Failed to fetch live tenants from VM gateway:', err);
+  }
+
   const transactions = getAdminTransactions();
 
   const planPrices = { free_trial: 0, starter: 499, pro: 999, agency: 2499 };

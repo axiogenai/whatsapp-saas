@@ -21,6 +21,10 @@ export interface BotConfig {
   voiceReplyMode: 'adaptive' | 'always' | 'text_only';
   voicePersona: string;
   voiceSpeed: number;
+  ownerName?: string;
+  ownerEmail?: string;
+  plan?: 'free_trial' | 'starter' | 'pro' | 'agency';
+  trialLimit?: number;
 }
 
 const HARDCODED_GROQ_KEY = process.env.GROQ_API_KEY || '';
@@ -99,6 +103,10 @@ function getDefaultConfig(tenantId: string): BotConfig {
     voiceReplyMode: 'adaptive',
     voicePersona: 'am_adam',
     voiceSpeed: 1.0,
+    ownerName: tenantId === 'default' ? 'Aditya Minchekar' : tenantId === 'aditaypatil07' ? 'Aditya Patil' : tenantId === 'kishorkumar' ? 'Kishor Kumar' : 'Workspace Owner',
+    ownerEmail: tenantId === 'default' ? 'team@axiogen.in' : tenantId === 'aditaypatil07' ? 'aditay26patil@gmail.com' : tenantId === 'kishorkumar' ? 'kishor@axiogen.in' : `${tenantId}@axiogen.in`,
+    plan: tenantId === 'default' ? 'agency' : tenantId === 'aditaypatil07' ? 'starter' : 'free_trial',
+    trialLimit: tenantId === 'default' ? 25000 : tenantId === 'aditaypatil07' ? 1500 : 70,
   };
 }
 
