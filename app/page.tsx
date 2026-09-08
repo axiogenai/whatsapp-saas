@@ -5,7 +5,6 @@ import Link from 'next/link';
 import {
   Bot,
   QrCode,
-  Sparkles,
   ShieldCheck,
   Zap,
   MessageSquare,
@@ -15,198 +14,292 @@ import {
   Lock,
   Globe,
   Users,
+  Terminal,
+  Cpu,
+  Check,
 } from 'lucide-react';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col font-sans selection:bg-purple-500/30 selection:text-purple-200">
-      {/* Background ambient gradient glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[450px] bg-purple-600/10 blur-[140px] rounded-full pointer-events-none -z-10" />
-      <div className="absolute top-[600px] right-1/4 w-[600px] h-[300px] bg-indigo-600/10 blur-[130px] rounded-full pointer-events-none -z-10" />
-
-      {/* Header */}
-      <header className="h-20 px-6 sm:px-12 border-b border-zinc-800/80 bg-zinc-950/60 backdrop-blur-xl flex items-center justify-between sticky top-0 z-40">
+    <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col font-sans selection:bg-zinc-800 selection:text-white">
+      {/* Top Navbar */}
+      <header className="h-16 px-6 sm:px-12 border-b border-zinc-800/80 bg-[#09090b]/80 backdrop-blur-md flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.2)]">
-            <Bot className="w-6 h-6" />
+          <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-200">
+            <Bot className="w-4 h-4" />
           </div>
-          <span className="font-extrabold text-xl tracking-wider text-white font-mono">
-            AXIOGEN<span className="text-purple-400">.WA</span>
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-sm tracking-wide text-zinc-100">
+              AXIOGEN
+            </span>
+            <span className="text-[11px] font-mono text-zinc-500 border-l border-zinc-800 pl-2">
+              WhatsApp Engine
+            </span>
+          </div>
         </div>
 
-        <nav className="hidden md:flex items-center gap-8 text-xs font-medium text-zinc-400">
-          <a href="#features" className="hover:text-white transition-colors">Features</a>
-          <a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a>
-          <a href="#guarantees" className="hover:text-white transition-colors">Speech Guarantee</a>
+        <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-zinc-400">
+          <a href="#features" className="hover:text-zinc-200 transition-colors">Capabilities</a>
+          <a href="#architecture" className="hover:text-zinc-200 transition-colors">Architecture</a>
+          <a href="#pricing" className="hover:text-zinc-200 transition-colors">Pricing</a>
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <Link
             href="/login"
-            className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer"
+            className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-white transition-colors cursor-pointer"
           >
             Sign In
           </Link>
           <Link
             href="/signup"
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-xs font-semibold text-white shadow-lg shadow-purple-900/30 transition-all cursor-pointer flex items-center gap-1.5"
+            className="px-3.5 py-1.5 rounded-lg bg-white text-zinc-950 hover:bg-zinc-200 text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
           >
-            <span>Start Free</span>
+            <span>Get Started</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="pt-24 pb-20 px-6 sm:px-12 text-center max-w-5xl mx-auto flex flex-col items-center">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/60 border border-purple-800/60 text-purple-300 text-xs font-mono font-medium mb-8 shadow-[0_0_20px_rgba(168,85,247,0.15)]">
-          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-          <span>Next-Gen Autonomous WhatsApp Multi-Tenant SaaS</span>
+      <section className="pt-20 pb-16 px-6 sm:px-12 text-center max-w-4xl mx-auto flex flex-col items-center">
+        {/* Status Pill */}
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-mono font-medium mb-6">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Autonomous Multi-Tenant WhatsApp Gateway</span>
         </div>
 
-        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-[1.15] max-w-4xl">
-          Deploy Your 24/7 Autonomous WhatsApp AI Agent in{' '}
-          <span className="bg-gradient-to-r from-purple-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent">
-            30 Seconds
-          </span>
+        <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight text-white leading-tight max-w-3xl">
+          Production-grade WhatsApp AI agents for businesses
         </h1>
 
-        <p className="mt-6 text-base sm:text-lg text-zinc-400 max-w-2xl leading-relaxed">
-          Every client gets their own dedicated login, live QR code pairing, custom AI persona studio, and real-time inbox co-pilot. Zero markdown tables, zero asterisks, 100% natural conversational English &amp; local dialects.
+        <p className="mt-4 text-sm sm:text-base text-zinc-400 max-w-2xl leading-relaxed">
+          Deploy dedicated WhatsApp support bots with instant QR pairing, custom business instructions, sub-second Groq inference, and zero markdown formatting errors.
         </p>
 
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/signup"
-            className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-sm font-bold text-white shadow-xl shadow-purple-900/40 transition-all cursor-pointer flex items-center gap-2"
+            className="px-5 py-2.5 rounded-lg bg-white text-zinc-950 hover:bg-zinc-200 text-xs font-medium transition-all cursor-pointer flex items-center gap-2 shadow-sm"
           >
-            <span>Create Your Free Workspace</span>
-            <ArrowRight className="w-4 h-4" />
+            <span>Create Workspace</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </Link>
           <Link
             href="/login"
-            className="px-8 py-3.5 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-sm font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer flex items-center gap-2"
+            className="px-5 py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-white transition-colors cursor-pointer"
           >
-            <span>Explore Live Demo Workspace</span>
+            <span>Open Demo Account</span>
           </Link>
         </div>
 
-        {/* Feature Badges */}
-        <div className="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-4 w-full max-w-3xl pt-8 border-t border-zinc-900">
-          <div className="p-3 bg-zinc-900/40 border border-zinc-800/80 rounded-xl text-center">
-            <span className="block text-base font-extrabold text-white">0 Asterisks</span>
-            <span className="text-[11px] text-zinc-500">Natural Human Text</span>
+        {/* Live Interactive UI Preview Mockup */}
+        <div className="mt-14 w-full max-w-3xl border border-zinc-800 rounded-xl overflow-hidden bg-zinc-950 shadow-2xl text-left">
+          <div className="h-10 px-4 bg-[#09090b] border-b border-zinc-800 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
+              <span className="text-xs font-mono text-zinc-500 ml-2">whatsapp-socket // active session</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span>Online • macOS Desktop</span>
+            </div>
           </div>
-          <div className="p-3 bg-zinc-900/40 border border-zinc-800/80 rounded-xl text-center">
-            <span className="block text-base font-extrabold text-purple-400">&lt; 1.2s</span>
-            <span className="text-[11px] text-zinc-500">Groq Ultra Latency</span>
-          </div>
-          <div className="p-3 bg-zinc-900/40 border border-zinc-800/80 rounded-xl text-center">
-            <span className="block text-base font-extrabold text-indigo-400">100% Isolated</span>
-            <span className="text-[11px] text-zinc-500">Multi-Tenant Vault</span>
-          </div>
-          <div className="p-3 bg-zinc-900/40 border border-zinc-800/80 rounded-xl text-center">
-            <span className="block text-base font-extrabold text-emerald-400">1-Click Takeover</span>
-            <span className="text-[11px] text-zinc-500">Human Co-Pilot</span>
+
+          <div className="p-5 space-y-4 bg-[#0c0c0e]">
+            {/* Customer Message */}
+            <div className="flex flex-col items-start">
+              <div className="bg-zinc-900 border border-zinc-800 text-zinc-200 px-3.5 py-2.5 rounded-xl rounded-tl-sm text-xs max-w-md">
+                Hello, do you have any appointments available this Friday afternoon?
+              </div>
+              <span className="text-[10px] font-mono text-zinc-600 mt-1">Client • +91 98765 43210 • 14:32</span>
+            </div>
+
+            {/* AI Agent Response */}
+            <div className="flex flex-col items-end">
+              <div className="bg-zinc-800 text-zinc-100 border border-zinc-700/60 px-3.5 py-2.5 rounded-xl rounded-tr-sm text-xs max-w-md">
+                Hello! Yes, we have slots open this Friday at 2:30 PM and 4:15 PM with Dr. Sharma. Would you like me to book one of those for you?
+              </div>
+              <span className="text-[10px] font-mono text-zinc-500 mt-1 flex items-center gap-1.5">
+                <span className="text-emerald-400">AI Auto-Reply</span>
+                <span>•</span>
+                <span>Groq LPU 840ms</span>
+                <span>•</span>
+                <span>Zero asterisks</span>
+              </span>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Feature Grid */}
-      <section id="features" className="py-20 px-6 sm:px-12 max-w-6xl mx-auto border-t border-zinc-900">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-            Everything Businesses Need to Automate WhatsApp
+      <section id="features" className="py-16 px-6 sm:px-12 max-w-5xl mx-auto border-t border-zinc-800/80">
+        <div className="text-left mb-12">
+          <h2 className="text-xl sm:text-2xl font-semibold text-white tracking-tight">
+            Built for reliable customer operations
           </h2>
-          <p className="mt-3 text-xs sm:text-sm text-zinc-400">
-            Engineered for doctors, real estate agencies, salons, restaurants, and digital service agencies.
+          <p className="mt-1 text-xs sm:text-sm text-zinc-400">
+            No convoluted Meta Cloud API approval process, no phone number re-routing, and no downtime.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Card 1 */}
-          <div className="bg-zinc-900/50 border border-zinc-800/80 rounded-2xl p-6 backdrop-blur-md flex flex-col justify-between hover:border-purple-500/50 transition-all">
-            <div>
-              <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-5">
-                <QrCode className="w-6 h-6" />
-              </div>
-              <h3 className="font-bold text-base text-white mb-2">Zero-Code WhatsApp Link</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Scan your QR code directly or enter an 8-digit phone pairing code. No Meta Cloud API setup, no monthly platform verification fees, and no phone re-routing.
-              </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
+            <div className="w-8 h-8 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4">
+              <QrCode className="w-4 h-4" />
             </div>
-            <div className="mt-6 pt-4 border-t border-zinc-800/60 flex items-center gap-2 text-[11px] font-mono text-purple-400">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Baileys Socket Core</span>
-            </div>
+            <h3 className="font-semibold text-sm text-zinc-100 mb-1.5">macOS Socket Pairing</h3>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Pair your WhatsApp using an instant QR scan or an 8-digit phone code. Uses Baileys multi-file auth emulating a native macOS Desktop socket.
+            </p>
           </div>
 
-          {/* Card 2 */}
-          <div className="bg-zinc-900/50 border border-zinc-800/80 rounded-2xl p-6 backdrop-blur-md flex flex-col justify-between hover:border-indigo-500/50 transition-all">
-            <div>
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mb-5">
-                <Zap className="w-6 h-6" />
-              </div>
-              <h3 className="font-bold text-base text-white mb-2">AI Persona &amp; Knowledge Studio</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Provide your services, pricing, business hours, and tone. Select between Groq GPT-OSS 120B and Llama 3.3 70B for instant, razor-sharp responses.
-              </p>
+          <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
+            <div className="w-8 h-8 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4">
+              <Zap className="w-4 h-4" />
             </div>
-            <div className="mt-6 pt-4 border-t border-zinc-800/60 flex items-center gap-2 text-[11px] font-mono text-indigo-400">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Hot-Reload Updates</span>
-            </div>
+            <h3 className="font-semibold text-sm text-zinc-100 mb-1.5">Sub-Second Groq LPU</h3>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Powered by Groq inference hardware with OpenAI GPT-OSS 120B and Llama 3.3. Roundtrip responses complete in under 1 second.
+            </p>
           </div>
 
-          {/* Card 3 */}
-          <div className="bg-zinc-900/50 border border-zinc-800/80 rounded-2xl p-6 backdrop-blur-md flex flex-col justify-between hover:border-emerald-500/50 transition-all">
-            <div>
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-5">
-                <MessageSquare className="w-6 h-6" />
-              </div>
-              <h3 className="font-bold text-base text-white mb-2">Live Inbox &amp; Human Co-Pilot</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Watch conversations unfold live. When you reply manually or hit &quot;Take Over Chat&quot;, the AI bot automatically steps back for 30 minutes.
-              </p>
+          <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
+            <div className="w-8 h-8 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4">
+              <Lock className="w-4 h-4" />
             </div>
-            <div className="mt-6 pt-4 border-t border-zinc-800/60 flex items-center gap-2 text-[11px] font-mono text-emerald-400">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Auto Presence &amp; Debounce</span>
+            <h3 className="font-semibold text-sm text-zinc-100 mb-1.5">Tenant Session Vault</h3>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Every tenant operates in an isolated storage directory with separate encryption keys, chat state, and business prompt configurations.
+            </p>
+          </div>
+
+          <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
+            <div className="w-8 h-8 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4">
+              <MessageSquare className="w-4 h-4" />
             </div>
+            <h3 className="font-semibold text-sm text-zinc-100 mb-1.5">Natural Speech Filter</h3>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Automatic regex cleaning strips away bold markdown asterisks (*), hashtags, and markdown tables so the customer receives pure human text.
+            </p>
+          </div>
+
+          <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
+            <div className="w-8 h-8 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4">
+              <Users className="w-4 h-4" />
+            </div>
+            <h3 className="font-semibold text-sm text-zinc-100 mb-1.5">Live Human Takeover</h3>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Jump into any customer thread instantly. The AI pauses automatically when human staff intervenes, preventing conflicting messages.
+            </p>
+          </div>
+
+          <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
+            <div className="w-8 h-8 rounded-md bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4">
+              <Terminal className="w-4 h-4" />
+            </div>
+            <h3 className="font-semibold text-sm text-zinc-100 mb-1.5">REST API Proxy</h3>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Full suite of REST proxy endpoints under /api/whatsapp/ for programmatic dispatch, webhook integration, and analytics export.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-6 sm:px-12 bg-gradient-to-b from-transparent via-purple-950/20 to-transparent border-t border-zinc-900 text-center">
-        <div className="max-w-3xl mx-auto space-y-6">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Ready to give your business an AI WhatsApp bot?
+      {/* Pricing / Tiers */}
+      <section id="pricing" className="py-16 px-6 sm:px-12 max-w-5xl mx-auto border-t border-zinc-800/80">
+        <div className="text-left mb-10">
+          <h2 className="text-xl sm:text-2xl font-semibold text-white tracking-tight">
+            Transparent plans for every business size
           </h2>
-          <p className="text-sm text-zinc-400 max-w-xl mx-auto">
-            Sign up now, scan your WhatsApp QR code, and experience completely autonomous customer support.
+          <p className="mt-1 text-xs sm:text-sm text-zinc-400">
+            Scale from a single salon or clinic to hundreds of client numbers.
           </p>
-          <div className="pt-2">
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-6 flex flex-col justify-between">
+            <div>
+              <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider">Starter</span>
+              <div className="mt-3 mb-4">
+                <span className="text-2xl font-bold font-mono text-zinc-100">$29</span>
+                <span className="text-xs text-zinc-500"> / month</span>
+              </div>
+              <ul className="space-y-2 text-xs text-zinc-400 mb-6">
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> 1 WhatsApp Number</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> 2,500 AI Messages/mo</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> QR &amp; 8-Digit Pairing</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Human Takeover Console</li>
+              </ul>
+            </div>
             <Link
               href="/signup"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm shadow-xl shadow-purple-900/40 transition-all cursor-pointer"
+              className="w-full py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-center text-zinc-200 transition-colors"
             >
-              <span>Get Started Now</span>
-              <ArrowRight className="w-4 h-4" />
+              Start Free Trial
+            </Link>
+          </div>
+
+          <div className="bg-zinc-900/60 border border-zinc-700 rounded-xl p-6 flex flex-col justify-between relative shadow-lg">
+            <span className="absolute -top-2.5 right-4 px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-700 text-zinc-300">
+              POPULAR
+            </span>
+            <div>
+              <span className="text-xs font-mono text-zinc-300 uppercase tracking-wider">Pro Business</span>
+              <div className="mt-3 mb-4">
+                <span className="text-2xl font-bold font-mono text-zinc-100">$79</span>
+                <span className="text-xs text-zinc-500"> / month</span>
+              </div>
+              <ul className="space-y-2 text-xs text-zinc-300 mb-6">
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> 3 WhatsApp Numbers</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> 15,000 AI Messages/mo</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Custom Knowledge Base</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Priority Groq LPU Queues</li>
+              </ul>
+            </div>
+            <Link
+              href="/signup"
+              className="w-full py-2 rounded-lg bg-white hover:bg-zinc-200 text-zinc-950 font-medium text-xs text-center transition-all shadow-sm"
+            >
+              Get Started
+            </Link>
+          </div>
+
+          <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-6 flex flex-col justify-between">
+            <div>
+              <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider">Agency Vault</span>
+              <div className="mt-3 mb-4">
+                <span className="text-2xl font-bold font-mono text-zinc-100">$199</span>
+                <span className="text-xs text-zinc-500"> / month</span>
+              </div>
+              <ul className="space-y-2 text-xs text-zinc-400 mb-6">
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Unlimited Tenants</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> 60,000 AI Messages/mo</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Full REST API &amp; Webhooks</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Dedicated VM Deployments</li>
+              </ul>
+            </div>
+            <Link
+              href="/signup"
+              className="w-full py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-center text-zinc-200 transition-colors"
+            >
+              Contact Sales
             </Link>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-6 sm:px-12 border-t border-zinc-900 bg-zinc-950/80 flex flex-col sm:flex-row items-center justify-between text-xs text-zinc-500 font-mono">
-        <div className="flex items-center gap-2 mb-4 sm:mb-0">
-          <Bot className="w-4 h-4 text-purple-400" />
-          <span className="text-zinc-400">Axiogen WhatsApp Multi-Tenant SaaS Engine</span>
-        </div>
-        <div>
-          &copy; {new Date().getFullYear()} Axiogen. All rights reserved.
+      <footer className="mt-auto border-t border-zinc-800/80 py-8 px-6 sm:px-12 text-center text-xs text-zinc-500 font-mono">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <span>&copy; {new Date().getFullYear()} Axiogen AI Platform. All rights reserved.</span>
+          <div className="flex items-center gap-4 text-zinc-400">
+            <Link href="/login" className="hover:text-zinc-200">Sign In</Link>
+            <Link href="/signup" className="hover:text-zinc-200">Create Account</Link>
+            <a href="https://api.axiogen.in/whatsapp-saas/health" target="_blank" rel="noreferrer" className="hover:text-zinc-200">System Status</a>
+          </div>
         </div>
       </footer>
     </div>

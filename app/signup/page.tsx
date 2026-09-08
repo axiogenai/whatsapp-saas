@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Bot, Lock, Mail, User, Building, ArrowRight, AlertCircle, Loader2, Check } from 'lucide-react';
+import { Bot, Lock, Mail, User, Building, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { setStoredUser, slugify } from '@/lib/auth';
 
 export default function SignUpPage() {
@@ -53,32 +53,28 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background radial ambient lights */}
-      <div className="absolute top-0 right-1/2 translate-x-1/2 w-[750px] h-[380px] bg-purple-600/15 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 left-1/4 w-[500px] h-[250px] bg-indigo-600/10 blur-[100px] rounded-full pointer-events-none" />
-
-      <div className="sm:mx-auto sm:w-full sm:max-w-md z-10 text-center">
-        <Link href="/" className="inline-flex items-center gap-2.5 mb-6 group">
-          <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400 group-hover:bg-purple-500/20 transition-all shadow-[0_0_20px_rgba(168,85,247,0.2)]">
-            <Bot className="w-6 h-6" />
+    <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans selection:bg-zinc-800 selection:text-white">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
+        <Link href="/" className="inline-flex items-center gap-2 mb-6">
+          <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-200">
+            <Bot className="w-4 h-4" />
           </div>
-          <span className="font-extrabold text-xl tracking-wider text-white font-mono">
-            AXIOGEN<span className="text-purple-400">.WA</span>
+          <span className="font-semibold text-sm tracking-wide text-zinc-100">
+            AXIOGEN <span className="text-zinc-500 font-normal">WhatsApp</span>
           </span>
         </Link>
-        <h2 className="text-2xl font-bold tracking-tight text-white">
-          Create your WhatsApp Bot SaaS
+        <h2 className="text-xl font-semibold tracking-tight text-zinc-100">
+          Create your business workspace
         </h2>
-        <p className="mt-2 text-xs text-zinc-400">
-          Get your isolated bot workspace, custom AI prompt, and QR code in 30 seconds
+        <p className="mt-1 text-xs text-zinc-400">
+          Deploy an autonomous WhatsApp agent for your phone number in seconds
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md z-10 px-4 sm:px-0">
-        <div className="bg-zinc-900/70 border border-zinc-800 backdrop-blur-xl py-8 px-6 shadow-2xl rounded-2xl sm:px-10">
+      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
+        <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl py-6 px-6 sm:px-8 space-y-5">
           {error && (
-            <div className="mb-5 p-3 rounded-lg bg-rose-950/40 border border-rose-800/60 text-rose-300 text-xs flex items-center gap-2 font-medium">
+            <div className="p-3 rounded-lg bg-rose-950/30 border border-rose-800/60 text-rose-400 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -86,101 +82,98 @@ export default function SignUpPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
-                Full Name
+              <label className="block text-xs font-medium text-zinc-300 mb-1">
+                Your Name
               </label>
               <div className="relative">
-                <User className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <User className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Dr. Aditya Sharma"
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-zinc-950/70 border border-zinc-800 rounded-xl text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-purple-500 transition-all"
+                  placeholder="Aditya Sharma"
+                  className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
-                Business / Brand Name
+              <label className="block text-xs font-medium text-zinc-300 mb-1">
+                Business Name
               </label>
               <div className="relative">
-                <Building className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Building className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   required
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
-                  placeholder="e.g. Apex Health Clinic"
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-zinc-950/70 border border-zinc-800 rounded-xl text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-purple-500 transition-all"
+                  placeholder="Apex Dental Clinic"
+                  className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
                 />
               </div>
-              <p className="mt-1 text-[11px] text-zinc-500 font-mono">
-                Workspace Slug:{' '}
-                <span className="text-purple-400 font-semibold">{tenantSlug}</span>
+              <p className="text-[11px] font-mono text-zinc-500 mt-1">
+                Workspace ID: <span className="text-zinc-400">{tenantSlug}</span>
               </p>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-medium text-zinc-300 mb-1">
                 Work Email
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Mail className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="aditya@apexclinic.com"
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-zinc-950/70 border border-zinc-800 rounded-xl text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-purple-500 transition-all"
+                  placeholder="aditya@clinic.com"
+                  className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-medium text-zinc-300 mb-1">
                 Password
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-zinc-950/70 border border-zinc-800 rounded-xl text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-purple-500 transition-all"
+                  placeholder="••••••••"
+                  className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
                 />
               </div>
             </div>
 
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-purple-900/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Provisioning Bot Workspace...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Create Free Workspace</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 px-4 rounded-lg bg-white text-zinc-950 hover:bg-zinc-200 font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shadow-sm"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Creating Workspace...</span>
+                </>
+              ) : (
+                <>
+                  <span>Create Workspace</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </>
+              )}
+            </button>
           </form>
 
-          <div className="mt-6 text-center text-xs text-zinc-400">
-            Already have an account?{' '}
-            <Link href="/login" className="text-purple-400 hover:text-purple-300 font-semibold underline underline-offset-4">
+          <div className="pt-3 text-center border-t border-zinc-800/80">
+            <span className="text-xs text-zinc-500">Already have an account? </span>
+            <Link href="/login" className="text-xs font-medium text-zinc-300 hover:text-white">
               Sign In
             </Link>
           </div>
