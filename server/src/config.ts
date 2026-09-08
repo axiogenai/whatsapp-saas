@@ -103,10 +103,10 @@ function getDefaultConfig(tenantId: string): BotConfig {
     voiceReplyMode: 'adaptive',
     voicePersona: 'am_adam',
     voiceSpeed: 1.0,
-    ownerName: tenantId === 'default' ? 'Aditya Minchekar' : tenantId === 'aditaypatil07' ? 'Aditya Patil' : tenantId === 'kishorkumar' ? 'Kishor Kumar' : 'Workspace Owner',
-    ownerEmail: tenantId === 'default' ? 'team@axiogen.in' : tenantId === 'aditaypatil07' ? 'aditay26patil@gmail.com' : tenantId === 'kishorkumar' ? 'kishor@axiogen.in' : `${tenantId}@axiogen.in`,
-    plan: tenantId === 'default' ? 'agency' : tenantId === 'aditaypatil07' ? 'starter' : 'free_trial',
-    trialLimit: tenantId === 'default' ? 25000 : tenantId === 'aditaypatil07' ? 1500 : 70,
+    ownerName: tenantId === 'default' ? 'Team Axiogen Admin' : tenantId === 'aditaypatil07' ? 'Aditya Patil' : 'Workspace Owner',
+    ownerEmail: tenantId === 'default' ? 'team@axiogen.in' : tenantId === 'aditaypatil07' ? 'aditay26patil@gmail.com' : `${tenantId}@axiogen.in`,
+    plan: 'free_trial',
+    trialLimit: tenantId === 'default' ? 10000 : tenantId === 'aditaypatil07' ? 2000 : 70,
   };
 }
 
