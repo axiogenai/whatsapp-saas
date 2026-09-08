@@ -294,10 +294,6 @@ app.get('/api/admin/tenants', async (req: Request, res: Response) => {
     const defaultConfigFile = path.join(dataDir, 'bot-config.json');
     const tenantIds = new Set<string>();
 
-    if (fs.existsSync(defaultConfigFile)) {
-      tenantIds.add('default');
-    }
-
     if (fs.existsSync(tenantsDir)) {
       const files = fs.readdirSync(tenantsDir);
       for (const file of files) {

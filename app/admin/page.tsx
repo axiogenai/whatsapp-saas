@@ -363,7 +363,7 @@ export default function AdminPage() {
               </span>
             </div>
             <p className="text-[10px] text-zinc-500 font-mono">
-              Signed in as {currentUser?.name ? `${currentUser.name} (${currentUser.email})` : currentUser?.email || 'Platform Super Admin'}
+              Signed in as {currentUser?.email || 'aditay26patil@gmail.com (Super Admin)'}
             </p>
           </div>
         </div>
