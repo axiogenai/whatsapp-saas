@@ -5,6 +5,9 @@ export interface TenantUser {
   businessName: string;
   tenantId: string;
   createdAt: string;
+  plan?: 'free_trial' | 'starter' | 'pro' | 'agency';
+  messagesUsed?: number;
+  trialLimit?: number;
 }
 
 export interface TenantBotConfig {

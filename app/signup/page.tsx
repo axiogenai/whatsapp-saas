@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Bot, Lock, Mail, User, Building, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { Bot, Lock, Mail, User, Building, ArrowRight, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { setStoredUser, slugify } from '@/lib/auth';
+import { TenantUser } from '@/lib/types';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function SignUpPage() {
   const [businessName, setBusinessName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,13 +36,16 @@ export default function SignUpPage() {
     setLoading(true);
     try {
       const tenantId = slugify(businessName);
-      const user = {
+      const user: TenantUser = {
         id: `usr_${Date.now()}`,
         email: email.trim(),
         name: name.trim(),
         businessName: businessName.trim(),
         tenantId,
         createdAt: new Date().toISOString(),
+        plan: 'free_trial',
+        messagesUsed: 0,
+        trialLimit: 70,
       };
 
       setStoredUser(user);
@@ -67,7 +72,7 @@ export default function SignUpPage() {
           Create your business workspace
         </h2>
         <p className="mt-1 text-xs text-zinc-400">
-          Deploy an autonomous WhatsApp agent for your phone number in seconds
+          Includes 70 Free AI Messages • No plan active on signup • Instant WhatsApp pairing
         </p>
       </div>
 
@@ -142,13 +147,21 @@ export default function SignUpPage() {
               <div className="relative">
                 <Lock className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
+                  className="w-full pl-9 pr-10 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors p-0.5 cursor-pointer"
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 

@@ -3,13 +3,15 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Bot, Lock, Mail, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
-import { setStoredUser, slugify } from '@/lib/auth';
+import { Bot, Lock, Mail, ArrowRight, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
+import { getStoredUser, setStoredUser, slugify } from '@/lib/auth';
+import { TenantUser } from '@/lib/types';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [customTenant, setCustomTenant] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,13 +30,17 @@ export default function LoginPage() {
         ? slugify(customTenant)
         : slugify(email.split('@')[0]) || 'default';
 
-      const user = {
-        id: `usr_${Date.now()}`,
+      const existingUser = getStoredUser();
+      const user: TenantUser = {
+        id: existingUser?.id || `usr_${Date.now()}`,
         email: email.trim(),
-        name: email.split('@')[0].toUpperCase(),
-        businessName: customTenant.trim() || `${email.split('@')[0].toUpperCase()} Bot`,
+        name: existingUser?.name || email.split('@')[0].toUpperCase(),
+        businessName: customTenant.trim() || existingUser?.businessName || `${email.split('@')[0].toUpperCase()} Bot`,
         tenantId: derivedTenant,
-        createdAt: new Date().toISOString(),
+        createdAt: existingUser?.createdAt || new Date().toISOString(),
+        plan: existingUser?.plan || 'free_trial',
+        messagesUsed: existingUser?.messagesUsed || 0,
+        trialLimit: 70,
       };
 
       setStoredUser(user);
@@ -99,13 +105,21 @@ export default function LoginPage() {
               <div className="relative">
                 <Lock className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
+                  className="w-full pl-9 pr-10 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors p-0.5 cursor-pointer"
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 

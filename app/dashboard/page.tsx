@@ -39,13 +39,13 @@ import {
   Terminal,
   ExternalLink,
 } from 'lucide-react';
-import { getStoredUser, clearStoredUser } from '@/lib/auth';
+import { getStoredUser, setStoredUser, clearStoredUser } from '@/lib/auth';
 import { TenantUser, TenantSessionStatus, TenantBotConfig, ChatMessage, ChatContact } from '@/lib/types';
 
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<TenantUser | null>(null);
-  
+
   // Navigation & Layout
   const [tab, setTab] = useState<'connection' | 'studio' | 'inbox' | 'subscription' | 'analytics' | 'docs'>('connection');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -88,8 +88,8 @@ export default function DashboardPage() {
   const [sendingManual, setSendingManual] = useState(false);
   const [mobileChatView, setMobileChatView] = useState<'contacts' | 'messages'>('contacts');
 
-  // Subscription State (INR)
-  const [activePlan, setActivePlan] = useState<'starter' | 'pro' | 'agency'>('pro');
+  // Subscription State (Free Trial by default with 70 AI messages)
+  const [activePlan, setActivePlan] = useState<'free_trial' | 'starter' | 'pro' | 'agency'>('free_trial');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
   // Toast
@@ -107,6 +107,11 @@ export default function DashboardPage() {
       router.push('/login');
     } else {
       setUser(u);
+      if (u.plan) {
+        setActivePlan(u.plan);
+      } else {
+        setActivePlan('free_trial');
+      }
     }
   }, [router]);
 
@@ -347,12 +352,17 @@ export default function DashboardPage() {
 
   const handleSwitchPlan = (newPlan: 'starter' | 'pro' | 'agency') => {
     setActivePlan(newPlan);
+    if (user) {
+      const updated: TenantUser = { ...user, plan: newPlan };
+      setUser(updated);
+      setStoredUser(updated);
+    }
     const planNames = {
       starter: 'Starter Plan (₹499/mo)',
       pro: 'Business Pro (₹999/mo)',
       agency: 'Agency / Scale (₹2,499/mo)',
     };
-    showToast(`Switched to ${planNames[newPlan]}. Instant UPI activation active.`, 'success');
+    showToast(`Subscribed to ${planNames[newPlan]}. Free trial limit removed! Instant UPI active.`, 'success');
   };
 
   if (!user) {
@@ -363,7 +373,14 @@ export default function DashboardPage() {
     );
   }
 
+  // Quota & Free Trial Calculations
   const isConnected = statusData.status === 'connected';
+  const totalAiMessages = telemetry.filter((m) => m.fromMe).length;
+  const isTrial = activePlan === 'free_trial';
+  const trialLimit = user.trialLimit || 70;
+  const trialRemaining = Math.max(0, trialLimit - totalAiMessages);
+  const isTrialExhausted = isTrial && totalAiMessages >= trialLimit;
+
   const filteredContacts = contacts.filter((c) => {
     const q = contactSearch.toLowerCase().trim();
     if (!q) return true;
@@ -380,7 +397,12 @@ export default function DashboardPage() {
     { id: 'connection', label: 'Connection', icon: QrCode, badge: isConnected ? 'Live' : null },
     { id: 'studio', label: 'AI Studio', icon: Cpu, badge: null },
     { id: 'inbox', label: 'Live Inbox', icon: MessageSquare, badge: contacts.length > 0 ? `${contacts.length}` : null },
-    { id: 'subscription', label: 'Subscription', icon: IndianRupee, badge: 'INR' },
+    {
+      id: 'subscription',
+      label: 'Subscription',
+      icon: IndianRupee,
+      badge: isTrial ? (isTrialExhausted ? '0 Free' : `${trialRemaining} Free`) : 'INR',
+    },
     { id: 'analytics', label: 'Analytics & Ops', icon: BarChart3, badge: null },
     { id: 'docs', label: 'API & Webhooks', icon: Terminal, badge: null },
   ] as const;
@@ -566,8 +588,10 @@ export default function DashboardPage() {
                   {!isSidebarCollapsed && item.badge && (
                     <span
                       className={`px-1.5 py-0.5 rounded text-[10px] font-mono shrink-0 ${
-                        item.id === 'subscription'
-                          ? 'bg-emerald-950/60 border border-emerald-800/80 text-emerald-400'
+                        item.id === 'subscription' && isTrialExhausted
+                          ? 'bg-rose-950/80 border border-rose-800 text-rose-400'
+                          : item.id === 'subscription'
+                          ? 'bg-amber-950/60 border border-amber-800/80 text-amber-300'
                           : 'bg-zinc-900 border border-zinc-800 text-zinc-400'
                       }`}
                     >
@@ -713,7 +737,40 @@ export default function DashboardPage() {
         </header>
 
         {/* CONTENT CONTAINER */}
-        <main className="flex-1 p-3 sm:p-6 max-w-6xl w-full mx-auto space-y-6">
+        <main className="flex-1 p-3 sm:p-6 max-w-6xl w-full mx-auto space-y-5">
+          {/* FREE TRIAL STATUS BANNERS */}
+          {isTrialExhausted ? (
+            <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-800/80 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+              <div className="flex items-center gap-2.5 text-rose-300">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                <span>
+                  <strong>Free Trial Limit Reached (70/70 Messages):</strong> Your free AI trial messages have been completely used. Autonomous WhatsApp replies are paused until you activate a subscription.
+                </span>
+              </div>
+              <button
+                onClick={() => setTab('subscription')}
+                className="px-3.5 py-1.5 rounded-lg bg-white text-zinc-950 hover:bg-zinc-200 font-medium text-xs shrink-0 whitespace-nowrap cursor-pointer shadow-sm transition-all"
+              >
+                Activate Subscription (from ₹499/mo)
+              </button>
+            </div>
+          ) : isTrial ? (
+            <div className="px-3.5 py-2.5 rounded-xl bg-zinc-900/60 border border-zinc-800 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-zinc-300">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <span>
+                  <strong>Free Trial Mode:</strong> You have <strong className="text-emerald-400 font-mono">{trialRemaining} of 70 free AI messages</strong> remaining. No paid plan is active on signup.
+                </span>
+              </div>
+              <button
+                onClick={() => setTab('subscription')}
+                className="text-xs font-mono text-zinc-400 hover:text-white underline underline-offset-2 shrink-0 cursor-pointer"
+              >
+                View Plans (from ₹499/mo) &rarr;
+              </button>
+            </div>
+          ) : null}
+
           {/* TAB 1: CONNECTION */}
           {tab === 'connection' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -882,12 +939,14 @@ export default function DashboardPage() {
                       type="button"
                       onClick={() => setConfig({ ...config, autoReplyEnabled: !config.autoReplyEnabled })}
                       className={`px-2.5 py-1 rounded-md text-xs font-mono font-medium border transition-colors cursor-pointer ${
-                        config.autoReplyEnabled
+                        isTrialExhausted
+                          ? 'bg-rose-950/40 border-rose-800/80 text-rose-400'
+                          : config.autoReplyEnabled
                           ? 'bg-emerald-950/40 border-emerald-800/80 text-emerald-400'
                           : 'bg-zinc-900 border-zinc-800 text-zinc-500'
                       }`}
                     >
-                      {config.autoReplyEnabled ? 'ENABLED' : 'PAUSED'}
+                      {isTrialExhausted ? 'TRIAL QUOTA EXHAUSTED' : config.autoReplyEnabled ? 'ENABLED' : 'PAUSED'}
                     </button>
                   </div>
                 </div>
@@ -1002,246 +1061,264 @@ export default function DashboardPage() {
 
           {/* TAB 3: LIVE INBOX & TAKEOVER */}
           {tab === 'inbox' && (
-            <div className="flex h-[620px] sm:h-[680px] bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden relative">
-              {/* CONTACTS LIST COLUMN (Collapsible on desktop, master-detail on mobile) */}
-              <div
-                className={`border-r border-zinc-800 flex-col bg-[#09090b] min-h-0 transition-all duration-200 ease-in-out shrink-0 ${
-                  mobileChatView === 'messages' ? 'hidden md:flex' : 'flex'
-                } ${isContactsCollapsed ? 'w-12' : 'w-full md:w-72 lg:w-80'}`}
-              >
-                {/* Contacts Header */}
-                <div className="p-3 border-b border-zinc-800 flex items-center justify-between">
-                  {!isContactsCollapsed ? (
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-1.5">
-                        <h4 className="font-medium text-xs text-zinc-200">Conversations</h4>
-                        <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-zinc-900 border border-zinc-800 text-zinc-400">
-                          {contacts.length}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => setIsContactsCollapsed(true)}
-                        className="hidden md:block p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-white"
-                        title="Collapse Conversations"
-                      >
-                        <PanelLeftClose className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setIsContactsCollapsed(false)}
-                      className="mx-auto p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-white"
-                      title="Expand Conversations"
-                    >
-                      <PanelLeftOpen className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Contacts Search Bar */}
-                {!isContactsCollapsed && (
-                  <div className="p-2 border-b border-zinc-800/80">
-                    <div className="relative">
-                      <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        value={contactSearch}
-                        onChange={(e) => setContactSearch(e.target.value)}
-                        placeholder="Search phone or name..."
-                        className="w-full pl-8 pr-2.5 py-1.5 bg-zinc-900/60 border border-zinc-800 rounded-md text-[11px] text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-700"
-                      />
-                    </div>
+            <div className="flex flex-col h-[620px] sm:h-[680px] bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden relative">
+              {/* Inbox Notice for trial limit */}
+              {isTrialExhausted && (
+                <div className="px-3 py-2 bg-rose-950/40 border-b border-rose-800/60 text-xs text-rose-300 flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                    <span>Free trial 70-message quota reached. Bot auto-reply is muted. Reply manually or activate a plan.</span>
                   </div>
-                )}
-
-                {/* Contacts List */}
-                <div className="flex-1 overflow-y-auto p-1.5 space-y-1">
-                  {filteredContacts.length === 0 ? (
-                    <p className="text-xs text-zinc-500 text-center py-12">
-                      {!isContactsCollapsed ? 'No messages received yet.' : '...'}
-                    </p>
-                  ) : (
-                    filteredContacts.map((c) => {
-                      const active = c.jid === activeContact;
-                      return (
-                        <button
-                          key={c.jid}
-                          onClick={() => {
-                            setActiveContact(c.jid);
-                            setMobileChatView('messages');
-                          }}
-                          title={isContactsCollapsed ? c.senderName || c.jid : undefined}
-                          className={`w-full text-left rounded-lg border transition-colors cursor-pointer ${
-                            isContactsCollapsed ? 'p-2 flex justify-center' : 'p-2.5'
-                          } ${
-                            active
-                              ? 'bg-zinc-800/80 border-zinc-700 text-white'
-                              : 'bg-transparent hover:bg-zinc-900 border-transparent text-zinc-400'
-                          }`}
-                        >
-                          {!isContactsCollapsed ? (
-                            <>
-                              <div className="flex items-center justify-between mb-0.5">
-                                <span className="font-medium text-xs truncate max-w-[130px] text-zinc-200">
-                                  {c.senderName || c.jid.split('@')[0]}
-                                </span>
-                                {c.isHumanTakeover && (
-                                  <span className="px-1 py-0.2 rounded text-[9px] font-mono bg-amber-950/60 text-amber-400 border border-amber-800/80">
-                                    HUMAN
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-[11px] text-zinc-500 truncate">{c.lastMessage}</p>
-                            </>
-                          ) : (
-                            <span className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
-                          )}
-                        </button>
-                      );
-                    })
-                  )}
+                  <button
+                    onClick={() => setTab('subscription')}
+                    className="px-2 py-0.5 rounded bg-white text-zinc-950 font-medium text-[11px] shrink-0"
+                  >
+                    Subscribe
+                  </button>
                 </div>
-              </div>
+              )}
 
-              {/* CHAT MESSAGES THREAD */}
-              <div
-                className={`flex-1 flex-col min-h-0 bg-zinc-950 ${
-                  mobileChatView === 'contacts' ? 'hidden md:flex' : 'flex'
-                }`}
-              >
-                {selectedContactData ? (
-                  <>
-                    {/* Chat Header */}
-                    <div className="p-3 sm:p-3.5 border-b border-zinc-800 flex items-center justify-between bg-[#09090b]">
-                      <div className="flex items-center gap-2 min-w-0">
+              <div className="flex flex-1 min-h-0">
+                {/* CONTACTS LIST COLUMN */}
+                <div
+                  className={`border-r border-zinc-800 flex-col bg-[#09090b] min-h-0 transition-all duration-200 ease-in-out shrink-0 ${
+                    mobileChatView === 'messages' ? 'hidden md:flex' : 'flex'
+                  } ${isContactsCollapsed ? 'w-12' : 'w-full md:w-72 lg:w-80'}`}
+                >
+                  {/* Contacts Header */}
+                  <div className="p-3 border-b border-zinc-800 flex items-center justify-between">
+                    {!isContactsCollapsed ? (
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="font-medium text-xs text-zinc-200">Conversations</h4>
+                          <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-zinc-900 border border-zinc-800 text-zinc-400">
+                            {contacts.length}
+                          </span>
+                        </div>
                         <button
-                          type="button"
-                          onClick={() => setMobileChatView('contacts')}
-                          className="md:hidden p-1.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white shrink-0"
-                          title="Back to conversations"
+                          onClick={() => setIsContactsCollapsed(true)}
+                          className="hidden md:block p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-white"
+                          title="Collapse Conversations"
                         >
-                          <ChevronLeft className="w-4 h-4" />
+                          <PanelLeftClose className="w-3.5 h-3.5" />
                         </button>
-                        <div className="min-w-0">
-                          <h4 className="font-medium text-xs text-zinc-100 truncate">
-                            {selectedContactData.senderName || selectedContactData.jid.split('@')[0]}
-                          </h4>
-                          <p className="text-[10px] sm:text-[11px] font-mono text-zinc-500 truncate">
-                            {selectedContactData.jid}
-                          </p>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setIsContactsCollapsed(false)}
+                        className="mx-auto p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-white"
+                        title="Expand Conversations"
+                      >
+                        <PanelLeftOpen className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Contacts Search Bar */}
+                  {!isContactsCollapsed && (
+                    <div className="p-2 border-b border-zinc-800/80">
+                      <div className="relative">
+                        <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          value={contactSearch}
+                          onChange={(e) => setContactSearch(e.target.value)}
+                          placeholder="Search phone or name..."
+                          className="w-full pl-8 pr-2.5 py-1.5 bg-zinc-900/60 border border-zinc-800 rounded-md text-[11px] text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-700"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Contacts List */}
+                  <div className="flex-1 overflow-y-auto p-1.5 space-y-1">
+                    {filteredContacts.length === 0 ? (
+                      <p className="text-xs text-zinc-500 text-center py-12">
+                        {!isContactsCollapsed ? 'No messages received yet.' : '...'}
+                      </p>
+                    ) : (
+                      filteredContacts.map((c) => {
+                        const active = c.jid === activeContact;
+                        return (
+                          <button
+                            key={c.jid}
+                            onClick={() => {
+                              setActiveContact(c.jid);
+                              setMobileChatView('messages');
+                            }}
+                            title={isContactsCollapsed ? c.senderName || c.jid : undefined}
+                            className={`w-full text-left rounded-lg border transition-colors cursor-pointer ${
+                              isContactsCollapsed ? 'p-2 flex justify-center' : 'p-2.5'
+                            } ${
+                              active
+                                ? 'bg-zinc-800/80 border-zinc-700 text-white'
+                                : 'bg-transparent hover:bg-zinc-900 border-transparent text-zinc-400'
+                            }`}
+                          >
+                            {!isContactsCollapsed ? (
+                              <>
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <span className="font-medium text-xs truncate max-w-[130px] text-zinc-200">
+                                    {c.senderName || c.jid.split('@')[0]}
+                                  </span>
+                                  {c.isHumanTakeover && (
+                                    <span className="px-1 py-0.2 rounded text-[9px] font-mono bg-amber-950/60 text-amber-400 border border-amber-800/80">
+                                      HUMAN
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-zinc-500 truncate">{c.lastMessage}</p>
+                              </>
+                            ) : (
+                              <span className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
+                            )}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* CHAT MESSAGES THREAD */}
+                <div
+                  className={`flex-1 flex flex-col min-h-0 bg-zinc-950 ${
+                    mobileChatView === 'contacts' ? 'hidden md:flex' : 'flex'
+                  }`}
+                >
+                  {selectedContactData ? (
+                    <>
+                      {/* Chat Header */}
+                      <div className="p-3 sm:p-3.5 border-b border-zinc-800 flex items-center justify-between bg-[#09090b]">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => setMobileChatView('contacts')}
+                            className="md:hidden p-1.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white shrink-0"
+                            title="Back to conversations"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <div className="min-w-0">
+                            <h4 className="font-medium text-xs text-zinc-100 truncate">
+                              {selectedContactData.senderName || selectedContactData.jid.split('@')[0]}
+                            </h4>
+                            <p className="text-[10px] sm:text-[11px] font-mono text-zinc-500 truncate">
+                              {selectedContactData.jid}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() =>
+                              handleTakeover(
+                                selectedContactData.jid,
+                                selectedContactData.isHumanTakeover ? 'resume' : 'takeover'
+                              )
+                            }
+                            className={`px-2.5 py-1 rounded text-xs font-mono transition-colors cursor-pointer border whitespace-nowrap ${
+                              selectedContactData.isHumanTakeover
+                                ? 'bg-zinc-900 border-zinc-700 text-emerald-400 hover:bg-zinc-800'
+                                : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                            }`}
+                          >
+                            {selectedContactData.isHumanTakeover ? 'Resume Bot' : 'Take Over'}
+                          </button>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      {/* Message Thread */}
+                      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 bg-[#0c0c0e]">
+                        {activeChatMessages.length === 0 ? (
+                          <p className="text-xs text-zinc-500 text-center py-8 font-mono">
+                            No message history for this contact.
+                          </p>
+                        ) : (
+                          activeChatMessages.map((m, idx) => {
+                            const isFromMe = m.fromMe;
+                            return (
+                              <div
+                                key={idx}
+                                className={`flex flex-col ${isFromMe ? 'items-end' : 'items-start'}`}
+                              >
+                                <div
+                                  className={`max-w-[85%] sm:max-w-[75%] p-2.5 sm:p-3 rounded-xl text-xs leading-relaxed ${
+                                    isFromMe
+                                      ? 'bg-zinc-800 text-zinc-100 rounded-tr-xs border border-zinc-700/60'
+                                      : 'bg-zinc-900 text-zinc-200 rounded-tl-xs border border-zinc-800'
+                                  }`}
+                                >
+                                  {m.text}
+                                </div>
+                                <span className="text-[9px] font-mono text-zinc-600 mt-1">
+                                  {m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                </span>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+
+                      {/* Quick Response Chips */}
+                      <div className="px-3 py-1.5 bg-[#09090b] border-t border-zinc-800/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                        <span className="text-[10px] font-mono text-zinc-500 shrink-0">Quick reply:</span>
                         <button
-                          onClick={() =>
-                            handleTakeover(
-                              selectedContactData.jid,
-                              selectedContactData.isHumanTakeover ? 'resume' : 'takeover'
-                            )
-                          }
-                          className={`px-2.5 py-1 rounded text-xs font-mono transition-colors cursor-pointer border whitespace-nowrap ${
-                            selectedContactData.isHumanTakeover
-                              ? 'bg-zinc-900 border-zinc-700 text-emerald-400 hover:bg-zinc-800'
-                              : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
-                          }`}
+                          type="button"
+                          onClick={() => setManualText('👋 Hello! How may we assist you today?')}
+                          className="px-2 py-0.5 rounded text-[10px] bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-200 shrink-0 whitespace-nowrap"
                         >
-                          {selectedContactData.isHumanTakeover ? 'Resume Bot' : 'Take Over'}
+                          👋 Greeting
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setManualText('📅 We have appointment slots open this week. Would you like to reserve one?')}
+                          className="px-2 py-0.5 rounded text-[10px] bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-200 shrink-0 whitespace-nowrap"
+                        >
+                          📅 Booking
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setManualText('⏳ Our staff member will review your query and call you back shortly.')}
+                          className="px-2 py-0.5 rounded text-[10px] bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-200 shrink-0 whitespace-nowrap"
+                        >
+                          ⏳ Follow-up
                         </button>
                       </div>
-                    </div>
 
-                    {/* Message Thread */}
-                    <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 bg-[#0c0c0e]">
-                      {activeChatMessages.length === 0 ? (
-                        <p className="text-xs text-zinc-500 text-center py-8 font-mono">
-                          No message history for this contact.
-                        </p>
-                      ) : (
-                        activeChatMessages.map((m, idx) => {
-                          const isFromMe = m.fromMe;
-                          return (
-                            <div
-                              key={idx}
-                              className={`flex flex-col ${isFromMe ? 'items-end' : 'items-start'}`}
-                            >
-                              <div
-                                className={`max-w-[85%] sm:max-w-[75%] p-2.5 sm:p-3 rounded-xl text-xs leading-relaxed ${
-                                  isFromMe
-                                    ? 'bg-zinc-800 text-zinc-100 rounded-tr-xs border border-zinc-700/60'
-                                    : 'bg-zinc-900 text-zinc-200 rounded-tl-xs border border-zinc-800'
-                                }`}
-                              >
-                                {m.text}
-                              </div>
-                              <span className="text-[9px] font-mono text-zinc-600 mt-1">
-                                {m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-                              </span>
-                            </div>
-                          );
-                        })
-                      )}
+                      {/* Manual Send Input Form */}
+                      <form
+                        onSubmit={handleSendManual}
+                        className="p-3 border-t border-zinc-800 bg-[#09090b] flex items-center gap-2"
+                      >
+                        <input
+                          type="text"
+                          value={manualText}
+                          onChange={(e) => setManualText(e.target.value)}
+                          placeholder="Type a manual WhatsApp reply..."
+                          className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
+                        />
+                        <button
+                          type="submit"
+                          disabled={sendingManual || !manualText.trim()}
+                          className="px-3.5 py-2 rounded-lg bg-white text-zinc-950 hover:bg-zinc-200 text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          {sendingManual ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <>
+                              <span className="hidden xs:inline">Send</span>
+                              <Send className="w-3 h-3" />
+                            </>
+                          )}
+                        </button>
+                      </form>
+                    </>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center text-xs text-zinc-500 font-mono p-4 text-center">
+                      Select a conversation on the left to view messages
                     </div>
-
-                    {/* Quick Response Chips */}
-                    <div className="px-3 py-1.5 bg-[#09090b] border-t border-zinc-800/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                      <span className="text-[10px] font-mono text-zinc-500 shrink-0">Quick reply:</span>
-                      <button
-                        type="button"
-                        onClick={() => setManualText('👋 Hello! How may we assist you today?')}
-                        className="px-2 py-0.5 rounded text-[10px] bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-200 shrink-0 whitespace-nowrap"
-                      >
-                        👋 Greeting
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setManualText('📅 We have appointment slots open this week. Would you like to reserve one?')}
-                        className="px-2 py-0.5 rounded text-[10px] bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-200 shrink-0 whitespace-nowrap"
-                      >
-                        📅 Booking
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setManualText('⏳ Our staff member will review your query and call you back shortly.')}
-                        className="px-2 py-0.5 rounded text-[10px] bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-200 shrink-0 whitespace-nowrap"
-                      >
-                        ⏳ Follow-up
-                      </button>
-                    </div>
-
-                    {/* Manual Send Input Form */}
-                    <form
-                      onSubmit={handleSendManual}
-                      className="p-3 border-t border-zinc-800 bg-[#09090b] flex items-center gap-2"
-                    >
-                      <input
-                        type="text"
-                        value={manualText}
-                        onChange={(e) => setManualText(e.target.value)}
-                        placeholder="Type a manual WhatsApp reply..."
-                        className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
-                      />
-                      <button
-                        type="submit"
-                        disabled={sendingManual || !manualText.trim()}
-                        className="px-3.5 py-2 rounded-lg bg-white text-zinc-950 hover:bg-zinc-200 text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                      >
-                        {sendingManual ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <>
-                            <span className="hidden xs:inline">Send</span>
-                            <Send className="w-3 h-3" />
-                          </>
-                        )}
-                      </button>
-                    </form>
-                  </>
-                ) : (
-                  <div className="flex-1 flex items-center justify-center text-xs text-zinc-500 font-mono p-4 text-center">
-                    Select a conversation on the left to view messages
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -1254,18 +1331,37 @@ export default function DashboardPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800/80">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950/80 border border-emerald-800/80 text-emerald-400">
-                        ACTIVE SUBSCRIPTION
-                      </span>
+                      {isTrial ? (
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-mono border ${
+                            isTrialExhausted
+                              ? 'bg-rose-950/80 border-rose-800 text-rose-400'
+                              : 'bg-amber-950/80 border-amber-800 text-amber-300'
+                          }`}
+                        >
+                          {isTrialExhausted ? 'FREE TRIAL EXHAUSTED' : 'FREE TRIAL (70 MESSAGES)'}
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950/80 border border-emerald-800/80 text-emerald-400">
+                          ACTIVE SUBSCRIPTION
+                        </span>
+                      )}
                       <span className="text-xs font-mono text-zinc-400">🇮🇳 Billed in INR (UPI / Cards)</span>
                     </div>
+
                     <h3 className="text-xl font-semibold text-zinc-100">
+                      {isTrial && (isTrialExhausted ? 'Free Trial Quota Complete (70/70 Used)' : `Free Trial — ${trialRemaining} Messages Left`)}
                       {activePlan === 'starter' && 'Starter Plan — ₹499 / mo'}
                       {activePlan === 'pro' && 'Business Pro — ₹999 / mo'}
                       {activePlan === 'agency' && 'Agency / Scale — ₹2,499 / mo'}
                     </h3>
+
                     <p className="text-xs text-zinc-400 mt-1">
-                      Next auto-renewal on 1st of next month • Includes GST Input Tax Credit
+                      {isTrial
+                        ? (isTrialExhausted
+                            ? 'Your 70 free trial AI messages have finished. Activate an affordable plan below to resume auto-replies.'
+                            : 'No paid plan active on signup. You have 70 free messages. Once used up, a subscription is needed to continue.')
+                        : 'Next auto-renewal on 1st of next month • Includes GST Input Tax Credit'}
                     </p>
                   </div>
 
@@ -1283,20 +1379,22 @@ export default function DashboardPage() {
                 {/* Usage Meters */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6">
                   <div className="p-3.5 bg-zinc-950 border border-zinc-800/80 rounded-xl">
-                    <span className="text-xs text-zinc-400 font-medium">WhatsApp Messages Used</span>
+                    <span className="text-xs text-zinc-400 font-medium">WhatsApp AI Messages Used</span>
                     <div className="flex items-baseline justify-between mt-2">
                       <span className="text-lg font-bold font-mono text-zinc-100">
-                        {telemetry.length} / {activePlan === 'starter' ? '1,500' : activePlan === 'pro' ? '8,000' : '30,000'}
+                        {isTrial ? `${totalAiMessages} / 70` : `${totalAiMessages} / ${activePlan === 'starter' ? '1,500' : activePlan === 'pro' ? '8,000' : '30,000'}`}
                       </span>
-                      <span className="text-[11px] font-mono text-zinc-500">
-                        {Math.min(100, Math.round((telemetry.length / (activePlan === 'starter' ? 1500 : activePlan === 'pro' ? 8000 : 30000)) * 100))}%
+                      <span className={`text-[11px] font-mono ${isTrialExhausted ? 'text-rose-400' : 'text-zinc-500'}`}>
+                        {isTrial
+                          ? (isTrialExhausted ? '100% (Exhausted)' : `${Math.round((totalAiMessages / 70) * 100)}%`)
+                          : `${Math.min(100, Math.round((totalAiMessages / (activePlan === 'starter' ? 1500 : activePlan === 'pro' ? 8000 : 30000)) * 100))}%`}
                       </span>
                     </div>
                     <div className="w-full bg-zinc-900 rounded-full h-1.5 mt-2 overflow-hidden">
                       <div
-                        className="bg-emerald-400 h-1.5 rounded-full"
+                        className={`h-1.5 rounded-full transition-all duration-300 ${isTrialExhausted ? 'bg-rose-500' : 'bg-emerald-400'}`}
                         style={{
-                          width: `${Math.max(4, Math.min(100, (telemetry.length / (activePlan === 'starter' ? 1500 : activePlan === 'pro' ? 8000 : 30000)) * 100))}%`,
+                          width: `${Math.max(4, Math.min(100, isTrial ? (totalAiMessages / 70) * 100 : (totalAiMessages / (activePlan === 'starter' ? 1500 : activePlan === 'pro' ? 8000 : 30000)) * 100))}%`,
                         }}
                       />
                     </div>
@@ -1306,7 +1404,7 @@ export default function DashboardPage() {
                     <span className="text-xs text-zinc-400 font-medium">WhatsApp Numbers Active</span>
                     <div className="flex items-baseline justify-between mt-2">
                       <span className="text-lg font-bold font-mono text-zinc-100">
-                        {isConnected ? '1' : '0'} / {activePlan === 'starter' ? '1' : activePlan === 'pro' ? '2' : '5'}
+                        {isConnected ? '1' : '0'} / {isTrial ? '1' : activePlan === 'starter' ? '1' : activePlan === 'pro' ? '2' : '5'}
                       </span>
                       <span className="text-[11px] font-mono text-emerald-400">
                         {isConnected ? 'Connected' : 'Ready to pair'}
@@ -1315,7 +1413,7 @@ export default function DashboardPage() {
                     <div className="w-full bg-zinc-900 rounded-full h-1.5 mt-2 overflow-hidden">
                       <div
                         className="bg-emerald-400 h-1.5 rounded-full"
-                        style={{ width: isConnected ? '50%' : '0%' }}
+                        style={{ width: isConnected ? '100%' : '0%' }}
                       />
                     </div>
                   </div>
@@ -1335,7 +1433,17 @@ export default function DashboardPage() {
 
               {/* Plan Switcher Grid (Affordable Indian Pricing) */}
               <div>
-                <h4 className="font-semibold text-sm text-zinc-200 mb-3">Available India Plans</h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-sm text-zinc-200">
+                    {isTrial ? 'Choose a Subscription Plan to Activate' : 'Available India Plans'}
+                  </h4>
+                  {isTrial && (
+                    <span className="text-xs text-amber-400 font-mono">
+                      Current: 70 Free Messages Trial
+                    </span>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Starter Tier */}
                   <div
@@ -1350,7 +1458,7 @@ export default function DashboardPage() {
                         <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider">Starter</span>
                         {activePlan === 'starter' && (
                           <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-emerald-950/80 border border-emerald-800 text-emerald-400">
-                            CURRENT
+                            ACTIVE
                           </span>
                         )}
                       </div>
@@ -1364,19 +1472,20 @@ export default function DashboardPage() {
                         <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> 1,500 AI Messages/mo</li>
                         <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Instant QR &amp; Phone Code</li>
                         <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Human Takeover Console</li>
+                        <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Instant UPI Activation</li>
                       </ul>
                     </div>
 
                     <button
                       onClick={() => handleSwitchPlan('starter')}
                       disabled={activePlan === 'starter'}
-                      className={`w-full py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                      className={`w-full py-2.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                         activePlan === 'starter'
                           ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50'
                           : 'bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200'
                       }`}
                     >
-                      {activePlan === 'starter' ? 'Active Plan' : 'Switch to Starter'}
+                      {activePlan === 'starter' ? 'Current Plan' : isTrial ? 'Subscribe to Starter (₹499)' : 'Switch to Starter'}
                     </button>
                   </div>
 
@@ -1396,7 +1505,7 @@ export default function DashboardPage() {
                         <span className="text-xs font-mono text-zinc-300 uppercase tracking-wider">Business Pro</span>
                         {activePlan === 'pro' && (
                           <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-emerald-950/80 border border-emerald-800 text-emerald-400">
-                            CURRENT
+                            ACTIVE
                           </span>
                         )}
                       </div>
@@ -1417,13 +1526,13 @@ export default function DashboardPage() {
                     <button
                       onClick={() => handleSwitchPlan('pro')}
                       disabled={activePlan === 'pro'}
-                      className={`w-full py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                      className={`w-full py-2.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                         activePlan === 'pro'
                           ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50'
-                          : 'bg-white hover:bg-zinc-200 text-zinc-950 font-medium'
+                          : 'bg-white hover:bg-zinc-200 text-zinc-950 font-medium shadow-sm'
                       }`}
                     >
-                      {activePlan === 'pro' ? 'Active Plan' : 'Switch to Pro'}
+                      {activePlan === 'pro' ? 'Current Plan' : isTrial ? 'Subscribe to Pro (₹999)' : 'Switch to Pro'}
                     </button>
                   </div>
 
@@ -1440,7 +1549,7 @@ export default function DashboardPage() {
                         <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider">Agency / Scale</span>
                         {activePlan === 'agency' && (
                           <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-emerald-950/80 border border-emerald-800 text-emerald-400">
-                            CURRENT
+                            ACTIVE
                           </span>
                         )}
                       </div>
@@ -1461,13 +1570,13 @@ export default function DashboardPage() {
                     <button
                       onClick={() => handleSwitchPlan('agency')}
                       disabled={activePlan === 'agency'}
-                      className={`w-full py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                      className={`w-full py-2.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                         activePlan === 'agency'
                           ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50'
                           : 'bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200'
                       }`}
                     >
-                      {activePlan === 'agency' ? 'Active Plan' : 'Upgrade to Agency'}
+                      {activePlan === 'agency' ? 'Current Plan' : isTrial ? 'Subscribe to Agency (₹2,499)' : 'Upgrade to Agency'}
                     </button>
                   </div>
                 </div>
