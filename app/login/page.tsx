@@ -51,7 +51,7 @@ export default function LoginPage() {
         createdAt: existingUser?.createdAt || new Date().toISOString(),
         plan: isAdmin ? 'agency' : existingUser?.plan || 'free_trial',
         messagesUsed: existingUser?.messagesUsed || 0,
-        trialLimit: isAdmin ? 999999 : 70,
+        trialLimit: isAdmin ? 100000 : (cleanEmail === 'aditaypatil07@gmail.com' ? 100000 : (existingUser?.trialLimit || 70)),
         isAdmin,
       };
 

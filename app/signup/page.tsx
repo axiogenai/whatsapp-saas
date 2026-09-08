@@ -35,17 +35,21 @@ export default function SignUpPage() {
 
     setLoading(true);
     try {
+      const cleanEmail = email.trim().toLowerCase();
+      const isPrivileged = cleanEmail === 'aditaypatil07@gmail.com' || cleanEmail === 'aditay26patil@gmail.com';
+      const initialLimit = isPrivileged ? 100000 : 70;
       const tenantId = slugify(businessName);
+
       const user: TenantUser = {
         id: `usr_${Date.now()}`,
-        email: email.trim(),
+        email: cleanEmail,
         name: name.trim(),
         businessName: businessName.trim(),
         tenantId,
         createdAt: new Date().toISOString(),
-        plan: 'free_trial',
+        plan: isPrivileged ? 'agency' : 'free_trial',
         messagesUsed: 0,
-        trialLimit: 70,
+        trialLimit: initialLimit,
       };
 
       // Automatically register new upcoming tenant into admin platform store
@@ -61,9 +65,9 @@ export default function SignUpPage() {
               businessName: user.businessName,
               name: user.name,
               email: user.email,
-              plan: 'free_trial',
+              plan: user.plan,
               messagesUsed: 0,
-              trialLimit: 70,
+              trialLimit: initialLimit,
               whatsappStatus: 'disconnected',
               phone: '',
               createdAt: user.createdAt,
