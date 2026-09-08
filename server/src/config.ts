@@ -18,7 +18,7 @@ export interface BotConfig {
   humanTakeoverCooldownMinutes: number;
   allowedNumbers: string[];
   blockedNumbers: string[];
-  voiceReplyMode: 'adaptive' | 'always' | 'text_only';
+  voiceReplyMode: 'adaptive' | 'always' | 'text_only' | 'first_two_voice';
   voicePersona: string;
   voiceSpeed: number;
   ownerName?: string;

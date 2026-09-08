@@ -24,7 +24,7 @@ export interface TenantBotConfig {
   humanTakeoverCooldownMinutes: number;
   hasGroqApiKey?: boolean;
   maskedGroqApiKey?: string;
-  voiceReplyMode?: 'adaptive' | 'always' | 'text_only';
+  voiceReplyMode?: 'adaptive' | 'always' | 'text_only' | 'first_two_voice';
   voicePersona?: string;
   voiceSpeed?: number;
 }

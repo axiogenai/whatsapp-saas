@@ -53,6 +53,9 @@ const debounceBuffers = new Map<
 // Call reply timestamps: "tenantId:jid" -> lastReplyTimestamp (prevent spamming on multiple rings)
 const callReplyTimestamps = new Map<string, number>();
 
+// Voice reply counter per contact: "tenantId:jid" -> number of voice notes sent
+const tenantVoiceReplyCounts = new Map<string, number>();
+
 // Telemetry logs keyed per tenant: tenantId -> TelemetryMessage[] (capped at 100 per tenant)
 const tenantTelemetries = new Map<string, TelemetryMessage[]>();
 const MAX_LOGS_PER_TENANT = 100;
@@ -398,11 +401,24 @@ async function processDebouncedMessage(tenantId: string, jid: string): Promise<v
 
   // Determine whether to send voice reply:
   // - 'always': all replies are spoken
+  // - 'first_two_voice': first 2 bot replies to this contact are voice notes, thereafter text
   // - 'adaptive': replies as voice note if user spoke into mic (voice note)
   // - 'text_only': text only
-  const shouldSendVoice =
-    config.voiceReplyMode === 'always' ||
-    ((config.voiceReplyMode === 'adaptive' || !config.voiceReplyMode) && wasVoiceInput);
+  const voiceKey = getKey(tenantId, jid);
+  const voiceSentCount = tenantVoiceReplyCounts.get(voiceKey) || 0;
+
+  let shouldSendVoice = false;
+  if (config.voiceReplyMode === 'always') {
+    shouldSendVoice = true;
+  } else if (config.voiceReplyMode === 'first_two_voice') {
+    // First 2 bot replies to this contact are voice notes, thereafter text
+    shouldSendVoice = voiceSentCount < 2;
+  } else if (config.voiceReplyMode === 'text_only') {
+    shouldSendVoice = false;
+  } else {
+    // Default 'adaptive': speak if user spoke
+    shouldSendVoice = wasVoiceInput;
+  }
 
   // Send typing or recording indicator
   try {
@@ -441,6 +457,8 @@ async function processDebouncedMessage(tenantId: string, jid: string): Promise<v
         await dispatchers.sendAudioMsg(jid, audioBuffer);
         await dispatchers.sendPresence('paused', jid);
 
+        tenantVoiceReplyCounts.set(voiceKey, voiceSentCount + 1);
+
         addTenantTelemetry(tenantId, {
           id: `bot-voice-${Date.now()}`,
           tenantId,
@@ -452,7 +470,7 @@ async function processDebouncedMessage(tenantId: string, jid: string): Promise<v
           isBotReply: true,
         });
 
-        console.log(`[Bot Voice Reply Sent] Tenant '${tenantId}' to ${jid}: "${aiResponse.substring(0, 60)}..."`);
+        console.log(`[Bot Voice Reply Sent] Tenant '${tenantId}' to ${jid} (count: ${voiceSentCount + 1}): "${aiResponse.substring(0, 60)}..."`);
         return;
       } else {
         console.warn(`[Voice Fallback] Speech synthesis returned null. Falling back to text message for ${jid}.`);

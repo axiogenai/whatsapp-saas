@@ -1490,16 +1490,19 @@ CRITICAL WHATSAPP RULES:
                         onChange={(e) => setConfig({ ...config, voiceReplyMode: e.target.value as any })}
                         className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-zinc-600 cursor-pointer"
                       >
-                        <option value="adaptive">Adaptive (Voice note if user sent voice)</option>
+                        <option value="first_two_voice">First 2 Voice Notes, Then Text (Recommended)</option>
                         <option value="always">Always Speak (Voice note for every reply)</option>
+                        <option value="adaptive">Adaptive (Voice note if user sent voice)</option>
                         <option value="text_only">Text Only (Mute Voice Notes)</option>
                       </select>
                       <p className="text-[10px] text-zinc-500 mt-1">
-                        {config.voiceReplyMode === 'always'
+                        {config.voiceReplyMode === 'first_two_voice'
+                          ? 'Recommended: Sends first 2 replies to any contact as voice notes to build rapport, followed by fast text messages.'
+                          : config.voiceReplyMode === 'always'
                           ? 'Bot converts all responses into native WhatsApp PTT voice notes.'
                           : config.voiceReplyMode === 'text_only'
                           ? 'Bot only responds via text messages.'
-                          : 'Recommended: Responds via voice when client speaks, and text when they text.'}
+                          : 'Responds via voice when client speaks, and text when they text.'}
                       </p>
                     </div>
 
