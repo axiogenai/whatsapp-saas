@@ -294,6 +294,10 @@ app.get('/api/admin/tenants', async (req: Request, res: Response) => {
     const defaultConfigFile = path.join(dataDir, 'bot-config.json');
     const tenantIds = new Set<string>();
 
+    if (fs.existsSync(defaultConfigFile)) {
+      tenantIds.add('default');
+    }
+
     if (fs.existsSync(tenantsDir)) {
       const files = fs.readdirSync(tenantsDir);
       for (const file of files) {
@@ -342,12 +346,12 @@ app.get('/api/admin/tenants', async (req: Request, res: Response) => {
       tenantList.push({
         id: `usr_${tid}`,
         tenantId: tid,
-        businessName: config.businessName || (tid === 'default' ? 'Team Axiogen' : tid),
-        name: config.ownerName || config.botName || (tid === 'default' ? 'Team Axiogen Admin' : 'Owner'),
-        email: config.ownerEmail || (tid === 'default' ? 'team@axiogen.in' : `${tid}@axiogen.in`),
+        businessName: config.businessName || (tid === 'default' ? 'Team Axiogen (Admin)' : 'Team Axiogen (Primary)'),
+        name: config.ownerName || config.botName || (tid === 'default' ? 'Aditya Patil (Admin)' : 'Aditya Patil'),
+        email: config.ownerEmail || 'aditay26patil@gmail.com',
         plan: config.plan || 'free_trial',
         messagesUsed: telemetry.length,
-        trialLimit: config.trialLimit || (tid === 'default' ? 10000 : tid === 'aditaypatil07' ? 2000 : 70),
+        trialLimit: config.trialLimit || 100000,
         whatsappStatus: isConnected ? 'connected' : (state.status || 'disconnected'),
         phone: phoneDisplay,
         contactsCount: contacts.length,
