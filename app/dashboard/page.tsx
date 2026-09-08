@@ -38,6 +38,8 @@ import {
   Download,
   Terminal,
   ExternalLink,
+  Receipt,
+  Printer,
 } from 'lucide-react';
 import { getStoredUser, setStoredUser, clearStoredUser } from '@/lib/auth';
 import { TenantUser, TenantSessionStatus, TenantBotConfig, ChatMessage, ChatContact } from '@/lib/types';
@@ -91,6 +93,25 @@ export default function DashboardPage() {
   // Subscription State (Free Trial by default with 70 AI messages)
   const [activePlan, setActivePlan] = useState<'free_trial' | 'starter' | 'pro' | 'agency'>('free_trial');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [initiatingPlan, setInitiatingPlan] = useState<'starter' | 'pro' | 'agency' | null>(null);
+  const [lastTxnId, setLastTxnId] = useState<string>('TXN_PP_' + Date.now().toString().slice(-6));
+  const [paymentModal, setPaymentModal] = useState<{
+    type: 'success' | 'failed' | 'pending';
+    title: string;
+    message: string;
+    txn?: string;
+    plan?: string;
+    amount?: string;
+    mode?: string;
+  } | null>(null);
+  const [invoiceModal, setInvoiceModal] = useState<{
+    invoiceNo: string;
+    date: string;
+    amount: number;
+    planName: string;
+    txnId: string;
+    paymentMode: string;
+  } | null>(null);
 
   // Toast
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
@@ -100,17 +121,101 @@ export default function DashboardPage() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  // 1. Auth check
+  // 1. Auth check & Payment Return URL listener
   useEffect(() => {
     const u = getStoredUser();
     if (!u) {
       router.push('/login');
-    } else {
-      setUser(u);
-      if (u.plan) {
-        setActivePlan(u.plan);
+      return;
+    }
+
+    // Check for payment return parameters in URL
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const payment = urlParams.get('payment');
+      const plan = urlParams.get('plan') as 'starter' | 'pro' | 'agency' | null;
+      const txn = urlParams.get('txn');
+      const reason = urlParams.get('reason');
+      const amount = urlParams.get('amount');
+      const mode = urlParams.get('mode') || 'PhonePe UPI';
+      const requestedTab = urlParams.get('tab');
+
+      if (requestedTab === 'subscription') {
+        setTab('subscription');
+      }
+
+      if (payment === 'success' && plan) {
+        const planNames: Record<'starter' | 'pro' | 'agency', string> = {
+          starter: 'Starter Plan (₹499/mo)',
+          pro: 'Business Pro (₹999/mo)',
+          agency: 'Agency / Scale (₹2,499/mo)',
+        };
+
+        const updated: TenantUser = {
+          ...u,
+          plan: plan,
+          trialLimit: undefined, // 70-message trial limit lifted!
+        };
+        setUser(updated);
+        setStoredUser(updated);
+        setActivePlan(plan);
+        if (txn) setLastTxnId(txn);
+
+        setPaymentModal({
+          type: 'success',
+          title: 'UPI Payment Confirmed! 🎉',
+          message: `Your payment was 100% verified via PhonePe Payment Gateway. Your ${planNames[plan]} is now active with full quota and zero limits.`,
+          txn: txn || undefined,
+          plan: planNames[plan],
+          amount: amount ? `₹${amount}` : plan === 'starter' ? '₹499' : plan === 'pro' ? '₹999' : '₹2,499',
+          mode,
+        });
+
+        // Clean up URL cleanly without full page refresh
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('payment');
+        cleanUrl.searchParams.delete('plan');
+        cleanUrl.searchParams.delete('txn');
+        cleanUrl.searchParams.delete('amount');
+        cleanUrl.searchParams.delete('mode');
+        cleanUrl.searchParams.delete('reason');
+        window.history.replaceState({}, '', cleanUrl.toString());
+      } else if (payment === 'failed') {
+        setUser(u);
+        setActivePlan(u.plan || 'free_trial');
+        setTab('subscription');
+        setPaymentModal({
+          type: 'failed',
+          title: 'UPI Payment Unsuccessful',
+          message: reason ? decodeURIComponent(reason) : 'The transaction was cancelled or declined by your UPI bank. No money was deducted.',
+          txn: txn || undefined,
+        });
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('payment');
+        cleanUrl.searchParams.delete('reason');
+        cleanUrl.searchParams.delete('txn');
+        window.history.replaceState({}, '', cleanUrl.toString());
+      } else if (payment === 'pending') {
+        setUser(u);
+        setActivePlan(u.plan || 'free_trial');
+        setTab('subscription');
+        setPaymentModal({
+          type: 'pending',
+          title: 'Payment In Process',
+          message: 'Your UPI transaction is being confirmed by your bank. Your plan will activate automatically as soon as confirmation is received.',
+          txn: txn || undefined,
+        });
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('payment');
+        cleanUrl.searchParams.delete('txn');
+        window.history.replaceState({}, '', cleanUrl.toString());
       } else {
-        setActivePlan('free_trial');
+        setUser(u);
+        if (u.plan) {
+          setActivePlan(u.plan);
+        } else {
+          setActivePlan('free_trial');
+        }
       }
     }
   }, [router]);
@@ -350,19 +455,68 @@ export default function DashboardPage() {
     showToast(`Loaded ${type} persona template.`, 'success');
   };
 
-  const handleSwitchPlan = (newPlan: 'starter' | 'pro' | 'agency') => {
-    setActivePlan(newPlan);
-    if (user) {
-      const updated: TenantUser = { ...user, plan: newPlan };
-      setUser(updated);
-      setStoredUser(updated);
+  const handleInitiatePhonePePayment = async (planToBuy: 'starter' | 'pro' | 'agency') => {
+    if (!user) return;
+    setInitiatingPlan(planToBuy);
+    try {
+      const res = await fetch('/api/billing/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plan: planToBuy,
+          tenantId: user.tenantId,
+          email: user.email,
+          customerName: user.name,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success && data.redirectUrl) {
+        showToast('Connecting to PhonePe UPI Gateway...', 'success');
+        window.location.href = data.redirectUrl;
+      } else {
+        showToast(data.error || 'Failed to initiate UPI payment session.', 'error');
+        setInitiatingPlan(null);
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Network error connecting to payment gateway.', 'error');
+      setInitiatingPlan(null);
     }
-    const planNames = {
-      starter: 'Starter Plan (₹499/mo)',
-      pro: 'Business Pro (₹999/mo)',
-      agency: 'Agency / Scale (₹2,499/mo)',
-    };
-    showToast(`Subscribed to ${planNames[newPlan]}. Free trial limit removed! Instant UPI active.`, 'success');
+  };
+
+  const handleVerifyPendingStatus = async (txnId: string) => {
+    showToast('Checking PhonePe bank confirmation...', 'success');
+    try {
+      const res = await fetch(`/api/billing/status?txn=${encodeURIComponent(txnId)}`);
+      const data = await res.json();
+      if (data.status === 'SUCCESS') {
+        const resolvedPlan = data.plan || 'starter';
+        if (user) {
+          const updated: TenantUser = { ...user, plan: resolvedPlan, trialLimit: undefined };
+          setUser(updated);
+          setStoredUser(updated);
+        }
+        setActivePlan(resolvedPlan);
+        setPaymentModal({
+          type: 'success',
+          title: 'UPI Payment Confirmed! 🎉',
+          message: `PhonePe status confirmed. Your plan is active and unlimited.`,
+          txn: txnId,
+        });
+      } else if (data.status === 'FAILED') {
+        setPaymentModal({
+          type: 'failed',
+          title: 'Payment Failed',
+          message: data.message || 'Payment was declined by your UPI bank.',
+          txn: txnId,
+        });
+      } else {
+        showToast('Payment still pending confirmation from bank. Please check back shortly.', 'error');
+      }
+    } catch {
+      showToast('Could not verify status at this moment.', 'error');
+    }
   };
 
   if (!user) {
@@ -1477,15 +1631,26 @@ export default function DashboardPage() {
                     </div>
 
                     <button
-                      onClick={() => handleSwitchPlan('starter')}
-                      disabled={activePlan === 'starter'}
-                      className={`w-full py-2.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                      onClick={() => handleInitiatePhonePePayment('starter')}
+                      disabled={activePlan === 'starter' || initiatingPlan !== null}
+                      className={`w-full py-2.5 rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
                         activePlan === 'starter'
                           ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50'
                           : 'bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200'
                       }`}
                     >
-                      {activePlan === 'starter' ? 'Current Plan' : isTrial ? 'Subscribe to Starter (₹499)' : 'Switch to Starter'}
+                      {initiatingPlan === 'starter' ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-400" />
+                          <span>Connecting PhonePe UPI...</span>
+                        </>
+                      ) : activePlan === 'starter' ? (
+                        'Current Plan'
+                      ) : isTrial ? (
+                        'Subscribe to Starter (₹499)'
+                      ) : (
+                        'Switch to Starter'
+                      )}
                     </button>
                   </div>
 
@@ -1524,15 +1689,26 @@ export default function DashboardPage() {
                     </div>
 
                     <button
-                      onClick={() => handleSwitchPlan('pro')}
-                      disabled={activePlan === 'pro'}
-                      className={`w-full py-2.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                      onClick={() => handleInitiatePhonePePayment('pro')}
+                      disabled={activePlan === 'pro' || initiatingPlan !== null}
+                      className={`w-full py-2.5 rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
                         activePlan === 'pro'
                           ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50'
                           : 'bg-white hover:bg-zinc-200 text-zinc-950 font-medium shadow-sm'
                       }`}
                     >
-                      {activePlan === 'pro' ? 'Current Plan' : isTrial ? 'Subscribe to Pro (₹999)' : 'Switch to Pro'}
+                      {initiatingPlan === 'pro' ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-900" />
+                          <span>Connecting PhonePe UPI...</span>
+                        </>
+                      ) : activePlan === 'pro' ? (
+                        'Current Plan'
+                      ) : isTrial ? (
+                        'Subscribe to Pro (₹999)'
+                      ) : (
+                        'Switch to Pro'
+                      )}
                     </button>
                   </div>
 
@@ -1568,15 +1744,26 @@ export default function DashboardPage() {
                     </div>
 
                     <button
-                      onClick={() => handleSwitchPlan('agency')}
-                      disabled={activePlan === 'agency'}
-                      className={`w-full py-2.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                      onClick={() => handleInitiatePhonePePayment('agency')}
+                      disabled={activePlan === 'agency' || initiatingPlan !== null}
+                      className={`w-full py-2.5 rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
                         activePlan === 'agency'
                           ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50'
                           : 'bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200'
                       }`}
                     >
-                      {activePlan === 'agency' ? 'Current Plan' : isTrial ? 'Subscribe to Agency (₹2,499)' : 'Upgrade to Agency'}
+                      {initiatingPlan === 'agency' ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-400" />
+                          <span>Connecting PhonePe UPI...</span>
+                        </>
+                      ) : activePlan === 'agency' ? (
+                        'Current Plan'
+                      ) : isTrial ? (
+                        'Subscribe to Agency (₹2,499)'
+                      ) : (
+                        'Upgrade to Agency'
+                      )}
                     </button>
                   </div>
                 </div>
@@ -1585,47 +1772,63 @@ export default function DashboardPage() {
               {/* Supported Payment Channels & Invoices */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 bg-zinc-900/30 border border-zinc-800 rounded-xl space-y-2.5">
-                  <h5 className="font-semibold text-xs text-zinc-300">Indian Payment Channels</h5>
+                  <div className="flex items-center justify-between">
+                    <h5 className="font-semibold text-xs text-zinc-300">Indian Payment Channels (PhonePe PG)</h5>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950/80 border border-emerald-800 text-emerald-400 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      100% Verified UPI Gateway
+                    </span>
+                  </div>
                   <p className="text-xs text-zinc-400">
-                    Auto-debit and on-demand payment via Google Pay, PhonePe, Paytm, BHIM UPI, NetBanking, and RuPay/Visa/Mastercard.
+                    Real-time payment and instant subscription activation via Google Pay, PhonePe, Paytm, BHIM UPI, QR code scan, RuPay / Cards, and NetBanking.
                   </p>
                   <div className="flex flex-wrap gap-2 pt-1 font-mono text-[10px]">
-                    <span className="px-2 py-1 rounded bg-zinc-950 border border-zinc-800 text-zinc-300">UPI Autopay</span>
-                    <span className="px-2 py-1 rounded bg-zinc-950 border border-zinc-800 text-zinc-300">RuPay Cards</span>
-                    <span className="px-2 py-1 rounded bg-zinc-950 border border-zinc-800 text-zinc-300">NetBanking</span>
-                    <span className="px-2 py-1 rounded bg-zinc-950 border border-zinc-800 text-zinc-300">GST Input Credit</span>
+                    <span className="px-2 py-1 rounded bg-zinc-950 border border-zinc-800 text-emerald-400 flex items-center gap-1">
+                      <Check className="w-3 h-3" /> UPI AutoPay / Collect
+                    </span>
+                    <span className="px-2 py-1 rounded bg-zinc-950 border border-zinc-800 text-zinc-300">Dynamic UPI QR</span>
+                    <span className="px-2 py-1 rounded bg-zinc-950 border border-zinc-800 text-zinc-300">RuPay & Cards</span>
+                    <span className="px-2 py-1 rounded bg-zinc-950 border border-zinc-800 text-zinc-300">GST Input Credit (18%)</span>
                   </div>
                 </div>
 
                 <div className="p-4 bg-zinc-900/30 border border-zinc-800 rounded-xl space-y-2.5">
-                  <h5 className="font-semibold text-xs text-zinc-300">Recent Tax Invoices</h5>
+                  <div className="flex items-center justify-between">
+                    <h5 className="font-semibold text-xs text-zinc-300">Tax Invoices & Receipts</h5>
+                    <span className="text-[10px] font-mono text-zinc-500">GST Compliant</span>
+                  </div>
                   <div className="space-y-1.5 text-xs font-mono">
-                    <div className="flex items-center justify-between p-2 rounded bg-zinc-950 border border-zinc-800/80">
-                      <div>
-                        <span className="text-zinc-200 block">INV-2026-0891</span>
-                        <span className="text-[10px] text-zinc-500">01 Sep 2026 • ₹999</span>
+                    {activePlan !== 'free_trial' ? (
+                      <div className="flex items-center justify-between p-2.5 rounded bg-zinc-950 border border-emerald-900/40">
+                        <div>
+                          <span className="text-zinc-200 block font-medium">INV-2026-{lastTxnId.slice(-6).toUpperCase()}</span>
+                          <span className="text-[10px] text-zinc-400">
+                            Current Active Cycle • ₹{activePlan === 'starter' ? '499' : activePlan === 'pro' ? '999' : '2,499'} (PhonePe UPI)
+                          </span>
+                        </div>
+                        <button
+                          onClick={() =>
+                            setInvoiceModal({
+                              invoiceNo: `INV-2026-${lastTxnId.slice(-6).toUpperCase()}`,
+                              date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+                              amount: activePlan === 'starter' ? 499 : activePlan === 'pro' ? 999 : 2499,
+                              planName: activePlan === 'starter' ? 'Starter Plan' : activePlan === 'pro' ? 'Business Pro' : 'Agency / Scale',
+                              txnId: lastTxnId,
+                              paymentMode: 'PhonePe UPI',
+                            })
+                          }
+                          className="px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white flex items-center gap-1 text-[11px]"
+                          title="View Tax Invoice"
+                        >
+                          <Receipt className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>View Invoice</span>
+                        </button>
                       </div>
-                      <button
-                        onClick={() => showToast('Downloading invoice INV-2026-0891.pdf...', 'success')}
-                        className="p-1 text-zinc-400 hover:text-white"
-                        title="Download PDF"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between p-2 rounded bg-zinc-950 border border-zinc-800/80">
-                      <div>
-                        <span className="text-zinc-200 block">INV-2026-0542</span>
-                        <span className="text-[10px] text-zinc-500">01 Aug 2026 • ₹999</span>
+                    ) : (
+                      <div className="p-3 rounded bg-zinc-950/60 border border-zinc-800/80 text-center text-zinc-500 text-[11px]">
+                        No paid invoices yet. Active plan is Free Trial (70 AI messages).
                       </div>
-                      <button
-                        onClick={() => showToast('Downloading invoice INV-2026-0542.pdf...', 'success')}
-                        className="p-1 text-zinc-400 hover:text-white"
-                        title="Download PDF"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1768,6 +1971,246 @@ export default function DashboardPage() {
           )}
         </main>
       </div>
+
+      {/* MODAL 1: PHONEPE PAYMENT STATUS DIALOG (Success / Failed / Pending) */}
+      {paymentModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150">
+            <button
+              onClick={() => setPaymentModal(null)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div
+                className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                  paymentModal.type === 'success'
+                    ? 'bg-emerald-950/80 border border-emerald-800/80 text-emerald-400'
+                    : paymentModal.type === 'failed'
+                    ? 'bg-rose-950/80 border border-rose-800/80 text-rose-400'
+                    : 'bg-amber-950/80 border border-amber-800/80 text-amber-300'
+                }`}
+              >
+                {paymentModal.type === 'success' && <CheckCircle2 className="w-6 h-6" />}
+                {paymentModal.type === 'failed' && <AlertCircle className="w-6 h-6" />}
+                {paymentModal.type === 'pending' && <Clock className="w-6 h-6" />}
+              </div>
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
+                  {paymentModal.type === 'success'
+                    ? 'PhonePe 100% Verified'
+                    : paymentModal.type === 'failed'
+                    ? 'PhonePe Transaction Declined'
+                    : 'Awaiting Bank Confirmation'}
+                </span>
+                <h3 className="text-lg font-semibold text-zinc-100">{paymentModal.title}</h3>
+              </div>
+            </div>
+
+            <p className="text-xs text-zinc-300 leading-relaxed mb-4">{paymentModal.message}</p>
+
+            {paymentModal.txn && (
+              <div className="p-3 bg-zinc-950 border border-zinc-800 rounded-xl space-y-1.5 text-xs font-mono mb-5">
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Transaction ID:</span>
+                  <span className="text-zinc-200 truncate max-w-[200px]">{paymentModal.txn}</span>
+                </div>
+                {paymentModal.plan && (
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500">Subscribed Plan:</span>
+                    <span className="text-emerald-400 font-semibold">{paymentModal.plan}</span>
+                  </div>
+                )}
+                {paymentModal.amount && (
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500">Amount Billed:</span>
+                    <span className="text-zinc-200 font-semibold">{paymentModal.amount}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Payment Gateway:</span>
+                  <span className="text-zinc-300">PhonePe PG (UPI / RuPay)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Status:</span>
+                  <span
+                    className={`font-semibold ${
+                      paymentModal.type === 'success'
+                        ? 'text-emerald-400'
+                        : paymentModal.type === 'failed'
+                        ? 'text-rose-400'
+                        : 'text-amber-400'
+                    }`}
+                  >
+                    {paymentModal.type === 'success' ? 'COMPLETED (Active)' : paymentModal.type === 'failed' ? 'FAILED' : 'PENDING'}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2.5">
+              {paymentModal.type === 'pending' && paymentModal.txn && (
+                <button
+                  onClick={() => handleVerifyPendingStatus(paymentModal.txn!)}
+                  className="flex-1 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-medium text-xs flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Check Status Now</span>
+                </button>
+              )}
+              {paymentModal.type === 'failed' && (
+                <button
+                  onClick={() => {
+                    setPaymentModal(null);
+                    setTab('subscription');
+                  }}
+                  className="flex-1 py-2.5 rounded-lg bg-white hover:bg-zinc-200 text-zinc-950 font-medium text-xs transition-colors"
+                >
+                  Retry Subscription via UPI
+                </button>
+              )}
+              <button
+                onClick={() => setPaymentModal(null)}
+                className="flex-1 py-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium text-xs transition-colors"
+              >
+                {paymentModal.type === 'success' ? 'Continue to Workspace' : 'Close'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: PRINTABLE GST TAX INVOICE */}
+      {invoiceModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="max-w-lg w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-2xl relative my-8">
+            <button
+              onClick={() => setInvoiceModal(null)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Invoice Header */}
+            <div className="border-b border-zinc-800 pb-5 mb-5 flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-6 h-6 rounded bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-200">
+                    <Bot className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="font-bold text-sm tracking-wide text-zinc-100">
+                    AXIOGEN <span className="text-zinc-500 font-normal">SaaS</span>
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-400">Axiogen Technologies Private Limited</p>
+                <p className="text-[10px] text-zinc-500 font-mono">GSTIN: 27AABCA9182F1Z4 • SAC: 998313</p>
+              </div>
+
+              <div className="text-right font-mono">
+                <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-950/80 border border-emerald-800 text-emerald-400 inline-block mb-1">
+                  PAID INVOICE
+                </span>
+                <div className="text-xs text-zinc-200 font-semibold">{invoiceModal.invoiceNo}</div>
+                <div className="text-[10px] text-zinc-500">Date: {invoiceModal.date}</div>
+              </div>
+            </div>
+
+            {/* Bill To */}
+            <div className="bg-zinc-950 border border-zinc-800/80 rounded-xl p-3.5 mb-5 text-xs">
+              <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider block mb-1">
+                Billed To
+              </span>
+              <div className="font-medium text-zinc-200">{user?.businessName || 'Business Workspace'}</div>
+              <div className="text-zinc-400 text-[11px] mt-0.5">{user?.email}</div>
+              <div className="text-[10px] font-mono text-zinc-500 mt-1">Tenant ID: {user?.tenantId}</div>
+            </div>
+
+            {/* Line Items Table */}
+            <div className="border border-zinc-800 rounded-xl overflow-hidden mb-5 text-xs font-mono">
+              <div className="grid grid-cols-12 bg-zinc-950 p-2.5 text-zinc-400 border-b border-zinc-800 text-[11px]">
+                <div className="col-span-7">Description</div>
+                <div className="col-span-2 text-center">SAC</div>
+                <div className="col-span-3 text-right">Amount</div>
+              </div>
+              <div className="grid grid-cols-12 p-3 text-zinc-300 border-b border-zinc-800/60 bg-zinc-900/40">
+                <div className="col-span-7">
+                  <span className="font-semibold text-zinc-100 block">{invoiceModal.planName}</span>
+                  <span className="text-[10px] text-zinc-500 font-sans">Monthly WhatsApp AI automation service</span>
+                </div>
+                <div className="col-span-2 text-center text-zinc-400">998313</div>
+                <div className="col-span-3 text-right font-semibold">
+                  ₹{(invoiceModal.amount / 1.18).toFixed(2)}
+                </div>
+              </div>
+              <div className="p-3 bg-zinc-950 space-y-1 text-[11px]">
+                <div className="flex justify-between text-zinc-400">
+                  <span>Taxable Base Value:</span>
+                  <span>₹{(invoiceModal.amount / 1.18).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-zinc-400">
+                  <span>CGST (9.0%):</span>
+                  <span>₹{((invoiceModal.amount / 1.18) * 0.09).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-zinc-400">
+                  <span>SGST (9.0%):</span>
+                  <span>₹{((invoiceModal.amount / 1.18) * 0.09).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between pt-2 border-t border-zinc-800 text-zinc-100 font-bold text-xs">
+                  <span>Total Amount Paid (INR):</span>
+                  <span className="text-emerald-400 font-mono">₹{invoiceModal.amount}.00</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Details */}
+            <div className="p-3 bg-zinc-950/60 border border-zinc-800/80 rounded-xl mb-6 text-[11px] font-mono text-zinc-400 space-y-1">
+              <div>Payment Mode: <span className="text-zinc-200">PhonePe PG • UPI Autopay</span></div>
+              <div className="truncate">Reference / Txn: <span className="text-zinc-200">{invoiceModal.txnId}</span></div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => window.print()}
+                className="flex-1 py-2.5 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-medium text-xs flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Print / Download PDF</span>
+              </button>
+              <button
+                onClick={() => setInvoiceModal(null)}
+                className="px-4 py-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: INITIATING PAYMENT SPINNER OVERLAY */}
+      {initiatingPlan && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="max-w-sm w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-center space-y-4 shadow-2xl">
+            <div className="w-12 h-12 rounded-2xl bg-zinc-950 border border-zinc-800 flex items-center justify-center mx-auto text-emerald-400">
+              <Loader2 className="w-6 h-6 animate-spin" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-zinc-100 text-sm">Securing PhonePe UPI Session</h3>
+              <p className="text-xs text-zinc-400 mt-1">
+                Redirecting to secure Indian Payment Gateway (Google Pay, PhonePe, Paytm, BHIM QR)...
+              </p>
+            </div>
+            <div className="pt-2 flex items-center justify-center gap-2 font-mono text-[10px] text-zinc-500">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>256-bit Encrypted Bank Connection</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
