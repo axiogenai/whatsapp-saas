@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Bot, Lock, Mail, ArrowRight, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Bot, Lock, Mail, ArrowRight, AlertCircle, Loader2, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { getStoredUser, setStoredUser, slugify } from '@/lib/auth';
 import { TenantUser } from '@/lib/types';
 
@@ -16,6 +16,10 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isAdminEmail =
+    email.trim().toLowerCase() === 'aditay26patil@gmail.com' ||
+    email.trim().toLowerCase() === 'aditya26patil@gmail.com';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -26,25 +30,38 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
+      const cleanEmail = email.trim().toLowerCase();
+      const isAdmin =
+        cleanEmail === 'aditay26patil@gmail.com' ||
+        cleanEmail === 'aditya26patil@gmail.com';
+
       const derivedTenant = customTenant.trim()
         ? slugify(customTenant)
-        : slugify(email.split('@')[0]) || 'default';
+        : slugify(cleanEmail.split('@')[0]) || 'default';
 
       const existingUser = getStoredUser();
       const user: TenantUser = {
-        id: existingUser?.id || `usr_${Date.now()}`,
-        email: email.trim(),
-        name: existingUser?.name || email.split('@')[0].toUpperCase(),
-        businessName: customTenant.trim() || existingUser?.businessName || `${email.split('@')[0].toUpperCase()} Bot`,
-        tenantId: derivedTenant,
+        id: existingUser?.id || (isAdmin ? 'admin_master' : `usr_${Date.now()}`),
+        email: cleanEmail,
+        name: isAdmin ? 'Platform Administrator' : existingUser?.name || cleanEmail.split('@')[0].toUpperCase(),
+        businessName: isAdmin
+          ? 'Axiogen Platform Admin'
+          : customTenant.trim() || existingUser?.businessName || `${cleanEmail.split('@')[0].toUpperCase()} Bot`,
+        tenantId: isAdmin ? 'platform-admin' : derivedTenant,
         createdAt: existingUser?.createdAt || new Date().toISOString(),
-        plan: existingUser?.plan || 'free_trial',
+        plan: isAdmin ? 'agency' : existingUser?.plan || 'free_trial',
         messagesUsed: existingUser?.messagesUsed || 0,
-        trialLimit: 70,
+        trialLimit: isAdmin ? 999999 : 70,
+        isAdmin,
       };
 
       setStoredUser(user);
-      router.push('/dashboard');
+
+      if (isAdmin) {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err: any) {
       setError(err.message || 'Login failed.');
     } finally {
@@ -96,6 +113,12 @@ export default function LoginPage() {
                   className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
                 />
               </div>
+              {isAdminEmail && (
+                <div className="mt-2 p-2.5 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>👑 Super Admin recognized. Will open Platform Control Center.</span>
+                </div>
+              )}
             </div>
 
             <div>
@@ -151,7 +174,7 @@ export default function LoginPage() {
                 </>
               ) : (
                 <>
-                  <span>Sign In</span>
+                  <span>{isAdminEmail ? 'Sign In as Super Admin' : 'Sign In'}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </>
               )}

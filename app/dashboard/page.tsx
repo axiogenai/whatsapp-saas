@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Bot,
@@ -534,6 +535,10 @@ export default function DashboardPage() {
   const trialLimit = user.trialLimit || 70;
   const trialRemaining = Math.max(0, trialLimit - totalAiMessages);
   const isTrialExhausted = isTrial && totalAiMessages >= trialLimit;
+  const isSuperAdminUser =
+    user?.isAdmin === true ||
+    user?.email?.toLowerCase().trim() === 'aditay26patil@gmail.com' ||
+    user?.email?.toLowerCase().trim() === 'aditya26patil@gmail.com';
 
   const filteredContacts = contacts.filter((c) => {
     const q = contactSearch.toLowerCase().trim();
@@ -873,6 +878,16 @@ export default function DashboardPage() {
                   : 'Disconnected'}
               </span>
             </div>
+
+            {isSuperAdminUser && (
+              <Link
+                href="/admin"
+                className="px-2.5 py-1 rounded-md bg-amber-950/80 hover:bg-amber-900/80 border border-amber-800/80 text-amber-300 font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline">Admin Center</span>
+              </Link>
+            )}
 
             <button
               onClick={() => {

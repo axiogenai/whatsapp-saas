@@ -19,6 +19,9 @@ export function setStoredUser(user: TenantUser): void {
   // Also store in cookie for SSR checks
   document.cookie = `wa_tenant_id=${encodeURIComponent(user.tenantId)}; path=/; max-age=2592000; SameSite=Lax`;
   document.cookie = `wa_user_email=${encodeURIComponent(user.email)}; path=/; max-age=2592000; SameSite=Lax`;
+  if (user.isAdmin) {
+    document.cookie = `wa_is_admin=true; path=/; max-age=2592000; SameSite=Lax`;
+  }
 }
 
 export function clearStoredUser(): void {
@@ -26,6 +29,7 @@ export function clearStoredUser(): void {
   localStorage.removeItem(STORAGE_KEY);
   document.cookie = 'wa_tenant_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   document.cookie = 'wa_user_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  document.cookie = 'wa_is_admin=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
 }
 
 export function slugify(str: string): string {

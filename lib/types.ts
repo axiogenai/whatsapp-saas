@@ -8,6 +8,7 @@ export interface TenantUser {
   plan?: 'free_trial' | 'starter' | 'pro' | 'agency';
   messagesUsed?: number;
   trialLimit?: number;
+  isAdmin?: boolean;
 }
 
 export interface TenantBotConfig {
