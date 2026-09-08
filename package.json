@@ -10,7 +10,6 @@
                 },
     "dependencies":  {
                          "@number-flow/react":  "^0.6.2",
-                         "@supabase/supabase-js":  "^2.110.9",
                          "@types/d3-geo":  "^3.1.1",
                          "@types/geojson":  "^7946.0.16",
                          "@types/topojson-client":  "^3.1.5",
