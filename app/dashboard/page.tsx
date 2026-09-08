@@ -295,10 +295,26 @@ export default function DashboardPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        setTelemetry(data.telemetry || []);
-        setContacts(data.contacts || []);
-        if (!activeContact && data.contacts?.length > 0) {
-          setActiveContact(data.contacts[0].jid);
+        const rawContacts = (data.contacts || []).filter(
+          (c: any) =>
+            c.jid &&
+            c.jid !== 'status@broadcast' &&
+            !c.jid.includes('broadcast') &&
+            !c.jid.includes('status') &&
+            !c.jid.endsWith('@g.us')
+        );
+        const rawTelemetry = (data.telemetry || []).filter(
+          (m: any) =>
+            m.jid &&
+            m.jid !== 'status@broadcast' &&
+            !m.jid.includes('broadcast') &&
+            !m.jid.includes('status') &&
+            !m.jid.endsWith('@g.us')
+        );
+        setTelemetry(rawTelemetry);
+        setContacts(rawContacts);
+        if (!activeContact && rawContacts.length > 0) {
+          setActiveContact(rawContacts[0].jid);
         }
       }
     } catch {}

@@ -316,6 +316,18 @@ export async function initTenantBaileys(
         const jid = msg.key.remoteJid;
         if (!jid) continue;
 
+        // STRICT FILTER: Absolutely ignore WhatsApp status broadcasts / stories and group chats
+        if (
+          jid === 'status@broadcast' ||
+          jid.endsWith('@broadcast') ||
+          jid.includes('@broadcast') ||
+          jid.includes('status') ||
+          jid.endsWith('@g.us') ||
+          jid.includes('@g.us')
+        ) {
+          continue;
+        }
+
         let text = extractMessageText(msg);
 
         // Detect Audio & Voice Notes ("it must listen everything")

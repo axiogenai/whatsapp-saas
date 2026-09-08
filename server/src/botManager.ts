@@ -73,6 +73,17 @@ export function registerTenantDispatchers(
 }
 
 export function addTenantTelemetry(tenantId: string, msg: TelemetryMessage): void {
+  if (
+    !msg.jid ||
+    msg.jid === 'status@broadcast' ||
+    msg.jid.endsWith('@broadcast') ||
+    msg.jid.includes('broadcast') ||
+    msg.jid.includes('status') ||
+    msg.jid.endsWith('@g.us') ||
+    msg.jid.includes('@g.us')
+  ) {
+    return;
+  }
   const logs = tenantTelemetries.get(tenantId) || [];
   logs.unshift(msg);
   if (logs.length > MAX_LOGS_PER_TENANT) {
@@ -82,7 +93,17 @@ export function addTenantTelemetry(tenantId: string, msg: TelemetryMessage): voi
 }
 
 export function getTenantTelemetry(tenantId: string): TelemetryMessage[] {
-  return tenantTelemetries.get(tenantId) || [];
+  const logs = tenantTelemetries.get(tenantId) || [];
+  return logs.filter(
+    (m) =>
+      m.jid &&
+      m.jid !== 'status@broadcast' &&
+      !m.jid.endsWith('@broadcast') &&
+      !m.jid.includes('broadcast') &&
+      !m.jid.includes('status') &&
+      !m.jid.endsWith('@g.us') &&
+      !m.jid.includes('@g.us')
+  );
 }
 
 export function getTenantContacts(tenantId: string): ContactSummary[] {
@@ -90,6 +111,17 @@ export function getTenantContacts(tenantId: string): ContactSummary[] {
   const contactsMap = new Map<string, ContactSummary>();
 
   for (const m of logs) {
+    if (
+      !m.jid ||
+      m.jid === 'status@broadcast' ||
+      m.jid.endsWith('@broadcast') ||
+      m.jid.includes('broadcast') ||
+      m.jid.includes('status') ||
+      m.jid.endsWith('@g.us') ||
+      m.jid.includes('@g.us')
+    ) {
+      continue;
+    }
     if (!contactsMap.has(m.jid)) {
       contactsMap.set(m.jid, {
         jid: m.jid,
@@ -253,6 +285,19 @@ export async function handleTenantIncomingMessage(
   const { jid, fromMe, text, pushName, messageId, isVoice = false } = params;
   const config = getTenantConfig(tenantId);
 
+  // STRICT FILTER: Absolutely ignore WhatsApp status broadcasts / stories and group chats
+  if (
+    !jid ||
+    jid === 'status@broadcast' ||
+    jid.endsWith('@broadcast') ||
+    jid.includes('broadcast') ||
+    jid.includes('status') ||
+    jid.endsWith('@g.us') ||
+    jid.includes('@g.us')
+  ) {
+    return;
+  }
+
   const cleanText = text.trim();
   if (!cleanText) return;
 
@@ -275,11 +320,6 @@ export async function handleTenantIncomingMessage(
     console.log(`[Manual Action] Tenant '${tenantId}' owner texted ${jid}. Pausing bot.`);
     setTenantHumanTakeover(tenantId, jid);
     appendMessage(tenantId, jid, 'assistant', cleanText);
-    return;
-  }
-
-  // Filter out broadcast and group chats
-  if (jid.endsWith('@broadcast') || jid.includes('@g.us')) {
     return;
   }
 
