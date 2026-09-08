@@ -1,0 +1,19 @@
+﻿[Unit]
+Description=Axiogen Multi-Tenant WhatsApp SaaS Gateway
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/axiogen-whatsapp-saas
+ExecStart=/usr/bin/node --max-old-space-size=768 dist/server.js
+Restart=always
+RestartSec=5s
+Environment=NODE_ENV=production
+Environment=PORT=3002
+Environment=NODE_OPTIONS=--max-old-space-size=768
+
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
