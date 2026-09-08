@@ -27,6 +27,7 @@ export interface TenantSessionStatus {
   phone?: string;
   name?: string;
   qrCodeUrl?: string;
+  qr?: string;
   pairingCode?: string;
   lastConnectedAt?: string;
   lastError?: string;

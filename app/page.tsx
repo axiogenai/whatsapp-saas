@@ -211,11 +211,14 @@ export default function LandingPage() {
       {/* Pricing / Tiers */}
       <section id="pricing" className="py-16 px-6 sm:px-12 max-w-5xl mx-auto border-t border-zinc-800/80">
         <div className="text-left mb-10">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono bg-zinc-900 border border-zinc-800 text-zinc-300 mb-3">
+            <span>🇮🇳 India Pricing • Instant UPI &amp; GST Invoicing</span>
+          </div>
           <h2 className="text-xl sm:text-2xl font-semibold text-white tracking-tight">
-            Transparent plans for every business size
+            Simple, affordable plans for Indian businesses
           </h2>
           <p className="mt-1 text-xs sm:text-sm text-zinc-400">
-            Scale from a single operational line to hundreds of enterprise numbers.
+            No expensive USD conversions or foreign transaction fees. Pay via UPI, RuPay, or NetBanking.
           </p>
         </div>
 
@@ -223,15 +226,17 @@ export default function LandingPage() {
           <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-6 flex flex-col justify-between">
             <div>
               <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider">Starter</span>
-              <div className="mt-3 mb-4">
-                <span className="text-2xl font-bold font-mono text-zinc-100">$29</span>
+              <div className="mt-3 mb-1">
+                <span className="text-2xl font-bold font-mono text-zinc-100">₹499</span>
                 <span className="text-xs text-zinc-500"> / month</span>
               </div>
+              <p className="text-[11px] text-zinc-500 mb-4 font-mono">₹16/day • Perfect for solo shops &amp; clinics</p>
               <ul className="space-y-2 text-xs text-zinc-400 mb-6">
                 <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> 1 WhatsApp Number</li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> 2,500 AI Messages/mo</li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> QR &amp; 8-Digit Pairing</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> 1,500 AI Messages/mo</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Instant QR &amp; Phone Pairing</li>
                 <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Human Takeover Console</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Instant UPI Activation</li>
               </ul>
             </div>
             <Link
@@ -243,20 +248,22 @@ export default function LandingPage() {
           </div>
 
           <div className="bg-zinc-900/60 border border-zinc-700 rounded-xl p-6 flex flex-col justify-between relative shadow-lg">
-            <span className="absolute -top-2.5 right-4 px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-800 border border-zinc-700 text-zinc-300">
+            <span className="absolute -top-2.5 right-4 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950/80 border border-emerald-800/80 text-emerald-400">
               POPULAR
             </span>
             <div>
-              <span className="text-xs font-mono text-zinc-300 uppercase tracking-wider">Pro Business</span>
-              <div className="mt-3 mb-4">
-                <span className="text-2xl font-bold font-mono text-zinc-100">$79</span>
+              <span className="text-xs font-mono text-zinc-300 uppercase tracking-wider">Business Pro</span>
+              <div className="mt-3 mb-1">
+                <span className="text-2xl font-bold font-mono text-zinc-100">₹999</span>
                 <span className="text-xs text-zinc-500"> / month</span>
               </div>
+              <p className="text-[11px] text-zinc-400 mb-4 font-mono">₹33/day • For growing businesses</p>
               <ul className="space-y-2 text-xs text-zinc-300 mb-6">
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> 3 WhatsApp Numbers</li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> 15,000 AI Messages/mo</li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Custom Knowledge Base</li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Priority Groq LPU Queues</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> 2 WhatsApp Numbers</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> 8,000 AI Messages/mo</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Custom Knowledge Base &amp; FAQ</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Sub-Second Groq LPU Speed</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> WhatsApp &amp; UPI Support</li>
               </ul>
             </div>
             <Link
@@ -269,23 +276,25 @@ export default function LandingPage() {
 
           <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-6 flex flex-col justify-between">
             <div>
-              <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider">Agency Vault</span>
-              <div className="mt-3 mb-4">
-                <span className="text-2xl font-bold font-mono text-zinc-100">$199</span>
+              <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider">Agency / Scale</span>
+              <div className="mt-3 mb-1">
+                <span className="text-2xl font-bold font-mono text-zinc-100">₹2,499</span>
                 <span className="text-xs text-zinc-500"> / month</span>
               </div>
+              <p className="text-[11px] text-zinc-500 mb-4 font-mono">₹83/day • Multi-client agencies</p>
               <ul className="space-y-2 text-xs text-zinc-400 mb-6">
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Unlimited Tenants</li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> 60,000 AI Messages/mo</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> 5 WhatsApp Numbers</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> 30,000 AI Messages/mo</li>
                 <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Full REST API &amp; Webhooks</li>
-                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Dedicated VM Deployments</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> GST Tax Invoice Reports</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-400" /> Dedicated Account Manager</li>
               </ul>
             </div>
             <Link
               href="/signup"
               className="w-full py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-center text-zinc-200 transition-colors"
             >
-              Contact Sales
+              Start Agency Plan
             </Link>
           </div>
         </div>
