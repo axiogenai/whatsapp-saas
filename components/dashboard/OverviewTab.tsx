@@ -32,11 +32,15 @@ export function OverviewTab({ status, contacts, telemetry, reminders, config, on
   const startOfDay = new Date().setHours(0, 0, 0, 0);
   
   const todayTelemetry = telemetry.filter(t => getTsMs(t.timestamp) >= startOfDay);
-  const todayMessages = todayTelemetry.length > 0 ? todayTelemetry.length : telemetry.length;
   const activeContacts = contacts.length;
-  const aiReplies = (todayTelemetry.length > 0 ? todayTelemetry : telemetry).filter(t => t.isBotReply).length;
-  const humanReplies = (todayTelemetry.length > 0 ? todayTelemetry : telemetry).filter(t => t.fromMe && !t.isBotReply).length;
+  const aiReplies = (todayTelemetry.length > 0 ? todayTelemetry : telemetry).filter(
+    t => Boolean(t.isBotReply) || (typeof t.id === 'string' && (t.id.startsWith('bot-') || t.id.startsWith('rem-')))
+  ).length;
+  const humanReplies = (todayTelemetry.length > 0 ? todayTelemetry : telemetry).filter(
+    t => t.fromMe && !t.isBotReply && !(typeof t.id === 'string' && (t.id.startsWith('bot-') || t.id.startsWith('rem-')))
+  ).length;
   const pendingTasks = reminders.filter(r => r.status !== 'completed').length;
+  const automationRate = (aiReplies + humanReplies) > 0 ? Math.round((aiReplies / (aiReplies + humanReplies)) * 100) : 100;
 
   const recentContacts = [...contacts].sort((a, b) => getTsMs(b.lastTimestamp) - getTsMs(a.lastTimestamp)).slice(0, 5);
 
@@ -78,11 +82,11 @@ export function OverviewTab({ status, contacts, telemetry, reminders, config, on
 
       <section className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {[
-          { label: 'Messages Today', value: todayMessages, delta: '+12%' },
-          { label: 'Active Contacts', value: activeContacts, delta: '+3' },
-          { label: 'AI Replies', value: aiReplies, delta: '98% automation' },
-          { label: 'Human Replies', value: humanReplies, delta: 'Needs attention' },
-          { label: 'Pending Tasks', value: pendingTasks, delta: 'View all' },
+          { label: 'AI Messages Today', value: aiReplies, delta: 'Text & Voice Notes' },
+          { label: 'Active Contacts', value: activeContacts, delta: `${contacts.length} conversations` },
+          { label: 'Automation Rate', value: `${automationRate}%`, delta: 'AI handled' },
+          { label: 'Human Takeover', value: humanReplies, delta: 'Manual replies' },
+          { label: 'Pending Tasks', value: pendingTasks, delta: 'View tasks' },
           { label: 'Avg Response', value: '~1.2s', delta: 'Lightning fast' },
         ].map((stat, i) => (
           <div key={i} className="bg-[#0F0F0F] border border-white/[0.06] rounded-2xl p-5">

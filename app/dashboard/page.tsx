@@ -12,7 +12,7 @@ import { TasksTab } from '@/components/dashboard/TasksTab';
 import { InsightsTab } from '@/components/dashboard/InsightsTab';
 import { BillingTab } from '@/components/dashboard/BillingTab';
 import { SettingsTab } from '@/components/dashboard/SettingsTab';
-import { getStoredUser, clearStoredUser } from '@/lib/auth';
+import { getStoredUser, setStoredUser, clearStoredUser } from '@/lib/auth';
 import { TenantUser, TenantBotConfig, TenantSessionStatus, ChatMessage, ChatContact } from '@/lib/types';
 import { CheckCircle2, AlertCircle, X, ShieldAlert } from 'lucide-react';
 
@@ -484,11 +484,21 @@ export default function DashboardPage() {
       ? 'connecting'
       : 'disconnected';
 
-  // Free trial limits & usage
+  // Free trial limits & usage - STRICTLY count AI messages (AI text replies + AI voice notes)
   const isOwner = user?.email?.toLowerCase().includes('aditay') || user?.email?.toLowerCase().includes('aditya');
   const trialLimit = user?.trialLimit && user.trialLimit > 70 ? user.trialLimit : (isOwner ? 100000 : (user?.trialLimit || 70));
-  const messagesUsed = Math.max(user?.messagesUsed || 0, telemetry.length);
+  const aiMessagesCount = telemetry.filter(
+    (m) => Boolean(m.isBotReply) || (typeof m.id === 'string' && (m.id.startsWith('bot-') || m.id.startsWith('rem-')))
+  ).length;
+  const messagesUsed = aiMessagesCount;
   const trialExhausted = (user?.plan === 'free_trial' || !user?.plan) && messagesUsed >= trialLimit;
+
+  // Sync updated AI count to localStorage
+  useEffect(() => {
+    if (user && user.messagesUsed !== messagesUsed) {
+      setStoredUser({ ...user, messagesUsed });
+    }
+  }, [user, messagesUsed]);
 
   return (
     <div className="flex h-screen bg-[#050505] text-zinc-100 overflow-hidden font-sans">

@@ -20,8 +20,12 @@ export function InsightsTab({ telemetry, contacts, status }: InsightsTabProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const totalMessages = telemetry.length;
-  const aiReplies = telemetry.filter((t) => t.isBotReply).length;
-  const humanMessages = telemetry.filter((t) => t.fromMe && !t.isBotReply).length;
+  const aiReplies = telemetry.filter(
+    (t) => Boolean(t.isBotReply) || (typeof t.id === 'string' && (t.id.startsWith('bot-') || t.id.startsWith('rem-')))
+  ).length;
+  const humanMessages = telemetry.filter(
+    (t) => t.fromMe && !t.isBotReply && !(typeof t.id === 'string' && (t.id.startsWith('bot-') || t.id.startsWith('rem-')))
+  ).length;
   
   const aiPercentage = totalMessages === 0 ? 0 : Math.round((aiReplies / (aiReplies + humanMessages)) * 100) || 0;
   const humanPercentage = totalMessages === 0 ? 0 : 100 - aiPercentage;

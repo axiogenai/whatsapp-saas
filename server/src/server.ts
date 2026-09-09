@@ -343,6 +343,10 @@ app.get('/api/admin/tenants', async (req: Request, res: Response) => {
 
       const isConnected = state.status === 'connected' || Boolean(state.connectedPhone);
 
+      const aiMessages = telemetry.filter(
+        (m: any) => Boolean(m.isBotReply) || (typeof m.id === 'string' && (m.id.startsWith('bot-') || m.id.startsWith('rem-')))
+      );
+
       tenantList.push({
         id: `usr_${tid}`,
         tenantId: tid,
@@ -350,7 +354,7 @@ app.get('/api/admin/tenants', async (req: Request, res: Response) => {
         name: config.ownerName || config.botName || (tid === 'default' ? 'Platform Admin' : 'Aditya Patil'),
         email: config.ownerEmail || 'aditay26patil@gmail.com',
         plan: config.plan || 'free_trial',
-        messagesUsed: telemetry.length,
+        messagesUsed: aiMessages.length,
         trialLimit: config.trialLimit || 100000,
         whatsappStatus: isConnected ? 'connected' : (state.status || 'disconnected'),
         phone: phoneDisplay,

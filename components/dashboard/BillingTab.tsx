@@ -84,7 +84,12 @@ export function BillingTab({
 
       {/* Usage Meter */}
       <div className="bg-[#0F0F0F] border border-white/[0.06] rounded-2xl p-6">
-        <div className="text-sm font-medium text-white mb-3">Message Usage</div>
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-sm font-medium text-white">AI Message Usage</div>
+          <span className="text-[11px] font-mono text-[#25D366] bg-[#25D366]/10 border border-[#25D366]/20 px-2.5 py-0.5 rounded-full">
+            AI Text & Voice Notes Only
+          </span>
+        </div>
         <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
           <div 
             className={`h-full rounded-full transition-all duration-500 ${progressColor}`}
@@ -92,9 +97,12 @@ export function BillingTab({
           />
         </div>
         <div className="flex justify-between text-xs text-white/30 mt-2">
-          <span>{messagesUsed.toLocaleString()} used</span>
+          <span>{messagesUsed.toLocaleString()} AI messages used</span>
           <span>{limit.toLocaleString()} limit</span>
         </div>
+        <p className="text-[11px] text-white/30 mt-3 pt-3 border-t border-white/[0.04] leading-relaxed">
+          Only autonomous AI replies (text and voice notes) count towards your plan quota. Incoming messages and manual replies sent from your phone are 100% free and never deducted.
+        </p>
       </div>
 
       {/* Upgrade Section */}
