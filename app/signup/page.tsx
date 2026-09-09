@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Bot, Lock, Mail, User, Building, ArrowRight, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Bot, Lock, Mail, User, Building, ArrowRight, AlertCircle, Loader2, Eye, EyeOff, Check } from 'lucide-react';
 import { setStoredUser, slugify } from '@/lib/auth';
 import { TenantUser } from '@/lib/types';
 
@@ -87,28 +87,37 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans selection:bg-zinc-800 selection:text-white">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <Link href="/" className="inline-flex items-center gap-2 mb-6">
-          <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-200">
-            <Bot className="w-4 h-4" />
-          </div>
-          <span className="font-semibold text-sm tracking-wide text-zinc-100">
-            AXIOGEN <span className="text-zinc-500 font-normal">WhatsApp</span>
-          </span>
-        </Link>
-        <h2 className="text-xl font-semibold tracking-tight text-zinc-100">
-          Create your business workspace
-        </h2>
-        <p className="mt-1 text-xs text-zinc-400">
-          Includes 70 Free AI Messages • No plan active on signup • Instant WhatsApp pairing
-        </p>
+    <div className="min-h-screen bg-[#050505] text-white flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans selection:bg-emerald-900/40 selection:text-white relative overflow-hidden">
+      {/* Ambient background glow */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[500px] bg-gradient-to-b from-[#25D366]/[0.05] via-[#25D366]/[0.01] to-transparent blur-3xl" />
       </div>
 
-      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
-        <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl py-6 px-6 sm:px-8 space-y-5">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10">
+        <Link href="/" className="inline-flex items-center gap-2 mb-6 group">
+          <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-white/80 group-hover:border-white/[0.16] transition-colors">
+            <Bot className="w-5 h-5 text-[#25D366]" />
+          </div>
+          <span className="font-semibold text-sm tracking-wider text-white">
+            AXIOGEN
+          </span>
+        </Link>
+        <h2 className="text-2xl font-semibold tracking-tight text-white">
+          Create your AI workspace
+        </h2>
+        <div className="flex items-center justify-center gap-2 mt-2">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[#25D366]/10 text-[#25D366]">
+            <Check className="w-3.5 h-3.5" />
+            70 Free Messages
+          </span>
+          <span className="text-xs text-white/40">No card required</span>
+        </div>
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0 relative z-10">
+        <div className="bg-[#0F0F0F] border border-white/[0.08] rounded-2xl p-6 sm:p-8 shadow-2xl space-y-5">
           {error && (
-            <div className="p-3 rounded-lg bg-rose-950/30 border border-rose-800/60 text-rose-400 text-xs flex items-center gap-2">
+            <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -116,77 +125,77 @@ export default function SignUpPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1">
-                Your Name
+              <label className="block text-xs font-medium text-white/70 mb-1.5">
+                Your Full Name
               </label>
               <div className="relative">
-                <User className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <User className="w-4 h-4 text-white/30 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Full name"
-                  className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
+                  placeholder="e.g. Alex Morgan"
+                  className="w-full h-11 pl-10 pr-3.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#25D366]/50 focus:ring-1 focus:ring-[#25D366]/20 transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1">
-                Business Name
+              <label className="block text-xs font-medium text-white/70 mb-1.5">
+                Business / Workspace Name
               </label>
               <div className="relative">
-                <Building className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Building className="w-4 h-4 text-white/30 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   required
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
-                  placeholder="Company name"
-                  className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
+                  placeholder="e.g. Apex Legal Group"
+                  className="w-full h-11 pl-10 pr-3.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#25D366]/50 focus:ring-1 focus:ring-[#25D366]/20 transition-colors"
                 />
               </div>
-              <p className="text-[11px] font-mono text-zinc-500 mt-1">
-                Workspace ID: <span className="text-zinc-400">{tenantSlug}</span>
+              <p className="text-[11px] text-white/30 mt-1.5">
+                Tenant identifier: <span className="font-mono text-white/50">{tenantSlug}</span>
               </p>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1">
+              <label className="block text-xs font-medium text-white/70 mb-1.5">
                 Work Email
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Mail className="w-4 h-4 text-white/30 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
+                  className="w-full h-11 pl-10 pr-3.5 bg-white/[0.03] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#25D366]/50 focus:ring-1 focus:ring-[#25D366]/20 transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1">
+              <label className="block text-xs font-medium text-white/70 mb-1.5">
                 Password
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-white/30 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-9 pr-10 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600"
+                  placeholder="At least 6 characters"
+                  className="w-full h-11 pl-10 pr-10 bg-white/[0.03] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#25D366]/50 focus:ring-1 focus:ring-[#25D366]/20 transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors p-0.5 cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors p-0.5 cursor-pointer"
                   title={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -197,26 +206,26 @@ export default function SignUpPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 rounded-lg bg-white text-zinc-950 hover:bg-zinc-200 font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shadow-sm"
+              className="w-full h-12 rounded-xl bg-[#25D366] hover:bg-[#22c55e] text-white font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shadow-[0_0_20px_rgba(37,211,102,0.15)] mt-6"
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Creating Workspace...</span>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Provisioning workspace...</span>
                 </>
               ) : (
                 <>
-                  <span>Create Workspace</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <span>Create Workspace & Start Free Trial</span>
+                  <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
 
-          <div className="pt-3 text-center border-t border-zinc-800/80">
-            <span className="text-xs text-zinc-500">Already have an account? </span>
-            <Link href="/login" className="text-xs font-medium text-zinc-300 hover:text-white">
-              Sign In
+          <div className="pt-4 text-center border-t border-white/[0.06]">
+            <span className="text-xs text-white/40">Already have a workspace? </span>
+            <Link href="/login" className="text-xs font-medium text-white hover:text-[#25D366] transition-colors">
+              Sign in
             </Link>
           </div>
         </div>
