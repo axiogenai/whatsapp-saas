@@ -20,26 +20,14 @@ import {
   GraduationCap,
   Sparkles,
   MessageSquare,
-  HelpCircle,
   ChevronDown,
   CheckCheck,
-  X,
-  Lock,
   Smartphone,
-  Server,
   Activity,
   Calendar,
-  Layers,
   Phone,
   Video,
-  MoreVertical,
-  Volume2,
-  Image as ImageIcon,
-  Send,
-  ToggleLeft,
-  ToggleRight,
-  Radio,
-  FileText
+  Image as ImageIcon
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -50,49 +38,54 @@ export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col font-sans selection:bg-zinc-800 selection:text-white">
-      {/* Top Banner */}
-      <div className="bg-zinc-900 border-b border-zinc-800/80 px-4 py-2 text-center text-xs text-zinc-300 flex items-center justify-center gap-2">
-        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-[10px] uppercase tracking-wider font-semibold">
-          Update
+    <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col font-sans selection:bg-zinc-800 selection:text-white relative overflow-x-hidden">
+      {/* Ambient background glow (inspired by portfolio-redesign) */}
+      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[700px] bg-gradient-to-b from-emerald-500/[0.05] via-emerald-500/[0.01] to-transparent rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute top-[1800px] left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-gradient-to-b from-emerald-500/[0.03] to-transparent rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute top-[3600px] left-1/2 -translate-x-1/2 w-[1000px] h-[700px] bg-gradient-to-b from-emerald-500/[0.04] to-transparent rounded-full blur-3xl" />
+
+      {/* Top Banner (Seamless, no hard border lines) */}
+      <div className="px-4 py-2.5 text-center text-xs text-zinc-400 flex items-center justify-center gap-2 bg-zinc-950/40 backdrop-blur-sm">
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-900 text-zinc-300 font-mono text-[10px] uppercase tracking-wider font-semibold border border-zinc-800">
+          New
         </span>
-        <span className="text-zinc-300">
+        <span>
           Multimodal Vision &amp; Voice Note Engine is live.
         </span>
         <Link href="/signup" className="text-white underline font-medium hover:text-zinc-200 ml-1 inline-flex items-center gap-0.5">
-          Try 70 Free Messages &rarr;
+          Get 70 Free Messages &rarr;
         </Link>
       </div>
 
-      {/* Main Navigation */}
-      <header className="h-16 px-4 sm:px-8 border-b border-zinc-800/80 bg-[#09090b]/90 backdrop-blur-md flex items-center justify-between sticky top-0 z-50">
+      {/* Floating Glass Navigation Bar (No full-width border line) */}
+      <header className="h-16 px-4 sm:px-8 bg-[#09090b]/60 backdrop-blur-xl flex items-center justify-between sticky top-0 z-50">
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white">
+          <div className="w-8 h-8 rounded-lg bg-zinc-900/80 border border-zinc-800/80 flex items-center justify-center text-white shadow-sm">
             <Bot className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="flex items-center gap-2">
             <span className="font-semibold text-sm tracking-tight text-white">
               AXIOGEN
             </span>
-            <span className="hidden sm:inline-block text-[11px] font-mono text-zinc-500 border-l border-zinc-800 pl-2">
+            <span className="hidden sm:inline-block text-[11px] font-mono text-zinc-500 pl-2">
               WhatsApp Persona Engine
             </span>
           </div>
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-7 text-xs font-medium text-zinc-400">
-          <a href="#demo" className="hover:text-white transition-colors">Interactive Demo</a>
-          <a href="#comparison" className="hover:text-white transition-colors">Architecture vs Chatbots</a>
+        <nav className="hidden lg:flex items-center gap-8 text-xs font-medium text-zinc-400">
+          <a href="#demo" className="hover:text-white transition-colors">Takeover Demo</a>
+          <a href="#comparison" className="hover:text-white transition-colors">Why We&apos;re Different</a>
           <a href="#features" className="hover:text-white transition-colors">Capabilities</a>
           <a href="#use-cases" className="hover:text-white transition-colors">Workflows</a>
           <a href="#trust" className="hover:text-white transition-colors">Security &amp; Control</a>
           <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
         </nav>
 
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
           <Link
             href="/login"
-            className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-white transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white transition-colors cursor-pointer"
           >
             Sign In
           </Link>
@@ -107,10 +100,10 @@ export default function LandingPage() {
       </header>
 
       {/* HERO SECTION */}
-      <section className="pt-16 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-8 text-center max-w-4xl mx-auto flex flex-col items-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-medium mb-6">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
-          <span>Autonomous WhatsApp Persona with Instant Human Takeover</span>
+      <section className="pt-20 sm:pt-28 pb-16 sm:pb-24 px-4 sm:px-8 text-center max-w-4xl mx-auto flex flex-col items-center relative">
+        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/80 border border-zinc-800 text-zinc-300 text-xs font-medium mb-6 backdrop-blur-sm">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          <span>The WhatsApp Assistant That Steps Aside When You Type</span>
         </div>
 
         <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold tracking-[-0.03em] text-white leading-[1.15] sm:leading-[1.12] max-w-3xl">
@@ -118,60 +111,61 @@ export default function LandingPage() {
           even when you can&apos;t.
         </h1>
 
-        <p className="mt-5 text-sm sm:text-base md:text-lg text-zinc-400 max-w-2xl leading-relaxed">
-          Deploy an autonomous AI persona trained on your specific business rules, voice notes, and knowledge base. Handles chats 24/7 on your existing WhatsApp account, then steps aside the instant you start typing.
+        <p className="mt-6 text-sm sm:text-base md:text-lg text-zinc-400 max-w-2xl leading-relaxed">
+          Train an AI version of yourself that handles chats, voice notes, and images on your own WhatsApp account. Take over instantly whenever you want.
         </p>
 
         {/* CTA Buttons */}
         <div className="mt-8 flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center justify-center gap-3">
           <Link
             href="/signup"
-            className="px-6 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm"
+            className="px-6 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
           >
             <span>Start Free Trial (70 Messages)</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
           <a
             href="#demo"
-            className="px-5 py-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-sm font-medium text-zinc-300 hover:text-white transition-colors flex items-center justify-center gap-2"
+            className="px-5 py-3 rounded-lg bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800/80 text-sm font-medium text-zinc-300 hover:text-white transition-colors flex items-center justify-center gap-2 cursor-pointer"
           >
             <Play className="w-3.5 h-3.5 text-zinc-400" />
-            <span>Explore Live Demo</span>
+            <span>Watch 60s Demo</span>
           </a>
         </div>
 
-        {/* Value Proposition Pills */}
+        {/* Micro-Trust Indicators */}
         <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-zinc-500 font-mono">
           <span className="flex items-center gap-1.5">
-            <Check className="w-3.5 h-3.5 text-emerald-500" /> No credit card required
+            <Check className="w-3.5 h-3.5 text-emerald-500" /> No card required
           </span>
           <span className="flex items-center gap-1.5">
-            <Check className="w-3.5 h-3.5 text-emerald-500" /> 60-second QR pairing
+            <Check className="w-3.5 h-3.5 text-emerald-500" /> 60-second QR setup
           </span>
           <span className="flex items-center gap-1.5">
-            <Check className="w-3.5 h-3.5 text-emerald-500" /> 15-minute auto-mute on reply
+            <Check className="w-3.5 h-3.5 text-emerald-500" /> 15-minute auto-mute
           </span>
         </div>
       </section>
 
-      {/* SECTION 2: HIGH-FIDELITY WHATSAPP SIMULATOR */}
-      <section id="demo" className="py-12 sm:py-16 px-4 sm:px-8 max-w-5xl mx-auto w-full">
-        <div className="text-center mb-8 sm:mb-10">
-          <span className="text-xs font-mono text-emerald-500 uppercase tracking-wider font-medium">
-            Core Differentiator
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mt-1.5">
-            The AI speaks for you. But it never speaks over you.
+      {/* SECTION 2: INTERACTIVE WHATSAPP SIMULATOR (Seamlessly integrated into page flow) */}
+      <section id="demo" className="py-16 sm:py-24 px-4 sm:px-8 max-w-5xl mx-auto w-full relative">
+        <div className="text-center mb-10 sm:mb-12">
+          <div className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 mb-3">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span>Interactive Demonstration</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight">
+            The AI becomes you. But it never speaks over you.
           </h2>
           <p className="mt-2 text-sm text-zinc-400 max-w-xl mx-auto">
-            Traditional bots conflict with manual replies. Axiogen continuously monitors your outbound thread. The millisecond you text from your phone, the engine mutes for 15 minutes.
+            Traditional bots conflict with manual replies. Axiogen continuously monitors your outbound thread. The second you text from your phone, the engine mutes for 15 minutes.
           </p>
         </div>
 
-        {/* Simulator Device Frame */}
-        <div className="max-w-3xl mx-auto border border-zinc-800 rounded-xl overflow-hidden bg-[#0b141a] shadow-2xl">
+        {/* Simulator Device Card */}
+        <div className="max-w-3xl mx-auto border border-zinc-800/80 rounded-2xl overflow-hidden bg-[#0b141a] shadow-2xl">
           {/* Top WhatsApp App Header */}
-          <div className="h-14 px-4 sm:px-5 bg-[#1f2c34] border-b border-zinc-800 flex items-center justify-between">
+          <div className="h-14 px-4 sm:px-5 bg-[#1f2c34] flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className="w-9 h-9 rounded-full bg-zinc-700 flex items-center justify-center text-white font-medium text-xs">
@@ -190,7 +184,6 @@ export default function LandingPage() {
             <div className="flex items-center gap-4 text-zinc-400">
               <Video className="w-4 h-4 hover:text-zinc-200 cursor-pointer hidden sm:block" />
               <Phone className="w-4 h-4 hover:text-zinc-200 cursor-pointer hidden sm:block" />
-              <div className="h-4 w-px bg-zinc-700 hidden sm:block"></div>
               {/* Telemetry Status */}
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#111b21] border border-zinc-700/60 text-[11px] font-mono">
                 {activeScenario === 'takeover' && takeoverStep >= 3 ? (
@@ -209,7 +202,7 @@ export default function LandingPage() {
           </div>
 
           {/* Scenario Tab Selector */}
-          <div className="bg-[#111b21] px-4 py-2 border-b border-zinc-800 flex items-center gap-2 overflow-x-auto no-scrollbar text-xs">
+          <div className="bg-[#111b21] px-4 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar text-xs">
             <span className="text-zinc-500 text-[11px] font-mono shrink-0 mr-1">Scenario:</span>
             <button
               onClick={() => { setActiveScenario('takeover'); setTakeoverStep(3); }}
@@ -244,7 +237,7 @@ export default function LandingPage() {
           </div>
 
           {/* Chat Canvas Body */}
-          <div className="p-4 sm:p-6 space-y-4 min-h-[340px] flex flex-col justify-center bg-[#0b141a]">
+          <div className="p-4 sm:p-6 space-y-4 min-h-[330px] flex flex-col justify-center bg-[#0b141a]">
             {activeScenario === 'takeover' && (
               <>
                 {/* Contact Message */}
@@ -368,9 +361,9 @@ export default function LandingPage() {
 
           {/* Simulator Action Controls */}
           {activeScenario === 'takeover' && (
-            <div className="p-3 bg-[#1f2c34] border-t border-zinc-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="p-3 bg-[#1f2c34] flex flex-wrap items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2">
-                <span className="text-zinc-400 text-[11px] font-mono">Step sequence:</span>
+                <span className="text-zinc-400 text-[11px] font-mono">Sequence:</span>
                 <button
                   onClick={() => setTakeoverStep(1)}
                   className={`px-2.5 py-1 rounded text-[11px] font-mono transition-colors cursor-pointer ${
@@ -393,7 +386,7 @@ export default function LandingPage() {
                     takeoverStep === 3 ? 'bg-emerald-900/80 text-emerald-200 border border-emerald-700/60' : 'bg-[#111b21] text-zinc-400 hover:text-white'
                   }`}
                 >
-                  3. Human Mutes Bot
+                  3. Human Takeover
                 </button>
               </div>
 
@@ -406,80 +399,81 @@ export default function LandingPage() {
                 className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white font-mono cursor-pointer transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>Replay Animation</span>
+                <span>Replay</span>
               </button>
             </div>
           )}
         </div>
       </section>
 
-      {/* SECTION 3: ARCHITECTURE COMPARISON (ENTERPRISE MATRIX) */}
-      <section id="comparison" className="py-16 sm:py-24 px-4 sm:px-8 max-w-5xl mx-auto w-full border-t border-zinc-800/80">
+      {/* SECTION 3: ARCHITECTURAL COMPARISON (Seamless continuous page flow) */}
+      <section id="comparison" className="py-20 sm:py-28 px-4 sm:px-8 max-w-5xl mx-auto w-full relative">
         <div className="text-center mb-12 sm:mb-16">
-          <span className="text-xs font-mono text-emerald-500 uppercase tracking-wider font-medium">
-            Architectural Differentiation
-          </span>
-          <h2 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight mt-1.5">
-            Why Axiogen is fundamentally different
+          <div className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 mb-3">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span>Why We&apos;re Different</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight">
+            Built different from traditional chatbots
           </h2>
           <p className="mt-2 text-sm text-zinc-400 max-w-xl mx-auto">
-            Traditional AI chatbots make customers talk to a robot on an external website. Axiogen transforms your real WhatsApp account into an autonomous extension of yourself.
+            Traditional AI chatbots make customers talk to a bot on an external website. Axiogen transforms your real WhatsApp account into an autonomous extension of yourself.
           </p>
         </div>
 
-        {/* Comparison Table */}
-        <div className="border border-zinc-800 rounded-xl overflow-hidden bg-zinc-950/60">
+        {/* Comparison Matrix Card */}
+        <div className="border border-zinc-800/80 rounded-2xl overflow-hidden bg-zinc-950/60 backdrop-blur-sm shadow-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs sm:text-sm">
               <thead>
-                <tr className="border-b border-zinc-800 bg-zinc-900/60 text-zinc-400 font-mono text-xs">
+                <tr className="bg-zinc-900/40 text-zinc-400 font-mono text-xs">
                   <th className="py-4 px-5 font-medium">Capability</th>
                   <th className="py-4 px-5 font-medium">Generic AI Chatbots</th>
-                  <th className="py-4 px-5 font-medium text-emerald-400 bg-emerald-950/20 border-l border-emerald-900/40">
+                  <th className="py-4 px-5 font-medium text-emerald-400 bg-emerald-950/20">
                     Axiogen WhatsApp Persona
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/60">
+              <tbody className="divide-y divide-zinc-800/40">
                 <tr>
                   <td className="py-4 px-5 font-medium text-zinc-200">Where it operates</td>
                   <td className="py-4 px-5 text-zinc-400">External website widget or dedicated bot phone number</td>
-                  <td className="py-4 px-5 text-zinc-200 font-medium bg-emerald-950/10 border-l border-emerald-900/40">
+                  <td className="py-4 px-5 text-zinc-200 font-medium bg-emerald-950/10">
                     Your real personal or business WhatsApp number (Multi-Device)
                   </td>
                 </tr>
                 <tr>
                   <td className="py-4 px-5 font-medium text-zinc-200">Human Collision Handling</td>
                   <td className="py-4 px-5 text-zinc-400">No takeover logic. The bot continues typing over the human owner</td>
-                  <td className="py-4 px-5 text-emerald-300 font-medium bg-emerald-950/10 border-l border-emerald-900/40">
+                  <td className="py-4 px-5 text-emerald-300 font-medium bg-emerald-950/10">
                     Instant Human Takeover. Mutes AI for 15 mins on any manual send
                   </td>
                 </tr>
                 <tr>
                   <td className="py-4 px-5 font-medium text-zinc-200">Voice Note Processing</td>
-                  <td className="py-4 px-5 text-zinc-400">Audio notes ignored or return generic &ldquo;Cannot listen to audio&rdquo; error</td>
-                  <td className="py-4 px-5 text-zinc-200 font-medium bg-emerald-950/10 border-l border-emerald-900/40">
+                  <td className="py-4 px-5 text-zinc-400">Audio notes ignored or return generic error</td>
+                  <td className="py-4 px-5 text-zinc-200 font-medium bg-emerald-950/10">
                     Whisper v3 transcribes Hindi, English &amp; Marathi; sends voice replies
                   </td>
                 </tr>
                 <tr>
                   <td className="py-4 px-5 font-medium text-zinc-200">Multimodal Vision</td>
                   <td className="py-4 px-5 text-zinc-400">Text-only interface</td>
-                  <td className="py-4 px-5 text-zinc-200 font-medium bg-emerald-950/10 border-l border-emerald-900/40">
+                  <td className="py-4 px-5 text-zinc-200 font-medium bg-emerald-950/10">
                     Inspects receipts, prescriptions, error screenshots &amp; photos
                   </td>
                 </tr>
                 <tr>
                   <td className="py-4 px-5 font-medium text-zinc-200">Tone &amp; Persona</td>
                   <td className="py-4 px-5 text-zinc-400">Generic ChatGPT assistant tone with robotic markdown asterisks</td>
-                  <td className="py-4 px-5 text-zinc-200 font-medium bg-emerald-950/10 border-l border-emerald-900/40">
+                  <td className="py-4 px-5 text-zinc-200 font-medium bg-emerald-950/10">
                     Custom-tuned to your vocabulary, writing cadence, links &amp; policies
                   </td>
                 </tr>
                 <tr>
                   <td className="py-4 px-5 font-medium text-zinc-200">Setup Friction</td>
                   <td className="py-4 px-5 text-zinc-400">Weeks of Meta Business Manager paperwork, credit cards &amp; approvals</td>
-                  <td className="py-4 px-5 text-zinc-200 font-medium bg-emerald-950/10 border-l border-emerald-900/40">
+                  <td className="py-4 px-5 text-zinc-200 font-medium bg-emerald-950/10">
                     60-second QR or 8-digit pairing. Zero Meta developer accounts
                   </td>
                 </tr>
@@ -489,26 +483,27 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* SECTION 4: BENTO-GRID CAPABILITIES */}
-      <section id="features" className="py-16 sm:py-24 px-4 sm:px-8 max-w-5xl mx-auto w-full border-t border-zinc-800/80">
+      {/* SECTION 4: CAPABILITIES BENTO (Seamless flow) */}
+      <section id="features" className="py-20 sm:py-28 px-4 sm:px-8 max-w-5xl mx-auto w-full relative">
         <div className="text-center mb-12 sm:mb-16">
-          <span className="text-xs font-mono text-emerald-500 uppercase tracking-wider font-medium">
-            Engine Capabilities
-          </span>
-          <h2 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight mt-1.5">
-            Engineered for real-world communication
+          <div className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 mb-3">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span>Capabilities</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight">
+            Engineered for how people actually communicate
           </h2>
           <p className="mt-2 text-sm text-zinc-400 max-w-xl mx-auto">
-            Every feature is designed to protect your personal reputation, eliminate repetitive messaging, and capture high-intent leads.
+            Tangible outcomes that protect your reputation, eliminate repetitive messaging, and capture high-intent leads.
           </p>
         </div>
 
         {/* Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Bento 1: Large Takeover Feature (Span 2) */}
-          <div className="md:col-span-2 p-6 sm:p-8 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col justify-between">
+          <div className="md:col-span-2 p-6 sm:p-8 rounded-2xl bg-zinc-950/70 border border-zinc-800/80 flex flex-col justify-between backdrop-blur-sm hover:border-zinc-700/80 transition-all duration-300">
             <div>
-              <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 mb-5">
                 <Clock className="w-5 h-5" />
               </div>
               <h3 className="text-lg font-semibold text-white mb-2">
@@ -518,7 +513,7 @@ export default function LandingPage() {
                 The engine detects manual outbound messages originating from your phone. The second you send a text, the bot engages a 15-minute quiet debounce window. If no further manual text occurs for 15 minutes, autonomous mode silently re-engages.
               </p>
             </div>
-            <div className="mt-6 pt-4 border-t border-zinc-900 flex items-center gap-4 text-xs font-mono text-zinc-500">
+            <div className="mt-6 pt-4 border-t border-zinc-900/80 flex items-center gap-4 text-xs font-mono text-zinc-500">
               <span className="flex items-center gap-1.5 text-zinc-400">
                 <Check className="w-3.5 h-3.5 text-emerald-500" /> Zero duplicate messages
               </span>
@@ -529,9 +524,9 @@ export default function LandingPage() {
           </div>
 
           {/* Bento 2: Multimodal Engine (Span 1) */}
-          <div className="p-6 sm:p-8 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col justify-between">
+          <div className="p-6 sm:p-8 rounded-2xl bg-zinc-950/70 border border-zinc-800/80 flex flex-col justify-between backdrop-blur-sm hover:border-zinc-700/80 transition-all duration-300">
             <div>
-              <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 mb-5">
                 <Mic className="w-5 h-5" />
               </div>
               <h3 className="text-lg font-semibold text-white mb-2">
@@ -541,15 +536,15 @@ export default function LandingPage() {
                 Processes incoming voice notes using Whisper across English, Hindi, and Marathi. Vision inspects diagrams, prescriptions, and receipts.
               </p>
             </div>
-            <div className="mt-6 pt-4 border-t border-zinc-900 text-xs font-mono text-zinc-500">
+            <div className="mt-6 pt-4 border-t border-zinc-900/80 text-xs font-mono text-zinc-500">
               <span>Supports audio PTT &amp; images</span>
             </div>
           </div>
 
           {/* Bento 3: Memory & Context (Span 1) */}
-          <div className="p-6 sm:p-8 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col justify-between">
+          <div className="p-6 sm:p-8 rounded-2xl bg-zinc-950/70 border border-zinc-800/80 flex flex-col justify-between backdrop-blur-sm hover:border-zinc-700/80 transition-all duration-300">
             <div>
-              <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 mb-5">
                 <Brain className="w-5 h-5" />
               </div>
               <h3 className="text-lg font-semibold text-white mb-2">
@@ -559,15 +554,15 @@ export default function LandingPage() {
                 Retains context across multi-turn inquiries. Remembers client requirements, past agreements, and schedules without repeating itself.
               </p>
             </div>
-            <div className="mt-6 pt-4 border-t border-zinc-900 text-xs font-mono text-zinc-500">
+            <div className="mt-6 pt-4 border-t border-zinc-900/80 text-xs font-mono text-zinc-500">
               <span>Multi-turn retention</span>
             </div>
           </div>
 
           {/* Bento 4: 24/7 Booking & Autonomous Reminders (Span 2) */}
-          <div className="md:col-span-2 p-6 sm:p-8 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col justify-between">
+          <div className="md:col-span-2 p-6 sm:p-8 rounded-2xl bg-zinc-950/70 border border-zinc-800/80 flex flex-col justify-between backdrop-blur-sm hover:border-zinc-700/80 transition-all duration-300">
             <div>
-              <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 mb-5">
                 <Calendar className="w-5 h-5" />
               </div>
               <h3 className="text-lg font-semibold text-white mb-2">
@@ -577,7 +572,7 @@ export default function LandingPage() {
                 Equipped with function-calling tools. Can book consultation slots with Meet links, set autonomous reminders for you or clients, and qualify lead budgets while you sleep.
               </p>
             </div>
-            <div className="mt-6 pt-4 border-t border-zinc-900 flex items-center gap-4 text-xs font-mono text-zinc-500">
+            <div className="mt-6 pt-4 border-t border-zinc-900/80 flex items-center gap-4 text-xs font-mono text-zinc-500">
               <span className="flex items-center gap-1.5 text-zinc-400">
                 <Check className="w-3.5 h-3.5 text-emerald-500" /> Google Meet booking
               </span>
@@ -589,24 +584,25 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* SECTION 5: WORKFLOWS / AUDIENCES */}
-      <section id="use-cases" className="py-16 sm:py-24 px-4 sm:px-8 max-w-5xl mx-auto w-full border-t border-zinc-800/80">
+      {/* SECTION 5: AUDIENCE WORKFLOWS */}
+      <section id="use-cases" className="py-20 sm:py-28 px-4 sm:px-8 max-w-5xl mx-auto w-full relative">
         <div className="text-center mb-12 sm:mb-16">
-          <span className="text-xs font-mono text-emerald-500 uppercase tracking-wider font-medium">
-            Target Workflows
-          </span>
-          <h2 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight mt-1.5">
+          <div className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 mb-3">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span>Target Workflows</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight">
             Who relies on Axiogen every day?
           </h2>
           <p className="mt-2 text-sm text-zinc-400 max-w-xl mx-auto">
-            Engineered for professionals who receive 50+ inbound WhatsApp messages daily.
+            Save 2 to 4 hours of repetitive WhatsApp typing every single day.
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-5 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col justify-between">
+          <div className="p-6 rounded-2xl bg-zinc-950/70 border border-zinc-800/80 flex flex-col justify-between backdrop-blur-sm hover:border-zinc-700/80 transition-all duration-300">
             <div>
-              <div className="w-9 h-9 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4">
                 <Briefcase className="w-4 h-4" />
               </div>
               <h4 className="font-semibold text-sm text-white mb-1.5">Founders &amp; Executives</h4>
@@ -616,9 +612,9 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="p-5 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col justify-between">
+          <div className="p-6 rounded-2xl bg-zinc-950/70 border border-zinc-800/80 flex flex-col justify-between backdrop-blur-sm hover:border-zinc-700/80 transition-all duration-300">
             <div>
-              <div className="w-9 h-9 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4">
                 <Building2 className="w-4 h-4" />
               </div>
               <h4 className="font-semibold text-sm text-white mb-1.5">Agencies &amp; Consultancies</h4>
@@ -628,9 +624,9 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="p-5 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col justify-between">
+          <div className="p-6 rounded-2xl bg-zinc-950/70 border border-zinc-800/80 flex flex-col justify-between backdrop-blur-sm hover:border-zinc-700/80 transition-all duration-300">
             <div>
-              <div className="w-9 h-9 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4">
                 <Stethoscope className="w-4 h-4" />
               </div>
               <h4 className="font-semibold text-sm text-white mb-1.5">Doctors &amp; Clinics</h4>
@@ -640,9 +636,9 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="p-5 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col justify-between">
+          <div className="p-6 rounded-2xl bg-zinc-950/70 border border-zinc-800/80 flex flex-col justify-between backdrop-blur-sm hover:border-zinc-700/80 transition-all duration-300">
             <div>
-              <div className="w-9 h-9 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4">
                 <GraduationCap className="w-4 h-4" />
               </div>
               <h4 className="font-semibold text-sm text-white mb-1.5">Freelancers &amp; Creators</h4>
@@ -655,72 +651,73 @@ export default function LandingPage() {
       </section>
 
       {/* SECTION 6: CONTROL & TRUST ASSURANCE */}
-      <section id="trust" className="py-16 sm:py-24 px-4 sm:px-8 max-w-5xl mx-auto w-full border-t border-zinc-800/80">
+      <section id="trust" className="py-20 sm:py-28 px-4 sm:px-8 max-w-5xl mx-auto w-full relative">
         <div className="max-w-3xl mx-auto text-center mb-12 sm:mb-16">
-          <span className="text-xs font-mono text-emerald-500 uppercase tracking-wider font-medium">
-            Architectural Guarantees
-          </span>
-          <h2 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight mt-1.5">
-            Built with strict safety constraints
+          <div className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 mb-3">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span>Guaranteed Peace of Mind</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight">
+            You stay 100% in control
           </h2>
           <p className="mt-2 text-sm text-zinc-400 leading-relaxed">
-            The #1 concern with autonomous messaging is sending an incorrect or embarrassing reply. Axiogen enforces hardware and protocol-level guardrails:
+            We know what you&apos;re thinking: <em className="text-zinc-300 font-semibold">&ldquo;Will this send weird messages from my account?&rdquo;</em> Here is how we guarantee your safety and privacy:
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-4xl mx-auto">
-          <div className="p-6 rounded-xl bg-zinc-950 border border-zinc-800 flex gap-4 items-start">
-            <div className="w-9 h-9 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
+          <div className="p-6 rounded-2xl bg-zinc-950/70 border border-zinc-800/80 flex gap-4 items-start backdrop-blur-sm">
+            <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
               <Zap className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="font-semibold text-sm text-white mb-1">Outbound Debounce Override</h4>
+              <h4 className="font-semibold text-sm text-white mb-1">AI Pauses When You Reply</h4>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                When you reply to any contact, the engine instantly flags that JID as owner-controlled and silences AI generation for 15 minutes.
+                When you reply to any contact from your phone, the engine silences AI generation for 15 minutes. It will never double-message or conflict.
               </p>
             </div>
           </div>
 
-          <div className="p-6 rounded-xl bg-zinc-950 border border-zinc-800 flex gap-4 items-start">
-            <div className="w-9 h-9 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
+          <div className="p-6 rounded-2xl bg-zinc-950/70 border border-zinc-800/80 flex gap-4 items-start backdrop-blur-sm">
+            <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
               <Smartphone className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="font-semibold text-sm text-white mb-1">Standard Multi-Device Protocol</h4>
+              <h4 className="font-semibold text-sm text-white mb-1">Standard WhatsApp Linked Device</h4>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Operates strictly as an authorized WhatsApp Linked Device. You can revoke session access with a single tap in your phone settings at any second.
+                Operates strictly as an authorized WhatsApp Linked Device. You can unlink session access with a single tap in your phone settings anytime.
               </p>
             </div>
           </div>
 
-          <div className="p-6 rounded-xl bg-zinc-950 border border-zinc-800 flex gap-4 items-start">
-            <div className="w-9 h-9 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
+          <div className="p-6 rounded-2xl bg-zinc-950/70 border border-zinc-800/80 flex gap-4 items-start backdrop-blur-sm">
+            <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
               <Activity className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="font-semibold text-sm text-white mb-1">Live Audit Stream &amp; Killswitch</h4>
+              <h4 className="font-semibold text-sm text-white mb-1">Master Switch &amp; Live Telemetry</h4>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Every inbound query and outbound response is logged in real-time on your dashboard. A global master toggle allows instant pausing.
+                Every inbound query and outbound response is logged live in your dashboard. A global master toggle allows instant 1-click pausing.
               </p>
             </div>
           </div>
 
-          <div className="p-6 rounded-xl bg-zinc-950 border border-zinc-800 flex gap-4 items-start">
-            <div className="w-9 h-9 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
+          <div className="p-6 rounded-2xl bg-zinc-950/70 border border-zinc-800/80 flex gap-4 items-start backdrop-blur-sm">
+            <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
               <Shield className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="font-semibold text-sm text-white mb-1">Zero Model Training on Your Chats</h4>
+              <h4 className="font-semibold text-sm text-white mb-1">Strict Isolation &amp; Zero Training</h4>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Your tenant data and conversations are strictly isolated. We run inference via zero-retention enterprise endpoints.
+                Your messages and persona prompt are encrypted in isolated tenant storage. LLM inference runs via zero-retention enterprise endpoints.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* SECTION 7: PROPOSITION BANNER */}
-      <section className="py-20 sm:py-28 px-4 sm:px-8 bg-zinc-950 border-y border-zinc-800/80 text-center">
+      {/* SECTION 7: PROPOSITION BANNER (Fluid, atmospheric transition) */}
+      <section className="py-24 sm:py-32 px-4 sm:px-8 text-center relative">
         <div className="max-w-3xl mx-auto">
           <p className="text-xl sm:text-3xl md:text-4xl font-semibold text-zinc-200 tracking-tight leading-snug">
             &ldquo;Your WhatsApp account already works 24/7.<br />
@@ -731,24 +728,28 @@ export default function LandingPage() {
       </section>
 
       {/* SECTION 8: PRICING MATRIX */}
-      <section id="pricing" className="py-16 sm:py-24 px-4 sm:px-8 max-w-5xl mx-auto w-full">
+      <section id="pricing" className="py-20 sm:py-28 px-4 sm:px-8 max-w-5xl mx-auto w-full relative">
         <div className="text-center mb-10 sm:mb-14">
+          <div className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 mb-3">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span>Pricing Plans</span>
+          </div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-mono mb-4">
             <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
             <span>70 Free Messages on Signup • No Credit Card Required</span>
           </div>
           <h2 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight">
-            Transparent, Flat-Rate Pricing
+            Simple, Flat-Rate Pricing
           </h2>
           <p className="mt-2 text-sm text-zinc-400 max-w-xl mx-auto">
             Includes GST tax invoices, instant UPI/RuPay activation, and automatic multi-device session restoration.
           </p>
 
           {/* Billing Cycle Toggle */}
-          <div className="mt-6 inline-flex items-center p-1 rounded-lg bg-zinc-900 border border-zinc-800 text-xs font-medium">
+          <div className="mt-6 inline-flex items-center p-1 rounded-lg bg-zinc-900/80 border border-zinc-800 text-xs font-medium backdrop-blur-sm">
             <button
               onClick={() => setBillingCycle('monthly')}
-              className={`px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-md transition-colors cursor-pointer ${
                 billingCycle === 'monthly' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-400 hover:text-white'
               }`}
             >
@@ -756,7 +757,7 @@ export default function LandingPage() {
             </button>
             <button
               onClick={() => setBillingCycle('annual')}
-              className={`px-3 py-1.5 rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3.5 py-1.5 rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
                 billingCycle === 'annual' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-400 hover:text-white'
               }`}
             >
@@ -770,7 +771,7 @@ export default function LandingPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Starter Plan */}
-          <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-6 sm:p-7 flex flex-col justify-between hover:border-zinc-700 transition-colors">
+          <div className="bg-zinc-950/70 border border-zinc-800/80 rounded-2xl p-6 sm:p-7 flex flex-col justify-between hover:border-zinc-700/80 transition-all duration-300 backdrop-blur-sm">
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider font-semibold">Starter</span>
@@ -796,14 +797,14 @@ export default function LandingPage() {
             </div>
             <Link
               href="/signup?plan=starter"
-              className="w-full py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-center text-zinc-200 hover:text-white transition-colors block"
+              className="w-full py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-center text-zinc-200 hover:text-white transition-colors block cursor-pointer"
             >
               Start Free Trial (70 Msgs)
             </Link>
           </div>
 
           {/* Business Pro Plan (Most Popular) */}
-          <div className="bg-zinc-950 border-2 border-emerald-600/80 rounded-xl p-6 sm:p-7 flex flex-col justify-between relative shadow-lg">
+          <div className="bg-zinc-950/90 border-2 border-emerald-600/80 rounded-2xl p-6 sm:p-7 flex flex-col justify-between relative shadow-xl backdrop-blur-sm">
             <span className="absolute -top-3 right-6 px-2.5 py-0.5 rounded text-[10px] font-mono bg-emerald-600 text-white font-semibold uppercase tracking-wider">
               Most Popular
             </span>
@@ -833,14 +834,14 @@ export default function LandingPage() {
             </div>
             <Link
               href="/signup?plan=pro"
-              className="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs text-center transition-colors block shadow-sm"
+              className="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs text-center transition-colors block shadow-sm cursor-pointer"
             >
               Start Free Trial (Pro)
             </Link>
           </div>
 
           {/* Agency Plan */}
-          <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-6 sm:p-7 flex flex-col justify-between hover:border-zinc-700 transition-colors">
+          <div className="bg-zinc-950/70 border border-zinc-800/80 rounded-2xl p-6 sm:p-7 flex flex-col justify-between hover:border-zinc-700/80 transition-all duration-300 backdrop-blur-sm">
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-mono text-zinc-400 uppercase tracking-wider font-semibold">Agency / Scale</span>
@@ -866,7 +867,7 @@ export default function LandingPage() {
             </div>
             <Link
               href="/signup?plan=agency"
-              className="w-full py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-center text-zinc-200 hover:text-white transition-colors block"
+              className="w-full py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-center text-zinc-200 hover:text-white transition-colors block cursor-pointer"
             >
               Contact Agency Team
             </Link>
@@ -875,17 +876,18 @@ export default function LandingPage() {
       </section>
 
       {/* SECTION 9: FAQ */}
-      <section className="py-16 sm:py-24 px-4 sm:px-8 max-w-3xl mx-auto w-full border-t border-zinc-800/80">
+      <section className="py-20 sm:py-28 px-4 sm:px-8 max-w-3xl mx-auto w-full relative">
         <div className="text-center mb-10 sm:mb-12">
-          <span className="text-xs font-mono text-emerald-500 uppercase tracking-wider font-medium">
-            FAQ
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mt-1.5">
+          <div className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 mb-3">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span>FAQ</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">
             Frequently Asked Questions
           </h2>
         </div>
 
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {[
             {
               q: 'Do I need Meta Cloud API approval or a separate phone number?',
@@ -910,7 +912,7 @@ export default function LandingPage() {
           ].map((item, idx) => (
             <div
               key={idx}
-              className="border border-zinc-800 rounded-lg bg-zinc-950 overflow-hidden"
+              className="border border-zinc-800/80 rounded-xl bg-zinc-950/60 overflow-hidden backdrop-blur-sm"
             >
               <button
                 onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
@@ -924,7 +926,7 @@ export default function LandingPage() {
                 />
               </button>
               {openFaq === idx && (
-                <div className="px-4 pb-4 text-xs text-zinc-400 leading-relaxed border-t border-zinc-900 pt-3">
+                <div className="px-4 pb-4 text-xs text-zinc-400 leading-relaxed border-t border-zinc-900/80 pt-3">
                   {item.a}
                 </div>
               )}
@@ -934,9 +936,9 @@ export default function LandingPage() {
       </section>
 
       {/* FINAL CTA SECTION */}
-      <section className="py-20 sm:py-28 px-4 sm:px-8 text-center bg-zinc-950 border-t border-zinc-800/80">
+      <section className="py-24 sm:py-32 px-4 sm:px-8 text-center relative">
         <div className="max-w-2xl mx-auto flex flex-col items-center">
-          <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-500 mb-5">
+          <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-500 mb-5 shadow-sm">
             <Bot className="w-5 h-5" />
           </div>
           <h2 className="text-2xl sm:text-4xl font-semibold text-white tracking-tight">
@@ -945,10 +947,10 @@ export default function LandingPage() {
           <p className="mt-3 text-xs sm:text-sm text-zinc-400 leading-relaxed max-w-md">
             Deploy your autonomous WhatsApp persona in under 60 seconds with 70 complimentary messages.
           </p>
-          <div className="mt-7 flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          <div className="mt-8 flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
             <Link
               href="/signup"
-              className="w-full sm:w-auto px-7 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm"
+              className="w-full sm:w-auto px-7 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
             >
               <span>Get Started with 70 Free Messages</span>
               <ArrowRight className="w-4 h-4" />
@@ -957,17 +959,17 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="border-t border-zinc-800/80 py-8 px-4 sm:px-8 text-xs text-zinc-500 font-mono">
+      {/* FOOTER (Seamless, no hard top line) */}
+      <footer className="py-12 px-4 sm:px-8 text-xs text-zinc-500 font-mono">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <span>&copy; {new Date().getFullYear()} Axiogen AI. All rights reserved.</span>
           <div className="flex flex-wrap justify-center items-center gap-5 text-zinc-400">
-            <Link href="/login" className="hover:text-white">Sign In</Link>
-            <Link href="/signup" className="hover:text-white">Create Account</Link>
-            <a href="https://team.axiogen.in" target="_blank" rel="noreferrer" className="hover:text-white">
+            <Link href="/login" className="hover:text-white transition-colors">Sign In</Link>
+            <Link href="/signup" className="hover:text-white transition-colors">Create Account</Link>
+            <a href="https://team.axiogen.in" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
               Team Axiogen
             </a>
-            <a href="https://api.axiogen.in/whatsapp-saas/health" target="_blank" rel="noreferrer" className="hover:text-white">
+            <a href="https://api.axiogen.in/whatsapp-saas/health" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
               System Health
             </a>
           </div>
