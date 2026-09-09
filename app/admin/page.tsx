@@ -27,7 +27,6 @@ import {
   Power,
   Cpu,
   Layers,
-  Sparkles,
   ArrowRight,
   Eye,
   Sliders,

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { 
   Home, 
+  QrCode,
   MessageSquare, 
   Brain, 
   Phone, 
@@ -28,6 +29,7 @@ interface SidebarProps {
 
 const navItems = [
   { id: 'overview', label: 'Overview', icon: Home },
+  { id: 'connection', label: 'Connection', icon: QrCode },
   { id: 'inbox', label: 'Inbox', icon: MessageSquare },
   { id: 'brain', label: 'AI Brain', icon: Brain },
   { id: 'tasks', label: 'Tasks', icon: Phone },

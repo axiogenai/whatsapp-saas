@@ -130,31 +130,50 @@ export default function DashboardPage() {
   const fetchChats = useCallback(async () => {
     if (!user) return;
     try {
-      const res = await fetch(`/api/whatsapp/chats?tenantId=${encodeURIComponent(tenantId)}`);
+      const res = await fetch(`/api/whatsapp/chats?tenantId=${encodeURIComponent(tenantId)}`, {
+        headers: { 'x-tenant-id': tenantId },
+      });
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data.chats)) {
-          setTelemetry(data.chats);
-        }
-        if (Array.isArray(data.contacts)) {
-          setContacts(data.contacts);
+        const rawTelemetry = (data.telemetry || data.chats || []).filter(
+          (m: any) =>
+            m.jid &&
+            m.jid !== 'status@broadcast' &&
+            !m.jid.includes('broadcast') &&
+            !m.jid.includes('status') &&
+            !m.jid.endsWith('@g.us')
+        );
+        const rawContacts = (data.contacts || []).filter(
+          (c: any) =>
+            c.jid &&
+            c.jid !== 'status@broadcast' &&
+            !c.jid.includes('broadcast') &&
+            !c.jid.includes('status') &&
+            !c.jid.endsWith('@g.us')
+        );
+        setTelemetry(rawTelemetry);
+        setContacts(rawContacts);
+        if (!activeContact && rawContacts.length > 0) {
+          setActiveContact(rawContacts[0].jid);
         }
       }
     } catch (e) {
       console.error('Failed to fetch chats', e);
     }
-  }, [user, tenantId]);
+  }, [user, tenantId, activeContact]);
 
   // 5. Fetch Reminders & Tasks
   const fetchReminders = useCallback(async () => {
     if (!user) return;
     setLoadingReminders(true);
     try {
-      const res = await fetch(`/api/whatsapp/reminders?tenantId=${encodeURIComponent(tenantId)}`);
+      const res = await fetch(`/api/whatsapp/reminders?tenantId=${encodeURIComponent(tenantId)}`, {
+        headers: { 'x-tenant-id': tenantId },
+      });
       if (res.ok) {
         const data = await res.json();
         setRemindersList(Array.isArray(data.reminders) ? data.reminders : []);
-        setScheduledCallsList(Array.isArray(data.scheduledCalls) ? data.scheduledCalls : []);
+        setScheduledCallsList(Array.isArray(data.calls) ? data.calls : (Array.isArray(data.scheduledCalls) ? data.scheduledCalls : []));
         setLeadsList(Array.isArray(data.leads) ? data.leads : []);
       }
     } catch (e) {
@@ -516,6 +535,7 @@ export default function DashboardPage() {
           onRefresh={handleRefresh}
           refreshing={refreshing}
           onMobileMenuToggle={() => setIsMobileNavOpen((prev) => !prev)}
+          onTabChange={setTab}
         />
 
         {/* Tab Content Container */}

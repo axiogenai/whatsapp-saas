@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Zap, Mic, Eye, Brain, Clock, Sparkles } from 'lucide-react';
+import { Zap, Mic, Eye, Brain, Clock, Sliders } from 'lucide-react';
 
 const features = [
   {
@@ -37,7 +37,7 @@ const features = [
   {
     title: 'Your Personality',
     description: 'Learns your tone, mannerisms, and rules. Replies like you, not a generic bot.',
-    icon: Sparkles,
+    icon: Sliders,
     span: 'md:col-span-2'
   }
 ];

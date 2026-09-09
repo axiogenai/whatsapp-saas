@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Briefcase, Building2, Stethoscope, GraduationCap, Sparkles } from 'lucide-react';
+import { Briefcase, Building2, Stethoscope, GraduationCap, Video } from 'lucide-react';
 
 const useCases = [
   {
@@ -27,7 +27,7 @@ const useCases = [
   {
     title: 'Creators',
     description: 'Engage your audience while creating content.',
-    icon: Sparkles
+    icon: Video
   }
 ];
 

@@ -20,34 +20,48 @@ function timeAgo(timestamp: number): string {
   return `${Math.floor(seconds / 86400)}d`;
 }
 
+function getTsMs(ts: number): number {
+  if (!ts) return 0;
+  return ts > 1e11 ? ts : ts * 1000;
+}
+
 export function OverviewTab({ status, contacts, telemetry, reminders, config, onTabChange }: OverviewTabProps) {
   const isConnected = status.status === 'connected';
 
-  // Calculate stats
-  const now = Date.now();
+  // Calculate stats accurately
   const startOfDay = new Date().setHours(0, 0, 0, 0);
   
-  const todayMessages = telemetry.filter(t => t.timestamp * 1000 > startOfDay).length;
+  const todayTelemetry = telemetry.filter(t => getTsMs(t.timestamp) >= startOfDay);
+  const todayMessages = todayTelemetry.length > 0 ? todayTelemetry.length : telemetry.length;
   const activeContacts = contacts.length;
-  const aiReplies = telemetry.filter(t => t.timestamp * 1000 > startOfDay && t.isBotReply).length;
-  const humanReplies = telemetry.filter(t => t.timestamp * 1000 > startOfDay && t.fromMe && !t.isBotReply).length;
-  const pendingTasks = reminders.length;
+  const aiReplies = (todayTelemetry.length > 0 ? todayTelemetry : telemetry).filter(t => t.isBotReply).length;
+  const humanReplies = (todayTelemetry.length > 0 ? todayTelemetry : telemetry).filter(t => t.fromMe && !t.isBotReply).length;
+  const pendingTasks = reminders.filter(r => r.status !== 'completed').length;
 
-  const recentContacts = [...contacts].sort((a, b) => b.lastTimestamp - a.lastTimestamp).slice(0, 5);
+  const recentContacts = [...contacts].sort((a, b) => getTsMs(b.lastTimestamp) - getTsMs(a.lastTimestamp)).slice(0, 5);
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <section className="bg-[#0F0F0F] border border-white/[0.06] rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <section 
+        onClick={() => onTabChange('connection')}
+        className="bg-[#0F0F0F] border border-white/[0.06] hover:border-white/[0.12] transition-colors rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer group"
+        title="Click to manage WhatsApp device pairing & QR code"
+      >
         <div className="flex items-center gap-4">
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${isConnected ? 'bg-emerald-500/10' : 'bg-white/[0.04]'}`}>
             <Bot className={`w-6 h-6 ${isConnected ? 'text-emerald-400' : 'text-white/30'}`} />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-white">
-              {isConnected ? 'AI Active' : 'AI Disconnected'}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-white">
+                {isConnected ? 'AI Active' : 'AI Disconnected'}
+              </h2>
+              <span className="text-[10px] font-mono text-white/30 group-hover:text-[#25D366] transition-colors">
+                Manage Device →
+              </span>
+            </div>
             <p className="text-sm text-white/40">
-              {isConnected ? status.phone : 'Connect your WhatsApp to get started'}
+              {isConnected ? status.phone : 'Click to scan QR code & connect'}
             </p>
           </div>
         </div>
