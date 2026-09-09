@@ -8,7 +8,6 @@ import { MobileNav } from '@/components/dashboard/MobileNav';
 import { OverviewTab } from '@/components/dashboard/OverviewTab';
 import { ConnectionTab } from '@/components/dashboard/ConnectionTab';
 import { AIBrainTab } from '@/components/dashboard/AIBrainTab';
-import { InboxTab } from '@/components/dashboard/InboxTab';
 import { TasksTab } from '@/components/dashboard/TasksTab';
 import { InsightsTab } from '@/components/dashboard/InsightsTab';
 import { BillingTab } from '@/components/dashboard/BillingTab';
@@ -572,19 +571,6 @@ export default function DashboardPage() {
               onPreviewVoice={handlePreviewVoice}
               isPlayingAudio={isPlayingAudio}
               loadingAudioPreview={loadingAudioPreview}
-            />
-          )}
-
-          {tab === 'inbox' && (
-            <InboxTab
-              contacts={contacts}
-              telemetry={telemetry}
-              activeContact={activeContact}
-              onSelectContact={setActiveContact}
-              onSendMessage={handleSendMessage}
-              sendingMessage={sendingManual}
-              onTakeover={handleTakeover}
-              trialExhausted={trialExhausted}
             />
           )}
 

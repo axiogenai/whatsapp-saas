@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-type Tab = 'Dashboard' | 'AI Studio' | 'Inbox' | 'Tasks' | 'Analytics';
+type Tab = 'Dashboard' | 'AI Studio' | 'Live Activity' | 'Tasks' | 'Analytics';
 
 export default function ProductShowcase() {
   const [activeTab, setActiveTab] = useState<Tab>('Dashboard');
@@ -22,10 +22,10 @@ export default function ProductShowcase() {
       description: 'Set personality templates, voice settings, and custom prompts.',
     },
     {
-      id: 'Inbox',
-      label: 'Inbox',
-      descriptionTitle: 'Live conversations',
-      description: 'Monitor chats in real-time with human takeover controls.',
+      id: 'Live Activity',
+      label: 'Live Activity',
+      descriptionTitle: 'Audit real-time replies',
+      description: 'Stream incoming WhatsApp events, voice note transcriptions, and human takeover moments.',
     },
     {
       id: 'Tasks',

@@ -1,6 +1,6 @@
 'use client';
 
-import { Bot, MessageSquare, Brain, Clock, BarChart3, User } from 'lucide-react';
+import { Bot, QrCode, Brain, Clock, BarChart3, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface OverviewTabProps {
@@ -96,10 +96,8 @@ export function OverviewTab({ status, contacts, telemetry, reminders, config, on
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <section className="lg:col-span-2 bg-[#0F0F0F] border border-white/[0.06] rounded-2xl overflow-hidden">
           <div className="px-5 py-4 flex items-center justify-between border-b border-white/[0.04]">
-            <h3 className="text-sm font-medium text-white">Recent Conversations</h3>
-            <button onClick={() => onTabChange('inbox')} className="text-xs text-[#25D366]/60 hover:text-[#25D366] cursor-pointer transition-colors">
-              View All
-            </button>
+            <h3 className="text-sm font-medium text-white">Recent Activity</h3>
+            <span className="text-xs text-white/30">Live Sync</span>
           </div>
           <div className="flex flex-col">
             {recentContacts.length === 0 ? (
@@ -108,7 +106,7 @@ export function OverviewTab({ status, contacts, telemetry, reminders, config, on
               </div>
             ) : (
               recentContacts.map((c) => (
-                <div key={c.jid} className="flex items-center gap-3 px-5 py-3 hover:bg-white/[0.02] border-t border-white/[0.04] first:border-t-0 transition-colors cursor-pointer" onClick={() => onTabChange('inbox')}>
+                <div key={c.jid} className="flex items-center gap-3 px-5 py-3 hover:bg-white/[0.02] border-t border-white/[0.04] first:border-t-0 transition-colors">
                   <div className="w-9 h-9 rounded-full bg-white/[0.06] flex items-center justify-center text-xs text-white/40 font-medium shrink-0 uppercase">
                     {c.senderName ? c.senderName[0] : <User className="w-4 h-4" />}
                   </div>
@@ -120,7 +118,7 @@ export function OverviewTab({ status, contacts, telemetry, reminders, config, on
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-xs text-white/30 truncate flex-1">{c.lastMessage}</span>
                       {c.isHumanTakeover && (
-                        <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-medium bg-amber-500/10 text-amber-400/60 border border-amber-500/20">HUMAN</span>
+                        <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-medium bg-amber-500/10 text-amber-400/60 border border-amber-500/20">HUMAN OVERRIDE</span>
                       )}
                     </div>
                   </div>
@@ -132,7 +130,7 @@ export function OverviewTab({ status, contacts, telemetry, reminders, config, on
 
         <section className="grid grid-cols-2 lg:grid-cols-1 gap-4">
           {[
-            { label: 'Open Inbox', icon: MessageSquare, tab: 'inbox' },
+            { label: 'Pair WhatsApp', icon: QrCode, tab: 'connection' },
             { label: 'Configure AI', icon: Brain, tab: 'brain' },
             { label: 'Set Reminder', icon: Clock, tab: 'tasks' },
             { label: 'View Analytics', icon: BarChart3, tab: 'insights' },

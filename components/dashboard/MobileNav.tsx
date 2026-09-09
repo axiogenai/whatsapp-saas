@@ -11,14 +11,13 @@ interface MobileNavProps {
 
 const mainTabs = [
   { id: 'overview', label: 'Home', icon: Home },
-  { id: 'inbox', label: 'Inbox', icon: MessageSquare },
+  { id: 'connection', label: 'Connection', icon: QrCode },
   { id: 'brain', label: 'AI Brain', icon: Brain },
   { id: 'tasks', label: 'Tasks', icon: Phone },
   { id: 'more', label: 'More', icon: MoreHorizontal },
 ];
 
 const moreMenuTabs = [
-  { id: 'connection', label: 'Connection', icon: QrCode },
   { id: 'insights', label: 'Insights', icon: BarChart3 },
   { id: 'billing', label: 'Billing', icon: CreditCard },
   { id: 'settings', label: 'Settings', icon: Settings },

@@ -13,13 +13,12 @@ interface HeaderProps {
 
 const tabTitles: Record<string, string> = {
   overview: 'Overview',
-  inbox: 'Inbox',
+  connection: 'Connection',
   brain: 'AI Brain',
   tasks: 'Tasks',
   insights: 'Insights',
   billing: 'Billing',
   settings: 'Settings',
-  connection: 'Connection',
 };
 
 export function Header({ tab, status, onRefresh, refreshing, onMobileMenuToggle, onTabChange }: HeaderProps) {
