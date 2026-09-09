@@ -779,16 +779,16 @@ export default function LandingPage() {
               </div>
               <div className="mt-3 mb-1">
                 <span className="text-3xl font-semibold text-white">
-                  {billingCycle === 'monthly' ? '₹999' : '₹799'}
+                  {billingCycle === 'monthly' ? '₹499' : '₹399'}
                 </span>
                 <span className="text-xs text-zinc-500 font-mono"> / month</span>
               </div>
               <p className="text-xs text-zinc-500 mb-6 font-mono">
-                {billingCycle === 'annual' ? 'Billed ₹9,588 annually' : '₹33/day • Solo founders & freelancers'}
+                {billingCycle === 'annual' ? 'Billed ₹4,788 annually' : '₹16/day • Solo shops & clinics'}
               </p>
               <ul className="space-y-3 text-xs text-zinc-300 mb-8">
                 <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> 1 Connected WhatsApp Number</li>
-                <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> 2,500 AI Messages / month</li>
+                <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> 1,500 AI Messages / month</li>
                 <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> 15-Minute Human Override Circuit</li>
                 <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> Voice Note Transcription (Whisper)</li>
                 <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> Multimodal Vision &amp; Photo Inspection</li>
@@ -811,20 +811,20 @@ export default function LandingPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-mono text-emerald-400 uppercase tracking-wider font-semibold">Business Pro</span>
-                <span className="text-[10px] font-mono text-zinc-400">Founders &amp; Clinics</span>
+                <span className="text-[10px] font-mono text-zinc-400">Founders &amp; Growing Brands</span>
               </div>
               <div className="mt-3 mb-1">
                 <span className="text-3xl font-semibold text-white">
-                  {billingCycle === 'monthly' ? '₹2,999' : '₹2,399'}
+                  {billingCycle === 'monthly' ? '₹999' : '₹799'}
                 </span>
                 <span className="text-xs text-zinc-400 font-mono"> / month</span>
               </div>
               <p className="text-xs text-zinc-400 mb-6 font-mono">
-                {billingCycle === 'annual' ? 'Billed ₹28,788 annually' : '₹99/day • Complete business presence'}
+                {billingCycle === 'annual' ? 'Billed ₹9,588 annually' : '₹33/day • Complete business presence'}
               </p>
               <ul className="space-y-3 text-xs text-zinc-200 mb-8">
                 <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> <strong>2 Connected WhatsApp Numbers</strong></li>
-                <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> <strong>10,000 AI Messages / month</strong></li>
+                <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> <strong>8,000 AI Messages / month</strong></li>
                 <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> Push-To-Talk Voice Note Synthesis (TTS)</li>
                 <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> Multimodal Vision &amp; Photo Inspection</li>
                 <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> Custom Knowledge Base &amp; Personality Studio</li>
@@ -849,16 +849,16 @@ export default function LandingPage() {
               </div>
               <div className="mt-3 mb-1">
                 <span className="text-3xl font-semibold text-white">
-                  {billingCycle === 'monthly' ? '₹9,999' : '₹7,999'}
+                  {billingCycle === 'monthly' ? '₹2,499' : '₹1,999'}
                 </span>
                 <span className="text-xs text-zinc-500 font-mono"> / month</span>
               </div>
               <p className="text-xs text-zinc-500 mb-6 font-mono">
-                {billingCycle === 'annual' ? 'Billed ₹95,988 annually' : 'Multi-client agency infrastructure'}
+                {billingCycle === 'annual' ? 'Billed ₹23,988 annually' : 'Multi-client agency infrastructure'}
               </p>
               <ul className="space-y-3 text-xs text-zinc-300 mb-8">
                 <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> <strong>5 Connected WhatsApp Numbers</strong></li>
-                <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> <strong>50,000 AI Messages / month</strong></li>
+                <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> <strong>30,000 AI Messages / month</strong></li>
                 <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> Multi-Tenant Sub-Accounts</li>
                 <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> Full REST API &amp; Webhook Dispatch</li>
                 <li className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" /> Custom CRM / DB Integrations</li>

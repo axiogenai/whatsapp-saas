@@ -565,30 +565,27 @@ export default function DashboardPage() {
     }
   };
 
-  const applyTemplate = (type: 'axiogen' | 'support' | 'clinic' | 'realty' | 'restaurant') => {
+  const applyTemplate = (type: 'executive' | 'support' | 'clinic' | 'realty' | 'restaurant') => {
+    const biz = user?.businessName || user?.name || 'our business';
     const templates = {
-      axiogen: `You are Aditya, founder & lead software architect at Team Axiogen (team.axiogen.in).
-You are texting directly with clients, leads, and partners on your personal WhatsApp from your phone.
+      executive: `You are the executive AI persona for ${biz}.
+You text directly with clients, prospective leads, and partners on WhatsApp.
 
-CRITICAL PORTFOLIO & WORK LINKS:
-- The ONLY official website & portfolio URL for Team Axiogen is: https://team.axiogen.in
-- When anyone asks for portfolio, past work, projects, case studies, or demo links, ALWAYS provide https://team.axiogen.in. Never invent or send any other domain.
-- Flagship shipped products: ClinicOS (Healthcare ERP/CRM), Axiogen Voice Engine v2 (Neural TTS), Axiogen QR Engine, Axiogen Vault (Encrypted file delivery), and WhatsApp SaaS.
+AUTONOMOUS CAPABILITIES (THINK, EXECUTE, AND OBEY):
+- REMINDERS: If the contact asks to be reminded of anything (e.g. "remind me in 30 mins to follow up", "remind me tomorrow"), EXECUTE the schedule_reminder tool.
+- CALLS: If the contact wants to schedule a call, consultation, or meeting, EXECUTE schedule_call.
+- LEADS: If the contact shares their requirements, tech stack, or budget, EXECUTE save_lead.
+- PORTFOLIO: If the contact asks for your website or work, EXECUTE get_portfolio.
+- CHECK REMINDERS: If the contact asks what reminders are pending, EXECUTE get_reminders.
 
-YOU ARE AN AUTONOMOUS AGENT WITH REAL EXECUTABLE TOOLS (THINK, EXECUTE, AND OBEY):
-- REMINDERS: If the user asks to be reminded of anything (e.g. "remind me in 30 minutes to check server", "remind me tomorrow to call Rahul", "mala 15 minatani sang"), YOU MUST EXECUTE the schedule_reminder tool.
-- CALLS: If the user wants to schedule a call, consultation, or meeting, EXECUTE schedule_call.
-- PORTFOLIO: If the user asks for your work, projects, or website, EXECUTE get_portfolio or provide https://team.axiogen.in.
-- CHECK REMINDERS: If the user asks what reminders they have scheduled, EXECUTE get_reminders.
-
-CRITICAL WHATSAPP RULES:
+WHATSAPP RULES:
 1. ZERO MARKDOWN: Never use asterisks (* or **), bullet points, or markdown tables.
-2. TEXTING STYLE & LENGTH: 1 to 2 short sentences max. Sharp, conversational, punchy.
-3. MULTILINGUAL: English, Roman Hindi/Hinglish, and Roman Marathi.`,
-      support: `You are the customer support representative for ${user?.businessName || 'our business'}. Answer inquiries politely, clearly, and concisely. Provide information regarding services, support hours, and follow-ups. You have real tools: schedule_reminder to set reminders, and schedule_call to schedule consultations. Speak naturally without markdown tables or asterisks (1 to 2 sentences max).`,
-      clinic: `You are the front-desk appointment coordinator for ${user?.businessName || 'our clinic'}. Help clients with appointment availability, schedules, timings, and directions. Use schedule_call to book consultations and schedule_reminder to set follow-up reminders. Always maintain a calm, helpful, professional tone in 1-2 sentences. Avoid medical advice.`,
-      realty: `You are the property inquiry specialist for ${user?.businessName || 'our business'}. Assist potential buyers and tenants with property locations, pricing estimates, and site visits. Use schedule_call to book walkthroughs. Maintain an executive, trustworthy tone in 1-2 sentences without markdown.`,
-      restaurant: `You are the dining concierge for ${user?.businessName || 'our restaurant'}. Handle table reservations, dietary questions, operating hours, and location guidance. Keep responses friendly, warm, and brief in 1-2 sentences.`,
+2. TEXTING STYLE: 1 to 2 short sentences max. Sharp, conversational, and direct.
+3. MULTILINGUAL: Understands and responds naturally in English, Hindi, and Hinglish.`,
+      support: `You are the customer support representative for ${biz}. Answer inquiries politely, clearly, and concisely. Provide information regarding services, support hours, and follow-ups. You have real tools: schedule_reminder to set reminders, and schedule_call to schedule consultations. Speak naturally without markdown tables or asterisks (1 to 2 sentences max).`,
+      clinic: `You are the front-desk appointment coordinator for ${biz}. Help clients with appointment availability, schedules, timings, and directions. Use schedule_call to book consultations and schedule_reminder to set follow-up reminders. Always maintain a calm, helpful, professional tone in 1-2 sentences. Avoid medical advice.`,
+      realty: `You are the property inquiry specialist for ${biz}. Assist potential buyers and tenants with property locations, pricing estimates, and site visits. Use schedule_call to book walkthroughs. Maintain an executive, trustworthy tone in 1-2 sentences without markdown.`,
+      restaurant: `You are the dining concierge for ${biz}. Handle table reservations, dietary questions, operating hours, and location guidance. Keep responses friendly, warm, and brief in 1-2 sentences.`,
     };
     setConfig((prev) => ({ ...prev, systemPrompt: templates[type] }));
     setActivePreset(type);
@@ -612,7 +609,7 @@ CRITICAL WHATSAPP RULES:
           'x-tenant-id': tenantId,
         },
         body: JSON.stringify({
-          text: `Hi, this is ${config.botName || 'Aditya'} from Team Axiogen. Our portfolio is live at team dot axiogen dot in. How can I assist you today?`,
+          text: `Hello, this is ${config.botName || user?.businessName || 'your AI assistant'}. I am available to answer questions, assist customers, and schedule appointments. How can I help you today?`,
           voice: config.voicePersona || 'am_adam',
           speed: config.voiceSpeed || 1.0,
         }),
@@ -945,7 +942,7 @@ CRITICAL WHATSAPP RULES:
                         item.id === 'subscription' && isTrialExhausted
                           ? 'bg-rose-950/80 border border-rose-800 text-rose-400'
                           : item.id === 'subscription'
-                          ? 'bg-amber-950/60 border border-amber-800/80 text-amber-300'
+                          ? 'bg-zinc-800 border border-zinc-700/60 text-zinc-300'
                           : 'bg-zinc-900 border border-zinc-800 text-zinc-400'
                       }`}
                     >
@@ -965,9 +962,9 @@ CRITICAL WHATSAPP RULES:
             <div
               className={`p-2 rounded-lg border text-[11px] font-mono flex items-center justify-between ${
                 isConnected
-                  ? 'bg-emerald-950/20 border-emerald-900/50 text-emerald-400'
+                  ? 'bg-zinc-900/60 border-zinc-800 text-zinc-300'
                   : statusData.status === 'qr_ready'
-                  ? 'bg-amber-950/20 border-amber-900/50 text-amber-400'
+                  ? 'bg-zinc-900/60 border-zinc-800 text-zinc-300'
                   : 'bg-zinc-900 border-zinc-800 text-zinc-400'
               }`}
             >
@@ -975,7 +972,7 @@ CRITICAL WHATSAPP RULES:
                 <span
                   className={`w-2 h-2 rounded-full shrink-0 ${
                     isConnected
-                      ? 'bg-emerald-400 animate-pulse'
+                      ? 'bg-emerald-500'
                       : statusData.status === 'qr_ready'
                       ? 'bg-amber-400'
                       : 'bg-zinc-600'
@@ -985,7 +982,7 @@ CRITICAL WHATSAPP RULES:
                   {isConnected
                     ? `+${statusData.phone}`
                     : statusData.status === 'qr_ready'
-                    ? 'Scan QR'
+                    ? 'Pairing Required'
                     : 'Offline'}
                 </span>
               </div>
@@ -995,7 +992,7 @@ CRITICAL WHATSAPP RULES:
               <span
                 className={`w-2.5 h-2.5 rounded-full ${
                   isConnected
-                    ? 'bg-emerald-400 animate-pulse'
+                    ? 'bg-emerald-500'
                     : statusData.status === 'qr_ready'
                     ? 'bg-amber-400'
                     : 'bg-zinc-600'
@@ -1050,16 +1047,16 @@ CRITICAL WHATSAPP RULES:
             <div
               className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono border ${
                 isConnected
-                  ? 'bg-emerald-950/30 text-emerald-400 border-emerald-800/60'
+                  ? 'bg-zinc-900 border-zinc-800 text-zinc-300'
                   : statusData.status === 'qr_ready'
-                  ? 'bg-amber-950/30 text-amber-400 border-amber-800/60'
+                  ? 'bg-zinc-900 border-zinc-800 text-zinc-300'
                   : 'bg-zinc-900 text-zinc-400 border-zinc-800'
               }`}
             >
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
                   isConnected
-                    ? 'bg-emerald-400 animate-pulse'
+                    ? 'bg-emerald-500'
                     : statusData.status === 'qr_ready'
                     ? 'bg-amber-400'
                     : 'bg-zinc-600'
@@ -1069,7 +1066,7 @@ CRITICAL WHATSAPP RULES:
                 {isConnected
                   ? `Active • +${statusData.phone}`
                   : statusData.status === 'qr_ready'
-                  ? 'QR Ready'
+                  ? 'Pairing Required'
                   : 'Disconnected'}
               </span>
             </div>
@@ -1323,21 +1320,21 @@ CRITICAL WHATSAPP RULES:
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                     <button
                       type="button"
-                      onClick={() => applyTemplate('axiogen')}
+                      onClick={() => applyTemplate('executive')}
                       className={`p-2.5 rounded-lg text-left text-xs font-medium transition-colors cursor-pointer ${
-                        activePreset === 'axiogen'
-                          ? 'bg-indigo-950/60 border border-indigo-700 text-indigo-200'
+                        activePreset === 'executive'
+                          ? 'bg-zinc-800 border border-zinc-600 text-white shadow-sm'
                           : 'bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white'
                       }`}
                     >
-                      Team Axiogen (Founder Bot)
+                      Executive / Founder
                     </button>
                     <button
                       type="button"
                       onClick={() => applyTemplate('support')}
                       className={`p-2.5 rounded-lg text-left text-xs font-medium transition-colors cursor-pointer ${
                         activePreset === 'support'
-                          ? 'bg-indigo-950/60 border border-indigo-700 text-indigo-200'
+                          ? 'bg-zinc-800 border border-zinc-600 text-white shadow-sm'
                           : 'bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white'
                       }`}
                     >
@@ -1348,7 +1345,7 @@ CRITICAL WHATSAPP RULES:
                       onClick={() => applyTemplate('clinic')}
                       className={`p-2.5 rounded-lg text-left text-xs font-medium transition-colors cursor-pointer ${
                         activePreset === 'clinic'
-                          ? 'bg-indigo-950/60 border border-indigo-700 text-indigo-200'
+                          ? 'bg-zinc-800 border border-zinc-600 text-white shadow-sm'
                           : 'bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white'
                       }`}
                     >
@@ -1359,7 +1356,7 @@ CRITICAL WHATSAPP RULES:
                       onClick={() => applyTemplate('realty')}
                       className={`p-2.5 rounded-lg text-left text-xs font-medium transition-colors cursor-pointer ${
                         activePreset === 'realty'
-                          ? 'bg-indigo-950/60 border border-indigo-700 text-indigo-200'
+                          ? 'bg-zinc-800 border border-zinc-600 text-white shadow-sm'
                           : 'bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white'
                       }`}
                     >
@@ -1370,11 +1367,11 @@ CRITICAL WHATSAPP RULES:
                       onClick={() => applyTemplate('restaurant')}
                       className={`p-2.5 rounded-lg text-left text-xs font-medium transition-colors cursor-pointer ${
                         activePreset === 'restaurant'
-                          ? 'bg-indigo-950/60 border border-indigo-700 text-indigo-200'
+                          ? 'bg-zinc-800 border border-zinc-600 text-white shadow-sm'
                           : 'bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white'
                       }`}
                     >
-                      Restaurant / Dining
+                      Dining &amp; Hospitality
                     </button>
                   </div>
                 </div>
@@ -1846,20 +1843,19 @@ CRITICAL WHATSAPP RULES:
           {tab === 'reminders' && (
             <div className="space-y-6">
               {/* Header Info */}
-              <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 sm:p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-zinc-800/80">
+              <div className="bg-zinc-900/30 border border-zinc-800/80 rounded-xl p-5 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-zinc-800/60">
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-indigo-950/80 border border-indigo-800 text-indigo-400">
-                        AUTONOMOUS AGENT ACTIONS
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-800 text-zinc-300 border border-zinc-700/60">
+                        AUTONOMOUS ACTIONS
                       </span>
-                      <span className="text-xs font-mono text-zinc-400">Portfolio: https://team.axiogen.in</span>
                     </div>
-                    <h3 className="text-xl font-semibold text-zinc-100">
-                      Autonomous Reminders, Scheduled Calls &amp; Leads
+                    <h3 className="text-xl font-semibold text-zinc-100 tracking-tight">
+                      Tasks, Scheduled Calls &amp; Inbound Leads
                     </h3>
                     <p className="text-xs text-zinc-400 mt-1">
-                      The bot actively executes tools in real-time: schedules and fires WhatsApp reminders at due timestamps, books client consultations, and captures project leads.
+                      Manage automated WhatsApp follow-ups, booked client consultations, and qualified requirements.
                     </p>
                   </div>
 
@@ -1869,86 +1865,95 @@ CRITICAL WHATSAPP RULES:
                     className="px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-white transition-colors flex items-center gap-2 cursor-pointer self-start sm:self-auto shrink-0"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${loadingReminders ? 'animate-spin' : ''}`} />
-                    <span>Refresh Actions</span>
+                    <span>Refresh Data</span>
                   </button>
                 </div>
 
                 {/* Quick Stats */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-5">
-                  <div className="p-3.5 bg-zinc-950 border border-zinc-800/80 rounded-xl">
-                    <span className="text-xs text-zinc-400 font-medium">Active WhatsApp Reminders</span>
-                    <div className="flex items-baseline justify-between mt-2">
-                      <span className="text-lg font-bold font-mono text-emerald-400">
+                  <div className="p-4 bg-zinc-950 border border-zinc-800/80 rounded-xl flex flex-col justify-between">
+                    <div className="flex items-center justify-between text-zinc-400">
+                      <span className="text-xs font-medium">Pending Reminders</span>
+                      <Clock className="w-4 h-4 text-zinc-500" />
+                    </div>
+                    <div className="mt-3">
+                      <span className="text-2xl font-semibold text-white font-mono tracking-tight">
                         {remindersList.filter((r: any) => r.status === 'pending').length}
                       </span>
-                      <span className="text-[11px] font-mono text-zinc-500">Autonomous daemon</span>
+                      <p className="text-[11px] text-zinc-500 mt-0.5">
+                        In queue for automated dispatch
+                      </p>
                     </div>
-                    <p className="text-[10px] text-zinc-500 mt-1">
-                      Proactively messaged to WhatsApp when due
-                    </p>
                   </div>
 
-                  <div className="p-3.5 bg-zinc-950 border border-zinc-800/80 rounded-xl">
-                    <span className="text-xs text-zinc-400 font-medium">Scheduled Calls &amp; Meets</span>
-                    <div className="flex items-baseline justify-between mt-2">
-                      <span className="text-lg font-bold font-mono text-indigo-400">
+                  <div className="p-4 bg-zinc-950 border border-zinc-800/80 rounded-xl flex flex-col justify-between">
+                    <div className="flex items-center justify-between text-zinc-400">
+                      <span className="text-xs font-medium">Scheduled Consultations</span>
+                      <Smartphone className="w-4 h-4 text-zinc-500" />
+                    </div>
+                    <div className="mt-3">
+                      <span className="text-2xl font-semibold text-white font-mono tracking-tight">
                         {scheduledCallsList.length}
                       </span>
-                      <span className="text-[11px] font-mono text-zinc-500">Meet / Consultation</span>
+                      <p className="text-[11px] text-zinc-500 mt-0.5">
+                        Booked via WhatsApp conversation
+                      </p>
                     </div>
-                    <p className="text-[10px] text-zinc-500 mt-1">
-                      Automated booking via natural WhatsApp conversation
-                    </p>
                   </div>
 
-                  <div className="p-3.5 bg-zinc-950 border border-zinc-800/80 rounded-xl">
-                    <span className="text-xs text-zinc-400 font-medium">Project Leads Captured</span>
-                    <div className="flex items-baseline justify-between mt-2">
-                      <span className="text-lg font-bold font-mono text-amber-400">
+                  <div className="p-4 bg-zinc-950 border border-zinc-800/80 rounded-xl flex flex-col justify-between">
+                    <div className="flex items-center justify-between text-zinc-400">
+                      <span className="text-xs font-medium">Captured Leads</span>
+                      <User className="w-4 h-4 text-zinc-500" />
+                    </div>
+                    <div className="mt-3">
+                      <span className="text-2xl font-semibold text-white font-mono tracking-tight">
                         {leadsList.length}
                       </span>
-                      <span className="text-[11px] font-mono text-zinc-500">Inquiries</span>
+                      <p className="text-[11px] text-zinc-500 mt-0.5">
+                        Requirements &amp; budgets auto-logged
+                      </p>
                     </div>
-                    <p className="text-[10px] text-zinc-500 mt-1">
-                      Auto-logged requirements and budgets
-                    </p>
                   </div>
                 </div>
               </div>
 
               {/* Schedule Manual Reminder Card */}
-              <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-5">
-                <h4 className="font-semibold text-sm text-zinc-200 mb-1">
-                  Schedule WhatsApp Reminder
-                </h4>
+              <div className="bg-zinc-900/30 border border-zinc-800/80 rounded-xl p-5">
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock className="w-4 h-4 text-zinc-400" />
+                  <h4 className="font-semibold text-sm text-zinc-200">
+                    Schedule WhatsApp Follow-Up
+                  </h4>
+                </div>
                 <p className="text-xs text-zinc-400 mb-4">
-                  Schedule a message to be proactively sent to any WhatsApp chat after a specified delay.
+                  Dispatch a proactive reminder message to any phone number after a specified delay.
                 </p>
 
                 <form onSubmit={handleCreateManualReminder} className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <div className="sm:col-span-2">
                     <input
                       type="text"
-                      placeholder="Task (e.g. Inspect server logs or Follow up on proposal)"
+                      placeholder="Task description (e.g. Follow up on proposal contract)"
                       value={newReminderTask}
                       onChange={(e) => setNewReminderTask(e.target.value)}
-                      className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 font-mono"
+                      className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 transition-colors"
                     />
                   </div>
                   <div>
                     <input
                       type="text"
-                      placeholder="Phone (e.g. 919876543210)"
+                      placeholder="Phone with country code (e.g. 919876543210)"
                       value={newReminderPhone}
                       onChange={(e) => setNewReminderPhone(e.target.value)}
-                      className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 font-mono"
+                      className="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-xs font-mono text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 transition-colors"
                     />
                   </div>
                   <div className="flex gap-2">
                     <select
                       value={newReminderDelay}
                       onChange={(e) => setNewReminderDelay(e.target.value)}
-                      className="w-24 px-2 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-zinc-600"
+                      className="w-24 px-2.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-zinc-600"
                     >
                       <option value="5">5 mins</option>
                       <option value="15">15 mins</option>
@@ -1959,7 +1964,7 @@ CRITICAL WHATSAPP RULES:
                     <button
                       type="submit"
                       disabled={schedulingManualReminder}
-                      className="flex-1 py-2 px-3 rounded-lg bg-white text-zinc-950 hover:bg-zinc-200 font-medium text-xs transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 shrink-0"
+                      className="flex-1 py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0 shadow-sm"
                     >
                       {schedulingManualReminder ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>Schedule</span>}
                     </button>
@@ -1967,13 +1972,13 @@ CRITICAL WHATSAPP RULES:
                 </form>
               </div>
 
-              {/* Reminders, Calls, and Leads Lists */}
+              {/* Reminders & Scheduled Calls Lists */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Active Reminders */}
-                <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-5 space-y-4">
-                  <div className="flex items-center justify-between">
+                <div className="bg-zinc-900/30 border border-zinc-800/80 rounded-xl p-5 space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-zinc-800/60">
                     <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-emerald-400" />
+                      <Clock className="w-4 h-4 text-emerald-500" />
                       <h4 className="font-semibold text-sm text-zinc-200">Pending Reminders</h4>
                     </div>
                     <span className="text-xs font-mono text-zinc-500">
@@ -1982,8 +1987,14 @@ CRITICAL WHATSAPP RULES:
                   </div>
 
                   {remindersList.filter((r: any) => r.status === 'pending').length === 0 ? (
-                    <div className="py-8 text-center text-xs text-zinc-500 font-mono">
-                      No pending reminders right now. Tell the bot &ldquo;Remind me in 30 mins to...&rdquo; on WhatsApp!
+                    <div className="py-12 text-center flex flex-col items-center justify-center">
+                      <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 mb-3">
+                        <Clock className="w-4 h-4" />
+                      </div>
+                      <p className="text-xs font-medium text-zinc-300">No pending reminders in queue</p>
+                      <p className="text-[11px] text-zinc-500 mt-1 max-w-xs">
+                        Reminders scheduled manually or triggered autonomously via WhatsApp chat will appear here.
+                      </p>
                     </div>
                   ) : (
                     <div className="space-y-2.5 max-h-[380px] overflow-y-auto">
@@ -1994,7 +2005,7 @@ CRITICAL WHATSAPP RULES:
                           return (
                             <div
                               key={rem.id}
-                              className="p-3 bg-zinc-950 border border-zinc-800/80 rounded-lg flex items-start justify-between gap-3"
+                              className="p-3.5 bg-zinc-950 border border-zinc-800/80 rounded-lg flex items-start justify-between gap-3"
                             >
                               <div className="space-y-1 min-w-0">
                                 <p className="text-xs font-medium text-zinc-200 break-words">{rem.task}</p>
@@ -2006,7 +2017,7 @@ CRITICAL WHATSAPP RULES:
                               </div>
                               <button
                                 onClick={() => handleCancelReminder(rem.id)}
-                                className="px-2 py-1 rounded bg-zinc-900 hover:bg-rose-950/40 border border-zinc-800 hover:border-rose-800/80 text-[11px] text-zinc-400 hover:text-rose-400 cursor-pointer shrink-0"
+                                className="px-2.5 py-1 rounded bg-zinc-900 hover:bg-rose-950/40 border border-zinc-800 hover:border-rose-800/80 text-[11px] text-zinc-400 hover:text-rose-400 cursor-pointer shrink-0 transition-colors"
                               >
                                 Cancel
                               </button>
@@ -2018,11 +2029,11 @@ CRITICAL WHATSAPP RULES:
                 </div>
 
                 {/* Scheduled Calls */}
-                <div className="bg-zinc-900/30 border border-zinc-800 rounded-xl p-5 space-y-4">
-                  <div className="flex items-center justify-between">
+                <div className="bg-zinc-900/30 border border-zinc-800/80 rounded-xl p-5 space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-zinc-800/60">
                     <div className="flex items-center gap-2">
-                      <Smartphone className="w-4 h-4 text-indigo-400" />
-                      <h4 className="font-semibold text-sm text-zinc-200">Scheduled Calls &amp; Consultations</h4>
+                      <Smartphone className="w-4 h-4 text-emerald-500" />
+                      <h4 className="font-semibold text-sm text-zinc-200">Scheduled Consultations</h4>
                     </div>
                     <span className="text-xs font-mono text-zinc-500">
                       {scheduledCallsList.length} Booked
@@ -2030,15 +2041,21 @@ CRITICAL WHATSAPP RULES:
                   </div>
 
                   {scheduledCallsList.length === 0 ? (
-                    <div className="py-8 text-center text-xs text-zinc-500 font-mono">
-                      No calls booked yet. The bot automatically books slots when users request calls!
+                    <div className="py-12 text-center flex flex-col items-center justify-center">
+                      <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 mb-3">
+                        <Smartphone className="w-4 h-4" />
+                      </div>
+                      <p className="text-xs font-medium text-zinc-300">No scheduled consultations yet</p>
+                      <p className="text-[11px] text-zinc-500 mt-1 max-w-xs">
+                        When contacts request a meeting or call on WhatsApp, the AI automatically confirms the slot and logs it here.
+                      </p>
                     </div>
                   ) : (
                     <div className="space-y-2.5 max-h-[380px] overflow-y-auto">
                       {scheduledCallsList.map((c: any) => (
                         <div
                           key={c.id}
-                          className="p-3 bg-zinc-950 border border-zinc-800/80 rounded-lg flex items-start justify-between gap-3"
+                          className="p-3.5 bg-zinc-950 border border-zinc-800/80 rounded-lg flex items-start justify-between gap-3"
                         >
                           <div className="space-y-1 min-w-0">
                             <div className="flex items-center gap-2">
@@ -2051,7 +2068,7 @@ CRITICAL WHATSAPP RULES:
                             <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-500">
                               <span>+{c.clientPhone}</span>
                               <span>•</span>
-                              <span className="text-indigo-400">{c.preferredTime}</span>
+                              <span className="text-emerald-400">{c.preferredTime}</span>
                             </div>
                           </div>
                           {c.meetLink && (
@@ -2059,7 +2076,7 @@ CRITICAL WHATSAPP RULES:
                               href={c.meetLink}
                               target="_blank"
                               rel="noreferrer"
-                              className="px-2 py-1 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-indigo-300 hover:text-white cursor-pointer shrink-0 flex items-center gap-1"
+                              className="px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-white cursor-pointer shrink-0 flex items-center gap-1 transition-colors"
                             >
                               <span>Meet</span>
                               <ExternalLink className="w-3 h-3" />

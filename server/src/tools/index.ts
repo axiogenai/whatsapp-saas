@@ -101,13 +101,13 @@ export const TOOL_DEFINITIONS = [
     function: {
       name: 'get_portfolio',
       description:
-        'Retrieve the official Team Axiogen portfolio website URL (https://team.axiogen.in) and flagship products list.',
+        'Retrieve the business website URL, services, and portfolio details.',
       parameters: {
         type: 'object',
         properties: {
           category: {
             type: 'string',
-            description: 'Optional category (e.g. "all", "healthcare", "ai", "tts", "qr").',
+            description: 'Optional category (e.g. "all", "services", "work").',
           },
         },
       },
@@ -219,38 +219,17 @@ export async function executeTool(
     }
 
     case 'get_portfolio': {
+      const cfg = getTenantConfig(tenantId);
+      const url = (cfg as any).websiteUrl || (cfg as any).portfolioUrl || '';
+      const bizName = cfg.botName || 'our team';
+
       return {
         success: true,
-        portfolioUrl: 'https://team.axiogen.in',
-        flagshipProjects: [
-          {
-            name: 'ClinicOS',
-            description: 'Enterprise healthcare CRM & clinical practice management ERP.',
-            tag: 'Healthcare & Enterprise',
-          },
-          {
-            name: 'Axiogen Voice Engine v2',
-            description: 'Ultra-low-latency neural TTS & multilingual speech synthesis (port 7860).',
-            tag: 'AI & Speech',
-          },
-          {
-            name: 'Axiogen QR Engine',
-            description: 'High-res dynamic branded QR engine with matrix deadzone clearing (port 8000).',
-            tag: 'Branding & Infrastructure',
-          },
-          {
-            name: 'Axiogen Vault',
-            description: 'Zero-exposure cryptographic file distribution system with MinIO (port 8001 /vault).',
-            tag: 'Security & Cloud',
-          },
-          {
-            name: 'Axiogen WhatsApp SaaS',
-            description: 'Autonomous multi-tenant conversational WhatsApp AI gateway with agentic tool execution.',
-            tag: 'AI Automation',
-          },
-        ],
-        officialWebsite: 'https://team.axiogen.in',
-        message: 'The official Team Axiogen portfolio is live at https://team.axiogen.in',
+        businessName: bizName,
+        websiteUrl: url || undefined,
+        message: url
+          ? `Our official website and portfolio is live at ${url}.`
+          : `You can share your requirements directly with us here, or let us know a preferred time to connect.`,
       };
     }
 

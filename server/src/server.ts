@@ -81,7 +81,7 @@ app.get(['/api/status', '/api/tenant/:tenantId/status'], async (req: Request, re
       typingDelayMaxMs: config.typingDelayMaxMs,
       humanTakeoverCooldownMinutes: config.humanTakeoverCooldownMinutes,
       debounceWaitMs: config.debounceWaitMs,
-      portfolioUrl: 'https://team.axiogen.in',
+      portfolioUrl: (config as any).websiteUrl || (config as any).portfolioUrl || '',
       voiceReplyMode: config.voiceReplyMode || 'adaptive',
       voicePersona: config.voicePersona || 'am_adam',
       voiceSpeed: config.voiceSpeed || 1.0,
@@ -128,7 +128,7 @@ app.get(['/api/config', '/api/tenant/:tenantId/config'], (req: Request, res: Res
       ? `${cfg.groqApiKey.slice(0, 7)}...${cfg.groqApiKey.slice(-4)}`
       : '',
     hasApiKey: Boolean(cfg.groqApiKey && cfg.groqApiKey.length > 5),
-    officialPortfolioUrl: 'https://team.axiogen.in',
+    officialPortfolioUrl: (cfg as any).websiteUrl || (cfg as any).portfolioUrl || '',
   });
 });
 
