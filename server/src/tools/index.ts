@@ -8,6 +8,7 @@ import {
   ScheduledCall,
   CapturedLead,
 } from '../reminderManager';
+import { getTenantConfig } from '../config';
 
 export interface ToolExecutionContext {
   tenantId: string;
