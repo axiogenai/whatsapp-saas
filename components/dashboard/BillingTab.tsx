@@ -23,12 +23,13 @@ export function BillingTab({
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
 
   const getLimit = () => {
+    if (activePlan === 'free_trial' && trialLimit) return trialLimit;
     switch (activePlan) {
-      case 'free_trial': return 70;
+      case 'free_trial': return trialLimit || 70;
       case 'starter': return 1500;
       case 'pro': return 8000;
       case 'agency': return 30000;
-      default: return 70;
+      default: return trialLimit || 70;
     }
   };
 
@@ -73,7 +74,7 @@ export function BillingTab({
           ) : (
             <div>
               <span className="text-3xl font-semibold text-white font-mono">
-                ${activePlan === 'starter' ? '49' : activePlan === 'pro' ? '99' : '249'}
+                ₹{activePlan === 'starter' ? '499' : activePlan === 'pro' ? '999' : '2,499'}
               </span>
               <span className="text-base text-white/30">/mo</span>
             </div>
@@ -91,8 +92,8 @@ export function BillingTab({
           />
         </div>
         <div className="flex justify-between text-xs text-white/30 mt-2">
-          <span>{messagesUsed} used</span>
-          <span>{limit} limit</span>
+          <span>{messagesUsed.toLocaleString()} used</span>
+          <span>{limit.toLocaleString()} limit</span>
         </div>
       </div>
 
@@ -128,7 +129,7 @@ export function BillingTab({
                 <div className="text-sm font-medium text-white/60 mb-2">Starter</div>
                 <div className="mb-4">
                   <span className="text-2xl font-semibold text-white font-mono">
-                    ${billingCycle === 'monthly' ? '49' : '39'}
+                    ₹{billingCycle === 'monthly' ? '499' : '399'}
                   </span>
                   <span className="text-sm text-white/30">/mo</span>
                 </div>
@@ -142,7 +143,7 @@ export function BillingTab({
                 <button
                   onClick={() => onInitiatePayment('starter')}
                   disabled={initiatingPlan !== null}
-                  className="w-full h-10 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                  className="w-full h-10 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {initiatingPlan === 'starter' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Upgrade to Starter'}
                 </button>
@@ -151,14 +152,14 @@ export function BillingTab({
 
             {/* Pro */}
             {currentLevel < 2 && (
-              <div className="bg-[#0F0F0F] border border-[#25D366]/20 rounded-2xl p-5 flex flex-col relative">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-2 py-0.5 bg-[#25D366] text-black text-[10px] font-bold uppercase tracking-wider rounded-full">
+              <div className="bg-[#0F0F0F] border border-[#25D366]/20 rounded-2xl p-5 flex flex-col relative shadow-[0_0_30px_rgba(37,211,102,0.06)]">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-2.5 py-0.5 bg-[#25D366] text-black text-[10px] font-bold uppercase tracking-wider rounded-full">
                   Popular
                 </div>
                 <div className="text-sm font-medium text-white/60 mb-2 mt-1">Business Pro</div>
                 <div className="mb-4">
                   <span className="text-2xl font-semibold text-white font-mono">
-                    ${billingCycle === 'monthly' ? '99' : '79'}
+                    ₹{billingCycle === 'monthly' ? '999' : '799'}
                   </span>
                   <span className="text-sm text-white/30">/mo</span>
                 </div>
@@ -172,7 +173,7 @@ export function BillingTab({
                 <button
                   onClick={() => onInitiatePayment('pro')}
                   disabled={initiatingPlan !== null}
-                  className="w-full h-10 rounded-xl bg-[#25D366] hover:bg-[#22c55e] text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                  className="w-full h-10 rounded-xl bg-[#25D366] hover:bg-[#22c55e] text-white text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(37,211,102,0.15)]"
                 >
                   {initiatingPlan === 'pro' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Upgrade to Pro'}
                 </button>
@@ -185,7 +186,7 @@ export function BillingTab({
                 <div className="text-sm font-medium text-white/60 mb-2">Agency</div>
                 <div className="mb-4">
                   <span className="text-2xl font-semibold text-white font-mono">
-                    ${billingCycle === 'monthly' ? '249' : '199'}
+                    ₹{billingCycle === 'monthly' ? '2,499' : '1,999'}
                   </span>
                   <span className="text-sm text-white/30">/mo</span>
                 </div>
@@ -199,7 +200,7 @@ export function BillingTab({
                 <button
                   onClick={() => onInitiatePayment('agency')}
                   disabled={initiatingPlan !== null}
-                  className="w-full h-10 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                  className="w-full h-10 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {initiatingPlan === 'agency' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Upgrade to Agency'}
                 </button>

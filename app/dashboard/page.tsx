@@ -193,14 +193,10 @@ export default function DashboardPage() {
 
     const statusTimer = setInterval(fetchStatus, 3500);
     const chatsTimer = setInterval(() => {
-      if (tab === 'inbox' || tab === 'overview') {
-        fetchChats();
-      }
+      fetchChats();
     }, 3500);
     const remindersTimer = setInterval(() => {
-      if (tab === 'tasks' || tab === 'overview') {
-        fetchReminders();
-      }
+      fetchReminders();
     }, 5000);
 
     return () => {
@@ -208,7 +204,7 @@ export default function DashboardPage() {
       clearInterval(chatsTimer);
       clearInterval(remindersTimer);
     };
-  }, [user, tab, fetchStatus, fetchConfig, fetchChats, fetchReminders]);
+  }, [user, fetchStatus, fetchConfig, fetchChats, fetchReminders]);
 
   // Handle Manual Refresh
   const handleRefresh = async () => {
@@ -489,9 +485,10 @@ export default function DashboardPage() {
       ? 'connecting'
       : 'disconnected';
 
-  // Free trial limits
-  const trialLimit = user?.trialLimit || 70;
-  const messagesUsed = user?.messagesUsed || telemetry.filter((t) => t.isBotReply).length;
+  // Free trial limits & usage
+  const isOwner = user?.email?.toLowerCase().includes('aditay') || user?.email?.toLowerCase().includes('aditya');
+  const trialLimit = user?.trialLimit && user.trialLimit > 70 ? user.trialLimit : (isOwner ? 100000 : (user?.trialLimit || 70));
+  const messagesUsed = Math.max(user?.messagesUsed || 0, telemetry.length);
   const trialExhausted = (user?.plan === 'free_trial' || !user?.plan) && messagesUsed >= trialLimit;
 
   return (
