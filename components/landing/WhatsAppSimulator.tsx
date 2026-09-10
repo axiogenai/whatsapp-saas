@@ -51,10 +51,10 @@ export default function WhatsAppSimulator() {
         <div className="bg-[#1f2c34] px-4 py-3 flex items-center gap-3">
           <ChevronLeft className="w-5 h-5 text-white/50" />
           <div className="w-9 h-9 rounded-full bg-[#25D366]/20 flex items-center justify-center">
-            <span className="text-xs font-medium text-[#25D366]">RM</span>
+            <span className="text-xs font-medium text-[#25D366]">A</span>
           </div>
           <div className="flex-1">
-            <h3 className="text-sm font-medium text-white">Rohan Mehta</h3>
+            <h3 className="text-sm font-medium text-white">Aditya</h3>
             <p className="text-[10px] text-[#25D366]/60">online</p>
           </div>
           <div className="flex gap-4">
@@ -103,7 +103,7 @@ export default function WhatsAppSimulator() {
               >
                 <p className="text-sm text-[#e9edef]">
                   <span className="inline text-[9px] font-mono text-[#25D366]/50 mr-1">AI</span>
-                  Hi Rohan! He's currently in a focused session. He'll be available after 1:30 PM — would that work for a quick call?
+                  Hi Aditya! He's currently in a focused session. He'll be available after 1:30 PM — would that work for a quick call?
                 </p>
                 <div className="flex items-center justify-end gap-1 mt-1">
                   <span className="text-[10px] text-white/20">10:42 AM</span>
@@ -134,7 +134,7 @@ export default function WhatsAppSimulator() {
               >
                 <p className="text-sm text-[#e9edef]">
                   <span className="inline text-[9px] font-mono text-white/30 mr-1">You</span>
-                  Hey Rohan, free now! Let me call you in 5.
+                  Hey Aditya, free now! Let me call you in 5.
                 </p>
                 <div className="flex items-center justify-end gap-1 mt-1">
                   <span className="text-[10px] text-white/20">10:43 AM</span>

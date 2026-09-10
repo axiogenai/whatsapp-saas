@@ -82,7 +82,7 @@ export default function Hero() {
             {/* Conversation List */}
             <div className="flex flex-col mt-2">
               {[
-                { name: 'Rohan M.', lastMsg: 'Thanks, that works perfectly!', time: '2m', unread: true },
+                { name: 'Aditya P.', lastMsg: 'Thanks, that works perfectly!', time: '2m', unread: true },
                 { name: 'Priya K.', lastMsg: 'Can we schedule a call?', time: '8m', unread: true },
                 { name: 'Amit S.', lastMsg: 'Sent a voice note', time: '15m', unread: false },
               ].map((conv, i) => (
