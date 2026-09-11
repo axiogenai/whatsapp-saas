@@ -35,19 +35,29 @@ export default function LoginPage() {
         cleanEmail === 'aditay26patil@gmail.com' ||
         cleanEmail === 'aditya26patil@gmail.com';
 
-      const derivedTenant = customTenant.trim()
-        ? slugify(customTenant)
-        : slugify(cleanEmail.split('@')[0]) || 'default';
-
       const existingUser = getStoredUser();
+
+      // Determine tenantId:
+      // 1. Explicit custom tenant if provided
+      // 2. Existing stored tenant if email matches
+      // 3. If admin (Aditya), default to the primary connected session 'aditaypatil07'
+      // 4. Fallback to slug of email username
+      let targetTenant = customTenant.trim() ? slugify(customTenant) : '';
+      if (!targetTenant && existingUser && existingUser.email === cleanEmail && existingUser.tenantId) {
+        targetTenant = existingUser.tenantId;
+      }
+      if (!targetTenant) {
+        targetTenant = isAdmin ? 'aditaypatil07' : (slugify(cleanEmail.split('@')[0]) || 'default');
+      }
+
       const user: TenantUser = {
         id: existingUser?.id || (isAdmin ? 'admin_master' : `usr_${Date.now()}`),
         email: cleanEmail,
-        name: isAdmin ? 'Platform Administrator' : existingUser?.name || cleanEmail.split('@')[0].toUpperCase(),
+        name: isAdmin ? 'Aditya Patil' : existingUser?.name || cleanEmail.split('@')[0].toUpperCase(),
         businessName: isAdmin
-          ? 'Axiogen Platform Admin'
+          ? (customTenant.trim() || 'Team Axiogen')
           : customTenant.trim() || existingUser?.businessName || `${cleanEmail.split('@')[0].toUpperCase()} Bot`,
-        tenantId: isAdmin ? 'platform-admin' : derivedTenant,
+        tenantId: targetTenant,
         createdAt: existingUser?.createdAt || new Date().toISOString(),
         plan: isAdmin ? 'agency' : existingUser?.plan || 'free_trial',
         messagesUsed: existingUser?.messagesUsed || 0,

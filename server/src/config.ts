@@ -91,16 +91,13 @@ export function getTenantConfig(tenantId: string = 'default'): BotConfig {
       if (!config.groqApiKey || config.groqApiKey.length < 10) {
         config.groqApiKey = HARDCODED_GROQ_KEY;
       }
-      if (!config.groqModel || config.groqModel.includes('llama-3.3-70b-versatile')) {
+      if (!config.groqModel || config.groqModel.trim().length === 0) {
         config.groqModel = 'openai/gpt-oss-120b';
       }
 
-      // Only assign default if systemPrompt is empty or missing
-      if (!config.systemPrompt || config.systemPrompt.trim().length === 0) {
+      // Preserve user systemPrompt; only fallback to default if completely undefined or null
+      if (config.systemPrompt === undefined || config.systemPrompt === null) {
         config.systemPrompt = DEFAULT_SYSTEM_PROMPT;
-        try {
-          fs.writeFileSync(file, JSON.stringify(config, null, 2), 'utf-8');
-        } catch (_) {}
       }
 
       tenantConfigs.set(tenantId, config);
@@ -131,7 +128,8 @@ export function saveTenantConfig(tenantId: string = 'default', updates: Partial<
       fs.mkdirSync(TENANTS_DIR, { recursive: true });
     }
 
-    const current = tenantConfigs.get(tenantId) || getDefaultConfig(tenantId);
+    // Always fetch existing config (from memory or disk) so partial updates do not wipe saved fields
+    const current = getTenantConfig(tenantId);
     const updated: BotConfig = {
       ...current,
       ...updates,
@@ -149,7 +147,7 @@ export function saveTenantConfig(tenantId: string = 'default', updates: Partial<
     return updated;
   } catch (err) {
     console.error(`[Config] Failed to save config for tenant ${tenantId}:`, err);
-    return tenantConfigs.get(tenantId) || getDefaultConfig(tenantId);
+    return getTenantConfig(tenantId);
   }
 }
 

@@ -19,6 +19,7 @@ interface AIBrainTabProps {
   onConfigChange: (updates: Partial<TenantBotConfig>) => void;
   onSave: () => void;
   saving: boolean;
+  loading?: boolean;
   user: { name: string; businessName: string } | null;
   onPreviewVoice: () => void;
   isPlayingAudio: boolean;
@@ -51,11 +52,21 @@ export function AIBrainTab({
   onConfigChange,
   onSave,
   saving,
+  loading = false,
   onPreviewVoice,
   isPlayingAudio,
   loadingAudioPreview
 }: AIBrainTabProps) {
-  
+  if (loading) {
+    return (
+      <div className="p-12 flex flex-col items-center justify-center min-h-[400px] text-white/40">
+        <Loader2 className="w-8 h-8 animate-spin text-[#25D366] mb-3" />
+        <p className="text-sm font-medium text-white/70">Loading AI Brain configuration...</p>
+        <p className="text-xs text-white/30 mt-1">Retrieving persistent prompt, voice settings, and parameters</p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6 pb-24 md:pb-6">
       <section className="bg-[#0F0F0F] border border-white/[0.06] rounded-2xl p-5 flex items-center justify-between">
@@ -280,7 +291,7 @@ export function AIBrainTab({
       <div className="flex justify-end mt-6 sticky md:relative bottom-4 md:bottom-0 z-10 pt-4 md:pt-0 bg-[#050505] md:bg-transparent">
         <button
           onClick={onSave}
-          disabled={saving}
+          disabled={saving || loading}
           className="bg-[#25D366] hover:bg-[#22c55e] text-[#050505] h-11 px-6 rounded-xl text-sm font-semibold transition-colors disabled:opacity-70 flex items-center gap-2 shadow-lg shadow-[#25D366]/20 w-full md:w-auto justify-center"
         >
           {saving ? (

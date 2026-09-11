@@ -52,6 +52,7 @@ export default function DashboardPage() {
 
   // Config State
   const [config, setConfig] = useState<TenantBotConfig>(DEFAULT_CONFIG);
+  const [loadingConfig, setLoadingConfig] = useState<boolean>(true);
   const [savingConfig, setSavingConfig] = useState<boolean>(false);
 
   // Audio preview state
@@ -111,9 +112,10 @@ export default function DashboardPage() {
     }
   }, [user, tenantId]);
 
-  // 3. Fetch Bot Config
+  // 3. Fetch Bot Config (Runs once on mount / tenant change or explicit user refresh)
   const fetchConfig = useCallback(async () => {
     if (!user) return;
+    setLoadingConfig(true);
     try {
       const res = await fetch(`/api/whatsapp/config?tenantId=${encodeURIComponent(tenantId)}`);
       if (res.ok) {
@@ -122,6 +124,8 @@ export default function DashboardPage() {
       }
     } catch (e) {
       console.error('Failed to fetch config', e);
+    } finally {
+      setLoadingConfig(false);
     }
   }, [user, tenantId]);
 
@@ -182,11 +186,17 @@ export default function DashboardPage() {
     }
   }, [user, tenantId]);
 
-  // Periodic polling
+  // Dedicated config load: runs on mount when user is ready or tenantId changes
+  useEffect(() => {
+    if (user) {
+      fetchConfig();
+    }
+  }, [user?.tenantId, fetchConfig]);
+
+  // Periodic polling for status, messages, and reminders ONLY (never polling config!)
   useEffect(() => {
     if (!user) return;
     fetchStatus();
-    fetchConfig();
     fetchChats();
     fetchReminders();
 
@@ -203,7 +213,7 @@ export default function DashboardPage() {
       clearInterval(chatsTimer);
       clearInterval(remindersTimer);
     };
-  }, [user, fetchStatus, fetchConfig, fetchChats, fetchReminders]);
+  }, [user, fetchStatus, fetchChats, fetchReminders]);
 
   // Handle Manual Refresh
   const handleRefresh = async () => {
@@ -276,6 +286,10 @@ export default function DashboardPage() {
         body: JSON.stringify({ ...config, tenantId }),
       });
       if (res.ok) {
+        const data = await res.json();
+        if (data.config) {
+          setConfig(data.config);
+        }
         showToast('AI Brain settings saved successfully');
       } else {
         showToast('Failed to save settings', 'error');
@@ -574,6 +588,7 @@ export default function DashboardPage() {
           {tab === 'brain' && (
             <AIBrainTab
               config={config}
+              loading={loadingConfig}
               onConfigChange={(updates) => setConfig((prev) => ({ ...prev, ...updates }))}
               onSave={handleSaveConfig}
               saving={savingConfig}
