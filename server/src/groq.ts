@@ -210,14 +210,19 @@ export async function generateAiReply(
 
   let recipientPromptInstruction = '';
   if (isSavedName && config.useSavedContactNames !== false) {
-    const senderIdentity = config.ownerName || config.botName || 'Aditya';
+    const senderIdentity = config.ownerName || 'Aditya';
     const businessIdentity = config.businessName || 'Team Axiogen';
 
-    recipientPromptInstruction = `RECIPIENT IDENTITY & GREETING RULE (CRITICAL):
-- Recipient Contact Name: "${contactName}"
-- You are texting directly with "${contactName}".
-- Always greet and address them respectfully using their exact saved name "${contactName}" (for example: "Hello ${contactName}...", "Hi ${contactName}, this is ${senderIdentity} from ${businessIdentity}...").
-- Spell their name exactly as provided ("${contactName}") without altering, omitting honorifics, or abbreviating it.`;
+    recipientPromptInstruction = `RECIPIENT IDENTITY & DYNAMIC GREETING MANDATE (CRITICAL):
+- Recipient Contact Name & Title: "${contactName}"
+- You are texting directly with "${contactName}" on WhatsApp.
+- DYNAMIC GREETING REQUIREMENT:
+  In your greeting or opening message to "${contactName}", you MUST address them respectfully using their exact saved name and title in this format:
+  "Hello ${contactName}, this is ${senderIdentity} from ${businessIdentity}..." (or "Hi ${contactName}, this is ${senderIdentity} from ${businessIdentity}...").
+- EXACT SPELLING & HONORIFICS RULE:
+  Spell their name and title EXACTLY as provided ("${contactName}").
+  NEVER remove, alter, or omit honorifics (such as "ma'am", "sir", "doctor", "dr", "bhai", "ji").
+  NEVER replace their title with a generic greeting.`;
   }
 
   if (options?.isVip) {

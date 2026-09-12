@@ -207,6 +207,12 @@ export default function DashboardPage() {
     fetchChats();
     fetchReminders();
 
+    // Auto-import all WhatsApp contacts immediately upon login
+    fetch(`/api/whatsapp/contacts/sync?tenantId=${encodeURIComponent(tenantId)}`, {
+      method: 'POST',
+      headers: { 'x-tenant-id': tenantId },
+    }).catch(() => {});
+
     const statusTimer = setInterval(fetchStatus, 3500);
     const chatsTimer = setInterval(() => {
       fetchChats();

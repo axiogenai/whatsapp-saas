@@ -29,11 +29,17 @@ export interface SavedContact {
   notify?: string;
   verifiedName?: string;
   updatedAt: number;
+  aiEnabled?: boolean;
+  voiceMode?: 'default' | 'text_only' | 'voice_only';
+  isVip?: boolean;
+  notes?: string;
 }
 
 export interface TenantBotConfig {
   tenantId: string;
   botName: string;
+  ownerName?: string;
+  businessName?: string;
   autoReplyEnabled: boolean;
   groqModel: string;
   systemPrompt: string;

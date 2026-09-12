@@ -4,7 +4,11 @@ import { getTenantConfig } from './config';
 import { generateAiReply, appendMessage } from './groq';
 import { startReminderScheduler } from './reminderManager';
 import { synthesizeSpeech } from './voiceEngine';
-import { getResolvedContactName } from './contactStore';
+import {
+  getResolvedContactName,
+  isAiEnabledForContact,
+  getContactVoiceMode,
+} from './contactStore';
 
 export interface TelemetryMessage {
   id: string;
@@ -417,9 +421,16 @@ export async function handleTenantIncomingMessage(
     }
   }
 
-  // 4. Check VIP Specific Delivery Rule
+  // 4. Check VIP Specific Delivery Rule or Contact-level AI mute
   if (vip && vip.rule === 'human_only') {
     console.log(`[Bot VIP] Tenant '${tenantId}': VIP contact ${phoneOnly} (${vip.name}) is 'human_only'. Pausing bot for 60m.`);
+    setTenantHumanTakeover(tenantId, jid, 60);
+    return;
+  }
+
+  // Check if contact specifically has AI disabled in directory (Human Only)
+  if (!isAiEnabledForContact(tenantId, jid)) {
+    console.log(`[Bot Filter] Tenant '${tenantId}': Contact ${phoneOnly} has AI disabled (Human Only). Pausing bot for 60m.`);
     setTenantHumanTakeover(tenantId, jid, 60);
     return;
   }
@@ -484,11 +495,13 @@ async function processDebouncedMessage(tenantId: string, jid: string): Promise<v
   if (!buffered || buffered.texts.length === 0) return;
 
   const combinedText = buffered.texts.join('\n');
-  const contactName = buffered.contactName;
   const wasVoiceInput = Boolean(buffered.isVoice);
 
+  const resolved = getResolvedContactName(tenantId, jid, buffered.contactName);
+  const contactName = resolved.name;
+
   console.log(
-    `[Debounce Complete] Tenant '${tenantId}' processing from ${jid} (voiceInput: ${wasVoiceInput}): "${combinedText.substring(0, 60)}..."`
+    `[Debounce Complete] Tenant '${tenantId}' processing from ${jid} (name: "${contactName}", voiceInput: ${wasVoiceInput}): "${combinedText.substring(0, 60)}..."`
   );
 
   const dispatchers = tenantDispatchers.get(tenantId);
@@ -515,11 +528,12 @@ async function processDebouncedMessage(tenantId: string, jid: string): Promise<v
   //   * 'adaptive': replies as voice note if user spoke into mic (voice note)
   //   * 'text_only': text only
   const voiceSentCount = getVoiceSentCount(tenantId, jid);
+  const contactVoiceMode = getContactVoiceMode(tenantId, jid);
 
   let shouldSendVoice = false;
-  if (vip?.rule === 'text_only') {
+  if (contactVoiceMode === 'text_only' || vip?.rule === 'text_only') {
     shouldSendVoice = false;
-  } else if (vip?.rule === 'voice_only') {
+  } else if (contactVoiceMode === 'voice_only' || vip?.rule === 'voice_only') {
     shouldSendVoice = true;
   } else if (config.voiceReplyMode === 'always') {
     shouldSendVoice = true;
@@ -549,7 +563,7 @@ async function processDebouncedMessage(tenantId: string, jid: string): Promise<v
 
   // Generate Groq AI reply (with VIP metadata and tool calling execution)
   const aiResponse = await generateAiReply(tenantId, jid, combinedText, contactName, {
-    isVip: Boolean(vip),
+    isVip: Boolean(vip) || Boolean(resolved.isVip),
     vipRule: vip?.rule,
     vipNotes: vip?.notes,
   });

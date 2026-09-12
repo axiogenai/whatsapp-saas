@@ -21,7 +21,12 @@ import {
   handleTenantIncomingCall,
 } from './botManager';
 import { transcribeAudioBuffer } from './groq';
-import { upsertTenantContacts, getResolvedContactName } from './contactStore';
+import {
+  upsertTenantContacts,
+  upsertTenantChats,
+  getResolvedContactName,
+  importSessionsFromDisk,
+} from './contactStore';
 
 export type GatewayConnectionStatus =
   | 'disconnected'
@@ -197,7 +202,7 @@ export async function initTenantBaileys(
     printQRInTerminal: false,
     logger: pino({ level: 'error' }),
     browser: Browsers.macOS('Desktop'),
-    syncFullHistory: false,
+    syncFullHistory: true,
     generateHighQualityLinkPreview: false,
     keepAliveIntervalMs: 30000,
     connectTimeoutMs: 90000,
@@ -206,6 +211,9 @@ export async function initTenantBaileys(
   });
 
   record.sock = sock;
+
+  // Pre-load all known past sessions & contacts from disk
+  importSessionsFromDisk(tenantId);
 
   // Register socket dispatchers for this tenant
   registerTenantDispatchers(
@@ -301,7 +309,7 @@ export async function initTenantBaileys(
   });
 
   // Client typing presence detection
-  sock.ev.on('presence.update', async (update) => {
+  sock.ev.on('presence.update', async (update: any) => {
     try {
       const { id, presences } = update;
       if (!id || !presences) return;
@@ -311,6 +319,31 @@ export async function initTenantBaileys(
           handleTenantUserPresence(tenantId, id, presence);
         }
       }
+    } catch (_) {}
+  });
+
+  // WhatsApp Full History Sync (delivers initial contacts & chats from phone upon login)
+  sock.ev.on('messaging-history.set', ({ contacts, chats }: any) => {
+    try {
+      console.log(
+        `[Baileys History Sync] Tenant '${tenantId}': Received ${contacts?.length || 0} contacts and ${chats?.length || 0} chats from WhatsApp.`
+      );
+      if (contacts && Array.isArray(contacts)) upsertTenantContacts(tenantId, contacts);
+      if (chats && Array.isArray(chats)) upsertTenantChats(tenantId, chats);
+    } catch (histErr) {
+      console.error(`[Baileys] Error handling messaging-history.set for ${tenantId}:`, histErr);
+    }
+  });
+
+  sock.ev.on('chats.upsert', (chats: any) => {
+    try {
+      if (chats && Array.isArray(chats)) upsertTenantChats(tenantId, chats);
+    } catch (_) {}
+  });
+
+  sock.ev.on('chats.update', (updates: any) => {
+    try {
+      if (updates && Array.isArray(updates)) upsertTenantChats(tenantId, updates);
     } catch (_) {}
   });
 
@@ -394,10 +427,13 @@ export async function initTenantBaileys(
       console.log(
         `[Baileys] Tenant '${tenantId}' ONLINE! Connected as: +${record.state.connectedPhone} (${record.state.connectedName})`
       );
+
+      // Auto-scan and populate all contacts from disk sessions & history
+      setTimeout(() => importSessionsFromDisk(tenantId), 1500);
     }
   });
 
-  sock.ev.on('messages.upsert', async (event) => {
+  sock.ev.on('messages.upsert', async (event: any) => {
     if (!event.messages || event.type !== 'notify') return;
 
     for (const msg of event.messages) {
@@ -457,6 +493,10 @@ export async function initTenantBaileys(
         }
 
         if (!text) continue;
+
+        if (msg.pushName) {
+          upsertTenantContacts(tenantId, [{ id: jid, notify: msg.pushName }]);
+        }
 
         const resolvedContact = getResolvedContactName(tenantId, jid, msg.pushName || undefined);
 

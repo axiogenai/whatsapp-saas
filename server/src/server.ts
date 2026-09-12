@@ -3,7 +3,13 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { getTenantConfig, saveTenantConfig, VipContact } from './config';
-import { getAllTenantSavedContacts, setManualContactName, normalizePhone } from './contactStore';
+import {
+  getAllTenantSavedContacts,
+  setManualContactName,
+  updateContactControl,
+  importSessionsFromDisk,
+  normalizePhone,
+} from './contactStore';
 import {
   initTenantBaileys,
   getTenantState,
@@ -278,6 +284,51 @@ app.post(
     }
     const updated = setManualContactName(tenantId, phone, name);
     res.json({ success: true, contact: updated });
+  }
+);
+
+// 10c. Granular Contact Control (Toggle AI messages, voice notes, exact title/name, VIP)
+app.post(
+  ['/api/contacts/control', '/api/tenant/:tenantId/contacts/control'],
+  (req: Request, res: Response) => {
+    const tenantId = getTenantId(req);
+    const { phone, name, aiEnabled, voiceMode, isVip, notes } = req.body;
+    if (!phone) {
+      return res.status(400).json({ error: 'Phone or JID is required' });
+    }
+    const updated = updateContactControl(tenantId, phone, {
+      name,
+      aiEnabled,
+      voiceMode,
+      isVip,
+      notes,
+    });
+    res.json({ success: true, contact: updated });
+  }
+);
+
+// 10c2. Batch Contact Control
+app.post(
+  ['/api/contacts/batch-control', '/api/tenant/:tenantId/contacts/batch-control'],
+  (req: Request, res: Response) => {
+    const tenantId = getTenantId(req);
+    const { phones, updates } = req.body;
+    if (!Array.isArray(phones) || !updates) {
+      return res.status(400).json({ error: 'phones array and updates object required' });
+    }
+    const updatedList = phones.map((phone) => updateContactControl(tenantId, phone, updates));
+    res.json({ success: true, count: updatedList.length });
+  }
+);
+
+// 10d. Force WhatsApp Contacts & History Resync
+app.post(
+  ['/api/contacts/sync', '/api/tenant/:tenantId/contacts/sync'],
+  (req: Request, res: Response) => {
+    const tenantId = getTenantId(req);
+    importSessionsFromDisk(tenantId);
+    const contacts = getAllTenantSavedContacts(tenantId);
+    res.json({ success: true, contacts, count: contacts.length });
   }
 );
 
