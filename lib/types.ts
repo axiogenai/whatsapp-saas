@@ -11,6 +11,26 @@ export interface TenantUser {
   isAdmin?: boolean;
 }
 
+export type VipRule = 'human_only' | 'text_only' | 'voice_only' | 'ai_allowed';
+export type AudienceMode = 'all' | 'exclude_vip' | 'whitelist_only';
+
+export interface VipContact {
+  phone: string;
+  name: string;
+  rule: VipRule;
+  notes?: string;
+  addedAt?: number;
+}
+
+export interface SavedContact {
+  jid: string;
+  phone: string;
+  name?: string;
+  notify?: string;
+  verifiedName?: string;
+  updatedAt: number;
+}
+
 export interface TenantBotConfig {
   tenantId: string;
   botName: string;
@@ -27,6 +47,12 @@ export interface TenantBotConfig {
   voiceReplyMode?: 'adaptive' | 'always' | 'text_only' | 'first_two_voice';
   voicePersona?: string;
   voiceSpeed?: number;
+  vipModeEnabled?: boolean;
+  audienceMode?: AudienceMode;
+  vipContacts?: VipContact[];
+  useSavedContactNames?: boolean;
+  blockedNumbers?: string[];
+  allowedNumbers?: string[];
 }
 
 export interface TenantSessionStatus {

@@ -157,16 +157,24 @@ export async function transcribeAudioBuffer(
 /**
  * Autonomous AI Reply with Tool Execution
  */
+export interface AiReplyOptions {
+  isVip?: boolean;
+  vipRule?: string;
+  vipNotes?: string;
+}
+
 export async function generateAiReply(
   arg1: string,
   arg2: string,
   arg3?: string,
-  arg4?: string
+  arg4?: string,
+  arg5?: AiReplyOptions
 ): Promise<string | null> {
   let tenantId = 'default';
   let jid = '';
   let userMessage = '';
   let contactName: string | undefined;
+  let options: AiReplyOptions | undefined = arg5;
 
   if (arg4 !== undefined || (arg3 && arg3.length > 0 && !arg3.startsWith('+') && !arg1.includes('@'))) {
     tenantId = arg1;
@@ -192,13 +200,39 @@ export async function generateAiReply(
   // Append user message
   appendMessage(tenantId, jid, 'user', userMessage);
 
+  // Recipient contact identity & greeting directives
+  const isSavedName = Boolean(
+    contactName &&
+      contactName.trim().length > 0 &&
+      !contactName.startsWith('+') &&
+      !/^\d+$/.test(contactName.replace(/[\s\-\+\(\)]/g, ''))
+  );
+
+  let recipientPromptInstruction = '';
+  if (isSavedName && config.useSavedContactNames !== false) {
+    const senderIdentity = config.ownerName || config.botName || 'Aditya';
+    const businessIdentity = config.businessName || 'Team Axiogen';
+
+    recipientPromptInstruction = `RECIPIENT IDENTITY & GREETING RULE (CRITICAL):
+- Recipient Contact Name: "${contactName}"
+- You are texting directly with "${contactName}".
+- Always greet and address them respectfully using their exact saved name "${contactName}" (for example: "Hello ${contactName}...", "Hi ${contactName}, this is ${senderIdentity} from ${businessIdentity}...").
+- Spell their name exactly as provided ("${contactName}") without altering, omitting honorifics, or abbreviating it.`;
+  }
+
+  if (options?.isVip) {
+    recipientPromptInstruction += `\n- VIP STATUS: This recipient is an honored VIP client/contact.${
+      options.vipNotes ? ` (Notes: ${options.vipNotes})` : ''
+    } Give them highest priority, polite, and attentive service.`;
+  }
+
   const history = getChatHistory(tenantId, jid);
   const formattedMessages: any[] = [
     {
       role: 'system',
       content: [
         config.systemPrompt?.trim() || 'You are an AI assistant helping contacts on WhatsApp.',
-        contactName ? `(WhatsApp contact name: "${contactName}")` : '',
+        recipientPromptInstruction || (contactName ? `(WhatsApp contact name: "${contactName}")` : ''),
         'Technical Delivery Rule: Deliver plain text only. Never use markdown asterisks (*), hashtags, or markdown tables.',
       ]
         .filter(Boolean)
@@ -236,7 +270,7 @@ export async function generateAiReply(
       if (aiMsg?.tool_calls && aiMsg.tool_calls.length > 0) {
         console.log(
           `[Groq Engine] Model invoked ${aiMsg.tool_calls.length} tool(s):`,
-          aiMsg.tool_calls.map((tc) => tc.function.name)
+          aiMsg.tool_calls.map((tc: any) => tc.function.name)
         );
 
         formattedMessages.push(aiMsg);

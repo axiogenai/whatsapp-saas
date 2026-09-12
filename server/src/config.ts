@@ -4,6 +4,17 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+export type VipRule = 'human_only' | 'text_only' | 'voice_only' | 'ai_allowed';
+export type AudienceMode = 'all' | 'exclude_vip' | 'whitelist_only';
+
+export interface VipContact {
+  phone: string; // E.g. "919876543210"
+  name: string; // E.g. "Monali Maam"
+  rule: VipRule;
+  notes?: string;
+  addedAt?: number;
+}
+
 export interface BotConfig {
   tenantId: string;
   businessName: string;
@@ -25,6 +36,10 @@ export interface BotConfig {
   ownerEmail?: string;
   plan?: 'free_trial' | 'starter' | 'pro' | 'agency';
   trialLimit?: number;
+  vipModeEnabled?: boolean;
+  audienceMode?: AudienceMode;
+  vipContacts?: VipContact[];
+  useSavedContactNames?: boolean;
 }
 
 const HARDCODED_GROQ_KEY = process.env.GROQ_API_KEY || '';
@@ -69,6 +84,10 @@ function getDefaultConfig(tenantId: string): BotConfig {
     ownerEmail: tenantId === 'default' ? 'team@axiogen.in' : tenantId === 'aditaypatil07' ? 'aditay26patil@gmail.com' : `${tenantId}@axiogen.in`,
     plan: 'free_trial',
     trialLimit: tenantId === 'default' || tenantId === 'aditaypatil07' ? 100000 : 70,
+    vipModeEnabled: true,
+    audienceMode: 'all',
+    vipContacts: [],
+    useSavedContactNames: true,
   };
 }
 

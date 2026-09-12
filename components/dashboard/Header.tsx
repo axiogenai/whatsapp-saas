@@ -15,6 +15,7 @@ const tabTitles: Record<string, string> = {
   overview: 'Overview',
   connection: 'Connection',
   brain: 'AI Brain',
+  vip: 'VIP & Audience',
   tasks: 'Tasks',
   insights: 'Insights',
   billing: 'Billing',

@@ -4,6 +4,7 @@ import { getTenantConfig } from './config';
 import { generateAiReply, appendMessage } from './groq';
 import { startReminderScheduler } from './reminderManager';
 import { synthesizeSpeech } from './voiceEngine';
+import { getResolvedContactName } from './contactStore';
 
 export interface TelemetryMessage {
   id: string;
@@ -172,9 +173,10 @@ export function getTenantContacts(tenantId: string): ContactSummary[] {
       continue;
     }
     if (!contactsMap.has(m.jid)) {
+      const resolved = getResolvedContactName(tenantId, m.jid, m.senderName);
       contactsMap.set(m.jid, {
         jid: m.jid,
-        senderName: m.fromMe ? m.jid.split('@')[0] : m.senderName,
+        senderName: resolved.name,
         lastMessage: m.text,
         lastTimestamp: m.timestamp,
         isHumanTakeover: isTenantTakeoverActive(tenantId, m.jid),
@@ -371,15 +373,68 @@ export async function handleTenantIncomingMessage(
     return;
   }
 
-  // Check blocked list
-  const phoneOnly = jid.split('@')[0];
-  if (config.blockedNumbers.length > 0 && config.blockedNumbers.includes(phoneOnly)) {
+  // Extract cleaned phone digits for matching
+  const phoneOnly = jid.split('@')[0].split(':')[0].replace(/\D/g, '');
+
+  // 1. Check blocked list / blacklist
+  if (config.blockedNumbers && config.blockedNumbers.length > 0) {
+    const isBlocked = config.blockedNumbers.some((b) => {
+      const cleanB = b.replace(/\D/g, '');
+      return cleanB === phoneOnly || phoneOnly.endsWith(cleanB) || cleanB.endsWith(phoneOnly);
+    });
+    if (isBlocked) {
+      console.log(`[Bot Filter] Tenant '${tenantId}': Suppressed message from blocked number ${phoneOnly}.`);
+      return;
+    }
+  }
+
+  // 2. Identify VIP Contact if configured
+  const vip = config.vipContacts?.find((v) => {
+    const vPhone = v.phone.replace(/\D/g, '');
+    return vPhone === phoneOnly || phoneOnly.endsWith(vPhone) || vPhone.endsWith(phoneOnly);
+  });
+
+  // 3. Check Audience Mode
+  const audienceMode = config.audienceMode || 'all';
+  if (audienceMode === 'whitelist_only') {
+    const isAllowed =
+      (config.allowedNumbers &&
+        config.allowedNumbers.some((a) => {
+          const cleanA = a.replace(/\D/g, '');
+          return cleanA === phoneOnly || phoneOnly.endsWith(cleanA) || cleanA.endsWith(phoneOnly);
+        })) ||
+      Boolean(vip);
+
+    if (!isAllowed) {
+      console.log(`[Bot Audience] Tenant '${tenantId}': Skipping ${phoneOnly} (audienceMode: whitelist_only).`);
+      return;
+    }
+  } else if (audienceMode === 'exclude_vip') {
+    if (vip) {
+      console.log(`[Bot Audience] Tenant '${tenantId}': VIP contact ${phoneOnly} (${vip.name}) received message while audienceMode is exclude_vip. Flagging for human takeover.`);
+      setTenantHumanTakeover(tenantId, jid, 60);
+      return;
+    }
+  }
+
+  // 4. Check VIP Specific Delivery Rule
+  if (vip && vip.rule === 'human_only') {
+    console.log(`[Bot VIP] Tenant '${tenantId}': VIP contact ${phoneOnly} (${vip.name}) is 'human_only'. Pausing bot for 60m.`);
+    setTenantHumanTakeover(tenantId, jid, 60);
     return;
   }
 
-  // Check allowed numbers if whitelist active
-  if (config.allowedNumbers.length > 0 && !config.allowedNumbers.includes(phoneOnly)) {
-    return;
+  // 5. Fallback check for allowedNumbers if audienceMode is 'all'
+  if (config.allowedNumbers && config.allowedNumbers.length > 0) {
+    const isAllowed =
+      config.allowedNumbers.some((a) => {
+        const cleanA = a.replace(/\D/g, '');
+        return cleanA === phoneOnly || phoneOnly.endsWith(cleanA) || cleanA.endsWith(phoneOnly);
+      }) || Boolean(vip);
+
+    if (!isAllowed) {
+      return;
+    }
   }
 
   // Check auto-reply master toggle
@@ -444,15 +499,29 @@ async function processDebouncedMessage(tenantId: string, jid: string): Promise<v
 
   const config = getTenantConfig(tenantId);
 
+  const phoneOnly = jid.split('@')[0].split(':')[0].replace(/\D/g, '');
+  const vip = config.vipContacts?.find((v) => {
+    const vPhone = v.phone.replace(/\D/g, '');
+    return vPhone === phoneOnly || phoneOnly.endsWith(vPhone) || vPhone.endsWith(phoneOnly);
+  });
+
   // Determine whether to send voice reply:
-  // - 'always': all replies are spoken
-  // - 'first_two_voice': first 2 bot replies to this contact are voice notes, thereafter text
-  // - 'adaptive': replies as voice note if user spoke into mic (voice note)
-  // - 'text_only': text only
+  // - VIP Contact Rule Override:
+  //   * 'text_only': explicitly suppressed from voice replies
+  //   * 'voice_only': always receives voice notes
+  // - Global voiceReplyMode:
+  //   * 'always': all replies are spoken
+  //   * 'first_two_voice': first 2 bot replies to this contact are voice notes, thereafter text
+  //   * 'adaptive': replies as voice note if user spoke into mic (voice note)
+  //   * 'text_only': text only
   const voiceSentCount = getVoiceSentCount(tenantId, jid);
 
   let shouldSendVoice = false;
-  if (config.voiceReplyMode === 'always') {
+  if (vip?.rule === 'text_only') {
+    shouldSendVoice = false;
+  } else if (vip?.rule === 'voice_only') {
+    shouldSendVoice = true;
+  } else if (config.voiceReplyMode === 'always') {
     shouldSendVoice = true;
   } else if (config.voiceReplyMode === 'first_two_voice') {
     // Exactly the first 2 bot replies to this contact are voice notes, thereafter text
@@ -478,8 +547,12 @@ async function processDebouncedMessage(tenantId: string, jid: string): Promise<v
     Math.random() * (config.typingDelayMaxMs - config.typingDelayMinMs + 1) + config.typingDelayMinMs
   );
 
-  // Generate Groq AI reply (with tool calling execution)
-  const aiResponse = await generateAiReply(tenantId, jid, combinedText, contactName);
+  // Generate Groq AI reply (with VIP metadata and tool calling execution)
+  const aiResponse = await generateAiReply(tenantId, jid, combinedText, contactName, {
+    isVip: Boolean(vip),
+    vipRule: vip?.rule,
+    vipNotes: vip?.notes,
+  });
 
   if (!aiResponse) {
     try {

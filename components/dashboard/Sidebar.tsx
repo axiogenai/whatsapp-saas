@@ -14,7 +14,8 @@ import {
   LogOut, 
   ChevronLeft, 
   ChevronRight, 
-  Bot 
+  Bot,
+  Star
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -31,6 +32,7 @@ const navItems = [
   { id: 'overview', label: 'Overview', icon: Home },
   { id: 'connection', label: 'Connection', icon: QrCode },
   { id: 'brain', label: 'AI Brain', icon: Brain },
+  { id: 'vip', label: 'VIP & Audience', icon: Star },
   { id: 'tasks', label: 'Tasks', icon: Phone },
   { id: 'insights', label: 'Insights', icon: BarChart3 },
   { id: 'billing', label: 'Billing', icon: CreditCard },

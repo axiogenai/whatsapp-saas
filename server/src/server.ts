@@ -2,7 +2,8 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
-import { getTenantConfig, saveTenantConfig } from './config';
+import { getTenantConfig, saveTenantConfig, VipContact } from './config';
+import { getAllTenantSavedContacts, setManualContactName, normalizePhone } from './contactStore';
 import {
   initTenantBaileys,
   getTenantState,
@@ -256,7 +257,104 @@ app.post(
   }
 );
 
-// 10. Axiogen Voice Engine v2 - Live Audio Preview
+// 10. Contact Phonebook Directory
+app.get(
+  ['/api/contacts/directory', '/api/tenant/:tenantId/contacts/directory'],
+  (req: Request, res: Response) => {
+    const tenantId = getTenantId(req);
+    const contacts = getAllTenantSavedContacts(tenantId);
+    res.json({ success: true, contacts });
+  }
+);
+
+// 10b. Rename / Set Contact Name Manually
+app.post(
+  ['/api/contacts/rename', '/api/tenant/:tenantId/contacts/rename'],
+  (req: Request, res: Response) => {
+    const tenantId = getTenantId(req);
+    const { phone, name } = req.body;
+    if (!phone || !name) {
+      return res.status(400).json({ error: 'phone and name are required' });
+    }
+    const updated = setManualContactName(tenantId, phone, name);
+    res.json({ success: true, contact: updated });
+  }
+);
+
+// 10c. VIP Contacts Management
+app.get(
+  ['/api/vip', '/api/tenant/:tenantId/vip'],
+  (req: Request, res: Response) => {
+    const tenantId = getTenantId(req);
+    const cfg = getTenantConfig(tenantId);
+    res.json({
+      success: true,
+      vipModeEnabled: cfg.vipModeEnabled ?? true,
+      audienceMode: cfg.audienceMode ?? 'all',
+      vipContacts: cfg.vipContacts || [],
+      useSavedContactNames: cfg.useSavedContactNames ?? true,
+    });
+  }
+);
+
+app.post(
+  ['/api/vip', '/api/tenant/:tenantId/vip'],
+  (req: Request, res: Response) => {
+    const tenantId = getTenantId(req);
+    const cfg = getTenantConfig(tenantId);
+    const { action, vip, phone, name, rule, notes, audienceMode, vipModeEnabled, useSavedContactNames } = req.body;
+
+    let vipContacts = [...(cfg.vipContacts || [])];
+
+    if (action === 'delete' || action === 'remove') {
+      const targetPhone = normalizePhone(phone || vip?.phone || '');
+      vipContacts = vipContacts.filter((v) => normalizePhone(v.phone) !== targetPhone);
+    } else if (action === 'add' || action === 'update') {
+      const targetPhone = normalizePhone(phone || vip?.phone || '');
+      const targetName = (name || vip?.name || '').trim();
+      const targetRule = rule || vip?.rule || 'human_only';
+      const targetNotes = notes !== undefined ? notes : vip?.notes;
+
+      if (!targetPhone || !targetName) {
+        return res.status(400).json({ error: 'Phone and name are required for VIP contact' });
+      }
+
+      const existingIndex = vipContacts.findIndex((v) => normalizePhone(v.phone) === targetPhone);
+      const newEntry: VipContact = {
+        phone: targetPhone,
+        name: targetName,
+        rule: targetRule,
+        notes: targetNotes,
+        addedAt: Date.now(),
+      };
+
+      if (existingIndex >= 0) {
+        vipContacts[existingIndex] = { ...vipContacts[existingIndex], ...newEntry };
+      } else {
+        vipContacts.push(newEntry);
+      }
+    }
+
+    const updates: Partial<typeof cfg> = {
+      vipContacts,
+    };
+
+    if (audienceMode !== undefined) updates.audienceMode = audienceMode;
+    if (vipModeEnabled !== undefined) updates.vipModeEnabled = vipModeEnabled;
+    if (useSavedContactNames !== undefined) updates.useSavedContactNames = useSavedContactNames;
+
+    const saved = saveTenantConfig(tenantId, updates);
+    res.json({
+      success: true,
+      vipContacts: saved.vipContacts,
+      audienceMode: saved.audienceMode,
+      vipModeEnabled: saved.vipModeEnabled,
+      useSavedContactNames: saved.useSavedContactNames,
+    });
+  }
+);
+
+// 11. Axiogen Voice Engine v2 - Live Audio Preview
 app.post(['/api/tts/preview', '/api/tenant/:tenantId/tts/preview'], async (req: Request, res: Response) => {
   const { text, voice, speed } = req.body;
   const sampleText = text || 'Hello! I am your autonomous voice assistant. How can I help you today?';

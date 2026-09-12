@@ -12,6 +12,7 @@ import { TasksTab } from '@/components/dashboard/TasksTab';
 import { InsightsTab } from '@/components/dashboard/InsightsTab';
 import { BillingTab } from '@/components/dashboard/BillingTab';
 import { SettingsTab } from '@/components/dashboard/SettingsTab';
+import { VipAudienceTab } from '@/components/dashboard/VipAudienceTab';
 import { getStoredUser, setStoredUser, clearStoredUser } from '@/lib/auth';
 import { TenantUser, TenantBotConfig, TenantSessionStatus, ChatMessage, ChatContact } from '@/lib/types';
 import { CheckCircle2, AlertCircle, X, ShieldAlert } from 'lucide-react';
@@ -30,6 +31,12 @@ const DEFAULT_CONFIG: TenantBotConfig = {
   voiceReplyMode: 'adaptive',
   voicePersona: 'am_adam',
   voiceSpeed: 1.0,
+  vipModeEnabled: true,
+  audienceMode: 'all',
+  vipContacts: [],
+  useSavedContactNames: true,
+  blockedNumbers: [],
+  allowedNumbers: [],
 };
 
 export default function DashboardPage() {
@@ -596,6 +603,16 @@ export default function DashboardPage() {
               onPreviewVoice={handlePreviewVoice}
               isPlayingAudio={isPlayingAudio}
               loadingAudioPreview={loadingAudioPreview}
+            />
+          )}
+
+          {tab === 'vip' && (
+            <VipAudienceTab
+              config={config}
+              onConfigChange={(updates) => setConfig((prev) => ({ ...prev, ...updates }))}
+              onSave={handleSaveConfig}
+              saving={savingConfig}
+              tenantId={tenantId}
             />
           )}
 

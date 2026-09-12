@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, MessageSquare, Brain, Phone, MoreHorizontal, BarChart3, CreditCard, Settings, QrCode } from 'lucide-react';
+import { Home, MessageSquare, Brain, Phone, MoreHorizontal, BarChart3, CreditCard, Settings, QrCode, Star } from 'lucide-react';
 
 interface MobileNavProps {
   tab: string;
@@ -18,6 +18,7 @@ const mainTabs = [
 ];
 
 const moreMenuTabs = [
+  { id: 'vip', label: 'VIP & Audience', icon: Star },
   { id: 'insights', label: 'Insights', icon: BarChart3 },
   { id: 'billing', label: 'Billing', icon: CreditCard },
   { id: 'settings', label: 'Settings', icon: Settings },

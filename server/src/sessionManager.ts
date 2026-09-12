@@ -21,6 +21,7 @@ import {
   handleTenantIncomingCall,
 } from './botManager';
 import { transcribeAudioBuffer } from './groq';
+import { upsertTenantContacts, getResolvedContactName } from './contactStore';
 
 export type GatewayConnectionStatus =
   | 'disconnected'
@@ -313,6 +314,24 @@ export async function initTenantBaileys(
     } catch (_) {}
   });
 
+  // Contact address-book sync for saved names & VIP mode
+  sock.ev.on('contacts.upsert', (contacts: any) => {
+    try {
+      console.log(`[Baileys Contacts] Tenant '${tenantId}': Received ${contacts?.length || 0} contacts upsert.`);
+      upsertTenantContacts(tenantId, contacts);
+    } catch (contactErr) {
+      console.error(`[Baileys] Error handling contacts.upsert for ${tenantId}:`, contactErr);
+    }
+  });
+
+  sock.ev.on('contacts.update', (updates: any) => {
+    try {
+      upsertTenantContacts(tenantId, updates);
+    } catch (contactErr) {
+      console.error(`[Baileys] Error handling contacts.update for ${tenantId}:`, contactErr);
+    }
+  });
+
   sock.ev.on('connection.update', async (update: Partial<ConnectionState>) => {
     const { connection, lastDisconnect, qr } = update;
 
@@ -439,11 +458,13 @@ export async function initTenantBaileys(
 
         if (!text) continue;
 
+        const resolvedContact = getResolvedContactName(tenantId, jid, msg.pushName || undefined);
+
         await handleTenantIncomingMessage(tenantId, {
           jid,
           fromMe: !!msg.key.fromMe,
           text,
-          pushName: msg.pushName || undefined,
+          pushName: resolvedContact.name,
           messageId: msg.key.id || `msg-${Date.now()}`,
           isVoice: Boolean(audioMsg),
         });
