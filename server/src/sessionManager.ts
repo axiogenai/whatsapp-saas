@@ -195,6 +195,14 @@ export async function initTenantBaileys(
   record.state.status = 'connecting';
   record.state.lastError = null;
 
+  // Cleanly terminate any prior dangling socket
+  if (record.sock) {
+    try {
+      record.sock.end(undefined);
+    } catch (_) {}
+    record.sock = null;
+  }
+
   // Ultra-lean configuration optimized for 1GB RAM VM
   const sock = makeWASocket({
     version,
@@ -202,7 +210,7 @@ export async function initTenantBaileys(
     printQRInTerminal: false,
     logger: pino({ level: 'error' }),
     browser: Browsers.macOS('Desktop'),
-    syncFullHistory: true,
+    syncFullHistory: false,
     generateHighQualityLinkPreview: false,
     keepAliveIntervalMs: 30000,
     connectTimeoutMs: 90000,
