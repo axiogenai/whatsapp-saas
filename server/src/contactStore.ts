@@ -44,16 +44,18 @@ export function normalizePhone(raw: string): string {
  * (e.g. 14-16 digit internal IDs with no name, no pushName, no VIP status, and no notes)
  */
 export function isOrphanBroadcastArtifact(c: Partial<SavedContact>): boolean {
-  if (c.name && c.name.trim().length > 0 && c.name.trim() !== '-') return false;
-  if (c.notify && c.notify.trim().length > 0) return false;
-  if (c.isVip) return false;
-  if (c.notes && c.notes.trim().length > 0) return false;
-  if (c.realPhone && c.realPhone.trim().length > 0) return false;
-  // If it's a genuine E.164 phone number (7-12 digits, e.g. 919876543210), keep it
-  const phone = c.phone || '';
-  if (phone.length >= 7 && phone.length <= 12) return false;
-  // Any 13+ digit entry without a saved name, push name, VIP, or real phone is a broadcast artifact
-  return true;
+  if (!c || !c.phone) return true;
+  const jid = c.jid || '';
+  if (
+    jid.includes('@broadcast') ||
+    jid.includes('@newsletter') ||
+    jid.includes('@g.us') ||
+    jid.startsWith('status@') ||
+    jid.startsWith('0@')
+  ) {
+    return true;
+  }
+  return false;
 }
 
 /**

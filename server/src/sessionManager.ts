@@ -210,7 +210,7 @@ export async function initTenantBaileys(
     printQRInTerminal: false,
     logger: pino({ level: 'error' }),
     browser: Browsers.macOS('Desktop'),
-    syncFullHistory: false,
+    syncFullHistory: true,
     generateHighQualityLinkPreview: false,
     keepAliveIntervalMs: 30000,
     connectTimeoutMs: 90000,
