@@ -62,14 +62,6 @@ export function Header({ tab, status, onRefresh, refreshing, onMobileMenuToggle,
             </div>
           )}
         </button>
-
-        <button
-          onClick={onRefresh}
-          disabled={refreshing}
-          className="w-9 h-9 rounded-xl hover:bg-white/[0.06] flex items-center justify-center transition-colors"
-        >
-          <RefreshCw className={`w-4 h-4 text-white/30 hover:text-white/60 ${refreshing ? 'animate-spin' : ''}`} />
-        </button>
       </div>
     </div>
   );
