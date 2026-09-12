@@ -10,7 +10,7 @@ interface VoicePickerProps {
   className?: string;
 }
 
-type FilterCategory = 'all' | 'kokoro' | 'english' | 'indic' | 'european' | 'other';
+type FilterCategory = 'all' | 'kokoro' | 'english' | 'indic' | 'european';
 
 export function VoicePicker({ value, onChange, className = '' }: VoicePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -33,8 +33,7 @@ export function VoicePicker({ value, onChange, className = '' }: VoicePickerProp
     }
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      // Auto focus search input when opened
-      setTimeout(() => searchInputRef.current?.focus(), 50);
+      setTimeout(() => searchInputRef.current?.focus(), 40);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -115,7 +114,6 @@ export function VoicePicker({ value, onChange, className = '' }: VoicePickerProp
           acc.includes('russian');
         if (!isEu) return false;
       }
-      if (activeCategory === 'other' && voice.engine === 'kokoro') return false;
 
       // 2. Search Query Filter
       if (!q) return true;
@@ -147,46 +145,28 @@ export function VoicePicker({ value, onChange, className = '' }: VoicePickerProp
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
-      {/* Trigger Box */}
+      {/* Sleek Slim Trigger Box (Matches standard 42px input height) */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between gap-3 bg-[#0a0a0c] hover:bg-[#121215] border border-white/[0.1] hover:border-[#25D366]/40 rounded-xl px-3.5 py-2.5 text-left transition-all duration-150 group focus:outline-none focus:border-[#25D366]"
+        className="w-full h-[42px] flex items-center justify-between gap-2.5 bg-[#050505] hover:bg-[#0c0c0e] border border-white/[0.08] hover:border-white/[0.18] rounded-xl px-3.5 text-left transition-colors group focus:outline-none focus:border-[#25D366]/50"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="w-8 h-8 rounded-lg bg-[#25D366]/10 border border-[#25D366]/25 flex items-center justify-center shrink-0">
-            <Volume2 className="w-4 h-4 text-[#25D366]" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-white tracking-wide truncate">
-                {selectedVoice.name}
-              </span>
-              <span
-                className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-medium ${
-                  selectedVoice.engine === 'kokoro'
-                    ? 'bg-[#25D366]/15 text-[#25D366] border border-[#25D366]/30'
-                    : 'bg-white/[0.08] text-white/70 border border-white/[0.1]'
-                }`}
-              >
-                {selectedVoice.engine === 'kokoro' ? 'Kokoro Neural' : selectedVoice.engine.toUpperCase()}
-              </span>
-              {selectedVoice.accent && (
-                <span className="text-[11px] text-white/50">
-                  {selectedVoice.accent} {selectedVoice.gender ? `• ${selectedVoice.gender}` : ''}
-                </span>
-              )}
-            </div>
-            <div className="text-xs text-white/40 truncate mt-0.5">
-              {selectedVoice.style ? selectedVoice.style : selectedVoice.id}
-            </div>
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <Volume2 className="w-4 h-4 text-[#25D366] shrink-0" />
+          <div className="flex items-center gap-2 min-w-0 flex-1 truncate">
+            <span className="text-sm font-medium text-white truncate">
+              {selectedVoice.name}
+            </span>
+            <span className="text-xs text-white/40 truncate">
+              ({selectedVoice.accent || 'General'} {selectedVoice.gender || ''}{selectedVoice.style ? ` • ${selectedVoice.style}` : ''})
+            </span>
           </div>
         </div>
 
         <ChevronDown
-          className={`w-4 h-4 text-white/40 transition-transform duration-200 shrink-0 group-hover:text-white ${
+          className={`w-4 h-4 text-white/40 transition-transform duration-150 shrink-0 group-hover:text-white ${
             isOpen ? 'rotate-180 text-[#25D366]' : ''
           }`}
         />
@@ -194,39 +174,39 @@ export function VoicePicker({ value, onChange, className = '' }: VoicePickerProp
 
       {/* Dropdown Menu Popover */}
       {isOpen && (
-        <div className="absolute left-0 right-0 top-full mt-2 z-50 bg-[#0d0d10] border border-white/[0.12] rounded-2xl shadow-2xl backdrop-blur-xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150 min-w-[320px] max-w-full">
-          {/* Search Header */}
-          <div className="p-3 border-b border-white/[0.08] bg-[#09090b]/80">
+        <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-[#0c0c0e] border border-white/[0.12] rounded-xl shadow-2xl backdrop-blur-xl overflow-hidden min-w-[320px] max-w-full">
+          {/* Compact Search Header */}
+          <div className="p-2.5 border-b border-white/[0.08] bg-[#070709]">
             <div className="relative">
-              <Search className="w-4 h-4 text-white/40 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-white/40 absolute left-2.5 top-1/2 -translate-y-1/2" />
               <input
                 ref={searchInputRef}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name (Nicole, Bella, Adam), language, accent..."
-                className="w-full bg-[#151518] border border-white/[0.08] focus:border-[#25D366]/60 rounded-xl pl-9 pr-8 py-2 text-sm text-white placeholder-white/30 outline-none transition-colors"
+                placeholder="Search voice (e.g. Nicole, Adam, Hindi)..."
+                className="w-full h-8 bg-[#141416] border border-white/[0.08] focus:border-[#25D366]/50 rounded-lg pl-8 pr-7 text-xs text-white placeholder-white/30 outline-none transition-colors"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white p-0.5"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-white/40 hover:text-white p-0.5"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-3 h-3" />
                 </button>
               )}
             </div>
 
             {/* Category Filter Chips */}
-            <div className="flex items-center gap-1.5 mt-2.5 overflow-x-auto no-scrollbar pb-0.5">
+            <div className="flex items-center gap-1 mt-2 overflow-x-auto no-scrollbar">
               <button
                 type="button"
                 onClick={() => setActiveCategory('all')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                className={`px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap transition-colors ${
                   activeCategory === 'all'
                     ? 'bg-[#25D366]/20 text-[#25D366] border border-[#25D366]/40'
-                    : 'bg-white/[0.04] text-white/50 hover:text-white border border-transparent'
+                    : 'bg-white/[0.04] text-white/40 hover:text-white border border-transparent'
                 }`}
               >
                 All ({ALL_VOICES.length})
@@ -234,43 +214,43 @@ export function VoicePicker({ value, onChange, className = '' }: VoicePickerProp
               <button
                 type="button"
                 onClick={() => setActiveCategory('kokoro')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                className={`px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap transition-colors ${
                   activeCategory === 'kokoro'
                     ? 'bg-[#25D366]/20 text-[#25D366] border border-[#25D366]/40'
-                    : 'bg-white/[0.04] text-white/50 hover:text-white border border-transparent'
+                    : 'bg-white/[0.04] text-white/40 hover:text-white border border-transparent'
                 }`}
               >
-                Kokoro Neural (54)
+                Kokoro (54)
               </button>
               <button
                 type="button"
                 onClick={() => setActiveCategory('english')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                className={`px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap transition-colors ${
                   activeCategory === 'english'
                     ? 'bg-[#25D366]/20 text-[#25D366] border border-[#25D366]/40'
-                    : 'bg-white/[0.04] text-white/50 hover:text-white border border-transparent'
+                    : 'bg-white/[0.04] text-white/40 hover:text-white border border-transparent'
                 }`}
               >
-                English (US/UK)
+                English
               </button>
               <button
                 type="button"
                 onClick={() => setActiveCategory('indic')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                className={`px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap transition-colors ${
                   activeCategory === 'indic'
                     ? 'bg-[#25D366]/20 text-[#25D366] border border-[#25D366]/40'
-                    : 'bg-white/[0.04] text-white/50 hover:text-white border border-transparent'
+                    : 'bg-white/[0.04] text-white/40 hover:text-white border border-transparent'
                 }`}
               >
-                Indian / Indic
+                Indic
               </button>
               <button
                 type="button"
                 onClick={() => setActiveCategory('european')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                className={`px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap transition-colors ${
                   activeCategory === 'european'
                     ? 'bg-[#25D366]/20 text-[#25D366] border border-[#25D366]/40'
-                    : 'bg-white/[0.04] text-white/50 hover:text-white border border-transparent'
+                    : 'bg-white/[0.04] text-white/40 hover:text-white border border-transparent'
                 }`}
               >
                 European
@@ -278,38 +258,32 @@ export function VoicePicker({ value, onChange, className = '' }: VoicePickerProp
             </div>
           </div>
 
-          {/* Voice List Scroll Area */}
-          <div className="max-h-[340px] overflow-y-auto p-2 space-y-3 divide-y divide-white/[0.04]">
+          {/* Voice List Scroll Area (Compact rows) */}
+          <div className="max-h-[280px] overflow-y-auto p-1.5 space-y-2 divide-y divide-white/[0.04]">
             {filteredVoices.length === 0 ? (
-              <div className="py-8 text-center">
-                <div className="w-10 h-10 rounded-full bg-white/[0.04] flex items-center justify-center mx-auto mb-2 text-white/30">
-                  <Mic className="w-5 h-5" />
-                </div>
-                <div className="text-sm font-medium text-white/70">No voices found</div>
-                <div className="text-xs text-white/40 mt-0.5">
-                  Try searching for &quot;nicole&quot;, &quot;bella&quot;, &quot;adam&quot;, or &quot;hindi&quot;
-                </div>
+              <div className="py-6 text-center">
+                <div className="text-xs font-medium text-white/60">No voices found</div>
                 <button
                   type="button"
                   onClick={() => {
                     setSearchQuery('');
                     setActiveCategory('all');
                   }}
-                  className="mt-3 text-xs text-[#25D366] hover:underline"
+                  className="mt-1.5 text-[11px] text-[#25D366] hover:underline"
                 >
-                  Clear search &amp; filters
+                  Clear search
                 </button>
               </div>
             ) : (
               <>
                 {/* Kokoro Neural Section */}
                 {kokoroVoices.length > 0 && (
-                  <div className="pt-1 first:pt-0">
-                    <div className="px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-[#25D366] font-semibold flex items-center gap-1.5 mb-1">
-                      <Radio className="w-3 h-3 text-[#25D366]" />
-                      Kokoro Ultra-Neural ({kokoroVoices.length})
+                  <div className="pt-0.5">
+                    <div className="px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-[#25D366] font-medium flex items-center gap-1">
+                      <Radio className="w-2.5 h-2.5 text-[#25D366]" />
+                      Kokoro Neural ({kokoroVoices.length})
                     </div>
-                    <div className="grid grid-cols-1 gap-1">
+                    <div className="space-y-0.5">
                       {kokoroVoices.map((voice) => {
                         const isSelected = voice.id === value;
                         return (
@@ -319,32 +293,27 @@ export function VoicePicker({ value, onChange, className = '' }: VoicePickerProp
                               onChange(voice.id);
                               setIsOpen(false);
                             }}
-                            className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all duration-150 ${
+                            className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors ${
                               isSelected
-                                ? 'bg-[#25D366]/15 border border-[#25D366]/40 text-white'
-                                : 'hover:bg-white/[0.06] border border-transparent text-white/80 hover:text-white'
+                                ? 'bg-[#25D366]/15 border border-[#25D366]/30 text-white'
+                                : 'hover:bg-white/[0.05] border border-transparent text-white/70 hover:text-white'
                             }`}
                           >
                             <div className="min-w-0 flex-1 pr-2">
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold text-sm text-white">{voice.name}</span>
+                              <div className="flex items-center gap-1.5 truncate">
+                                <span className="font-medium text-xs text-white">{voice.name}</span>
                                 {voice.accent && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] text-white/60">
+                                  <span className="text-[10px] text-white/40">
                                     {voice.accent} {voice.gender || ''}
                                   </span>
                                 )}
-                                <span className="text-[10px] px-1.5 py-0.2 rounded font-mono text-[#25D366]/80 bg-[#25D366]/10">
-                                  Neural
+                                <span className="text-[10px] text-white/30 truncate">
+                                  {voice.style || voice.id}
                                 </span>
-                              </div>
-                              <div className="text-xs text-white/40 truncate mt-0.5">
-                                {voice.style || voice.id}
                               </div>
                             </div>
                             {isSelected && (
-                              <div className="w-5 h-5 rounded-full bg-[#25D366] flex items-center justify-center shrink-0">
-                                <Check className="w-3 h-3 text-black stroke-[3]" />
-                              </div>
+                              <Check className="w-3.5 h-3.5 text-[#25D366] stroke-[2.5] shrink-0" />
                             )}
                           </div>
                         );
@@ -353,14 +322,14 @@ export function VoicePicker({ value, onChange, className = '' }: VoicePickerProp
                   </div>
                 )}
 
-                {/* Other Engines Section (Piper / Meta) */}
+                {/* Multilingual / Regional Section */}
                 {otherVoices.length > 0 && (
-                  <div className="pt-2">
-                    <div className="px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-white/40 font-semibold flex items-center gap-1.5 mb-1">
-                      <Globe className="w-3 h-3 text-white/40" />
-                      Multilingual &amp; Regional Voices ({otherVoices.length})
+                  <div className="pt-1.5">
+                    <div className="px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-white/40 font-medium flex items-center gap-1">
+                      <Globe className="w-2.5 h-2.5 text-white/40" />
+                      Multilingual &amp; Regional ({otherVoices.length})
                     </div>
-                    <div className="grid grid-cols-1 gap-1">
+                    <div className="space-y-0.5">
                       {otherVoices.map((voice) => {
                         const isSelected = voice.id === value;
                         return (
@@ -370,32 +339,27 @@ export function VoicePicker({ value, onChange, className = '' }: VoicePickerProp
                               onChange(voice.id);
                               setIsOpen(false);
                             }}
-                            className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all duration-150 ${
+                            className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors ${
                               isSelected
-                                ? 'bg-[#25D366]/15 border border-[#25D366]/40 text-white'
-                                : 'hover:bg-white/[0.06] border border-transparent text-white/80 hover:text-white'
+                                ? 'bg-[#25D366]/15 border border-[#25D366]/30 text-white'
+                                : 'hover:bg-white/[0.05] border border-transparent text-white/70 hover:text-white'
                             }`}
                           >
                             <div className="min-w-0 flex-1 pr-2">
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold text-sm text-white">{voice.name}</span>
+                              <div className="flex items-center gap-1.5 truncate">
+                                <span className="font-medium text-xs text-white">{voice.name}</span>
                                 {voice.accent && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] text-white/60">
+                                  <span className="text-[10px] text-white/40">
                                     {voice.accent} {voice.gender || ''}
                                   </span>
                                 )}
-                                <span className="text-[10px] px-1.5 py-0.2 rounded font-mono text-white/50 bg-white/[0.06]">
-                                  {voice.engine.toUpperCase()}
+                                <span className="text-[10px] text-white/30 truncate">
+                                  {voice.style || voice.id}
                                 </span>
-                              </div>
-                              <div className="text-xs text-white/40 truncate mt-0.5">
-                                {voice.style || voice.id}
                               </div>
                             </div>
                             {isSelected && (
-                              <div className="w-5 h-5 rounded-full bg-[#25D366] flex items-center justify-center shrink-0">
-                                <Check className="w-3 h-3 text-black stroke-[3]" />
-                              </div>
+                              <Check className="w-3.5 h-3.5 text-[#25D366] stroke-[2.5] shrink-0" />
                             )}
                           </div>
                         );
@@ -407,10 +371,10 @@ export function VoicePicker({ value, onChange, className = '' }: VoicePickerProp
             )}
           </div>
 
-          {/* Footer count indicator */}
-          <div className="px-3 py-2 bg-[#09090b] border-t border-white/[0.06] flex items-center justify-between text-[11px] text-white/40">
-            <span>Showing {filteredVoices.length} of {ALL_VOICES.length} voices</span>
-            <span>Selected: {selectedVoice.name}</span>
+          {/* Minimal footer */}
+          <div className="px-3 py-1.5 bg-[#070709] border-t border-white/[0.06] flex items-center justify-between text-[10px] text-white/30">
+            <span>{filteredVoices.length} voices</span>
+            <span className="truncate max-w-[160px]">Selected: {selectedVoice.name}</span>
           </div>
         </div>
       )}

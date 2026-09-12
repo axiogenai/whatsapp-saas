@@ -186,10 +186,8 @@ export function AIBrainTab({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5">
-              Voice Persona (254 Neural &amp; Regional Voices)
-            </label>
-            <div className="flex gap-2 items-start">
+            <label className="block text-xs font-medium text-white/50 mb-1.5">Voice Persona</label>
+            <div className="flex gap-2 items-center">
               <VoicePicker
                 value={config.voicePersona || 'af_bella'}
                 onChange={(voiceId) => onConfigChange({ voicePersona: voiceId })}
@@ -198,7 +196,7 @@ export function AIBrainTab({
               <button
                 onClick={onPreviewVoice}
                 disabled={loadingAudioPreview}
-                className="px-4 py-2.5 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.08] hover:border-[#25D366]/40 rounded-xl text-white transition-colors flex items-center justify-center min-w-[46px] h-[46px] shrink-0"
+                className="px-3 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.08] hover:border-[#25D366]/40 rounded-xl text-white transition-colors flex items-center justify-center min-w-[42px] h-[42px] shrink-0"
                 title="Preview Voice"
               >
                 {loadingAudioPreview ? (
