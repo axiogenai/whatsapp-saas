@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TenantBotConfig } from '@/lib/types';
+import { VoicePicker } from './VoicePicker';
 
 interface AIBrainTabProps {
   config: TenantBotConfig;
@@ -185,23 +186,19 @@ export function AIBrainTab({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-xs font-medium text-white/50 mb-1.5">Voice Persona</label>
-            <div className="flex gap-2">
-              <select
+            <label className="block text-xs font-medium text-white/50 mb-1.5">
+              Voice Persona (254 Neural &amp; Regional Voices)
+            </label>
+            <div className="flex gap-2 items-start">
+              <VoicePicker
                 value={config.voicePersona || 'af_bella'}
-                onChange={(e) => onConfigChange({ voicePersona: e.target.value })}
-                className="flex-1 bg-[#050505] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-[#25D366]/50 transition-colors appearance-none"
-              >
-                <option value="am_adam">Adam - Tech Founder</option>
-                <option value="af_bella">Bella - Warm Support</option>
-                <option value="af_sarah">Sarah - Professional</option>
-                <option value="bf_emma">Emma - British</option>
-                <option value="bm_george">George - British</option>
-              </select>
+                onChange={(voiceId) => onConfigChange({ voicePersona: voiceId })}
+                className="flex-1 min-w-0"
+              />
               <button
                 onClick={onPreviewVoice}
                 disabled={loadingAudioPreview}
-                className="px-4 py-2 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.06] rounded-xl text-white transition-colors flex items-center justify-center min-w-[44px]"
+                className="px-4 py-2.5 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.08] hover:border-[#25D366]/40 rounded-xl text-white transition-colors flex items-center justify-center min-w-[46px] h-[46px] shrink-0"
                 title="Preview Voice"
               >
                 {loadingAudioPreview ? (
@@ -209,7 +206,7 @@ export function AIBrainTab({
                 ) : isPlayingAudio ? (
                   <Square className="w-4 h-4 text-[#25D366] fill-[#25D366]" />
                 ) : (
-                  <Play className="w-4 h-4 text-white/70 fill-white/70" />
+                  <Play className="w-4 h-4 text-white/80 fill-white/80 hover:text-[#25D366] hover:fill-[#25D366] transition-colors" />
                 )}
               </button>
             </div>

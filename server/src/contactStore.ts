@@ -92,8 +92,9 @@ export function importSessionsFromDisk(tenantId: string): number {
           aiEnabled: true,
           voiceMode: 'default',
         };
-        // Don't import if it's an orphan broadcast artifact
-        if (isOrphanBroadcastArtifact(newContact)) continue;
+        // NOTE: Do NOT apply isOrphanBroadcastArtifact filter here!
+        // A session-*.json file is definitive proof of a real 1:1 conversation.
+        // The orphan filter only applies when loading from persisted JSON.
 
         map.set(phone, newContact);
         importedCount++;
