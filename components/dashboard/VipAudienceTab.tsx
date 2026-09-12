@@ -1,22 +1,21 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   Shield, 
-  UserCheck, 
-  Users, 
-  MessageSquare, 
-  UserX, 
   Plus, 
-  Search, 
-  Check, 
+  Trash2, 
+  UserX, 
   Save, 
   Loader2, 
-  BookUser, 
-  RefreshCw, 
-  Edit2 
+  Phone, 
+  User, 
+  FileText, 
+  Search,
+  Check,
+  UserCheck
 } from 'lucide-react';
-import { TenantBotConfig, SavedContact } from '@/lib/types';
+import { TenantBotConfig, VipContact, SavedContact } from '@/lib/types';
 
 interface VipAudienceTabProps {
   config: TenantBotConfig;
@@ -26,8 +25,6 @@ interface VipAudienceTabProps {
   tenantId: string;
 }
 
-type FilterTab = 'all' | 'vips' | 'ai_active' | 'text_only';
-
 export function VipAudienceTab({
   config,
   onConfigChange,
@@ -35,835 +32,479 @@ export function VipAudienceTab({
   saving,
   tenantId,
 }: VipAudienceTabProps) {
-  const [contacts, setContacts] = useState<SavedContact[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [syncing, setSyncing] = useState(false);
+  // Input form state
+  const [phoneInput, setPhoneInput] = useState('');
+  const [nameInput, setNameInput] = useState('');
+  const [notesInput, setNotesInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
-  const [selectedPhones, setSelectedPhones] = useState<Set<string>>(new Set());
+  const [formError, setFormError] = useState<string | null>(null);
+  const [addedSuccess, setAddedSuccess] = useState(false);
 
-  // Inline name editing state: phone -> temporary edited name
-  const [editingPhone, setEditingPhone] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState<string>('');
-  const [savingPhone, setSavingPhone] = useState<string | null>(null);
-  const [savedSuccessPhone, setSavedSuccessPhone] = useState<string | null>(null);
+  // Bulk paste state
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
+  const [bulkInput, setBulkInput] = useState('');
 
-  // Inline real phone editing state: phone -> temporary edited real phone
-  const [editingRealPhoneKey, setEditingRealPhoneKey] = useState<string | null>(null);
-  const [editingRealPhoneValue, setEditingRealPhoneValue] = useState<string>('');
-
-  // Manual Add Modal (Add to VIP Protection)
-  const [isAddingContact, setIsAddingContact] = useState(false);
-  const [newPhone, setNewPhone] = useState('');
-  const [newName, setNewName] = useState('');
-  const [newVoiceMode, setNewVoiceMode] = useState<'default' | 'text_only' | 'voice_only'>('default');
-  const [newNotes, setNewNotes] = useState('');
-
-  // Blocked Number Input
+  // Blocked number input
   const [blockInput, setBlockInput] = useState('');
 
-  const blockedNumbers = config.blockedNumbers || [];
+  // Active VIP list from config
+  const vipList: VipContact[] = useMemo(() => {
+    return config.vipContacts || [];
+  }, [config.vipContacts]);
 
-  // Load Contacts Directory
-  const loadDirectory = async (forceSync = false) => {
-    if (forceSync) setSyncing(true);
-    else setLoading(true);
+  // Blocked numbers list
+  const blockedList: string[] = useMemo(() => {
+    return config.blockedNumbers || [];
+  }, [config.blockedNumbers]);
 
-    try {
-      const endpoint = forceSync 
-        ? `/api/whatsapp/contacts/sync?tenantId=${encodeURIComponent(tenantId)}`
-        : `/api/whatsapp/contacts/directory?tenantId=${encodeURIComponent(tenantId)}`;
-      
-      const res = await fetch(endpoint, {
-        method: forceSync ? 'POST' : 'GET',
-        headers: { 'x-tenant-id': tenantId },
-      });
+  // Normalize phone digits
+  const cleanDigits = (val: string) => val.replace(/\D/g, '');
 
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data.contacts)) {
-          setContacts(data.contacts);
-        }
+  // Add single VIP number
+  const handleAddVip = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setFormError(null);
+
+    const digits = cleanDigits(phoneInput);
+    if (!digits || digits.length < 7) {
+      setFormError('Please enter a valid phone number (at least 7 digits)');
+      return;
+    }
+
+    // Check if already in VIP
+    const exists = vipList.some((v) => cleanDigits(v.phone) === digits);
+    if (exists) {
+      setFormError('This phone number is already protected in VIP list');
+      return;
+    }
+
+    const newVip: VipContact = {
+      phone: digits,
+      name: nameInput.trim() || `+${digits}`,
+      rule: 'human_only', // VIP is always 100% human-only! AI never replies.
+      notes: notesInput.trim() || undefined,
+      addedAt: Date.now(),
+    };
+
+    const updated = [newVip, ...vipList];
+    onConfigChange({ vipContacts: updated });
+
+    // Clear form
+    setPhoneInput('');
+    setNameInput('');
+    setNotesInput('');
+    setAddedSuccess(true);
+    setTimeout(() => setAddedSuccess(false), 2500);
+
+    // Also sync with server contact store
+    fetch(`/api/whatsapp/contacts/control?tenantId=${encodeURIComponent(tenantId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: digits,
+        name: newVip.name,
+        isVip: true,
+        aiEnabled: false,
+        notes: newVip.notes,
+      }),
+    }).catch(() => {});
+  };
+
+  // Remove single VIP number
+  const handleRemoveVip = (phoneToRemove: string) => {
+    const digits = cleanDigits(phoneToRemove);
+    const updated = vipList.filter((v) => cleanDigits(v.phone) !== digits);
+    onConfigChange({ vipContacts: updated });
+
+    // Also sync with server
+    fetch(`/api/whatsapp/contacts/control?tenantId=${encodeURIComponent(tenantId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: digits,
+        isVip: false,
+        aiEnabled: true,
+      }),
+    }).catch(() => {});
+  };
+
+  // Bulk add multiple numbers
+  const handleBulkAdd = () => {
+    if (!bulkInput.trim()) return;
+
+    const rawEntries = bulkInput.split(/[\n,;]+/);
+    const newItems: VipContact[] = [];
+    const currentPhones = new Set(vipList.map((v) => cleanDigits(v.phone)));
+
+    for (const entry of rawEntries) {
+      const digits = cleanDigits(entry);
+      if (digits && digits.length >= 7 && !currentPhones.has(digits)) {
+        currentPhones.add(digits);
+        newItems.push({
+          phone: digits,
+          name: `+${digits}`,
+          rule: 'human_only',
+          addedAt: Date.now(),
+        });
       }
-    } catch (err) {
-      console.error('Failed fetching contacts directory:', err);
-    } finally {
-      setLoading(false);
-      setSyncing(false);
+    }
+
+    if (newItems.length > 0) {
+      onConfigChange({ vipContacts: [...newItems, ...vipList] });
+      setBulkInput('');
+      setIsBulkOpen(false);
+      setAddedSuccess(true);
+      setTimeout(() => setAddedSuccess(false), 2500);
     }
   };
 
-  useEffect(() => {
-    loadDirectory(false);
-  }, [tenantId]);
+  // Add blocked number
+  const handleAddBlocked = () => {
+    const digits = cleanDigits(blockInput);
+    if (!digits || digits.length < 7) return;
 
-  // Update single contact control
-  const handleUpdateContact = async (phone: string, updates: Partial<SavedContact>) => {
-    // Optimistic UI update
-    setContacts((prev) =>
-      prev.map((c) => (c.phone === phone ? { ...c, ...updates, updatedAt: Date.now() } : c))
-    );
-
-    setSavingPhone(phone);
-    try {
-      const res = await fetch(`/api/whatsapp/contacts/control?tenantId=${encodeURIComponent(tenantId)}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-tenant-id': tenantId,
-        },
-        body: JSON.stringify({
-          phone,
-          ...updates,
-        }),
-      });
-
-      if (res.ok) {
-        setSavedSuccessPhone(phone);
-        setTimeout(() => setSavedSuccessPhone(null), 2000);
-      }
-    } catch (err) {
-      console.error(`Failed to update contact ${phone}:`, err);
-    } finally {
-      setSavingPhone(null);
+    if (!blockedList.includes(digits)) {
+      onConfigChange({ blockedNumbers: [...blockedList, digits] });
     }
-  };
-
-  // Toggle VIP (CRITICAL: VIP = AI NEVER REPLIES)
-  const handleToggleVip = (contact: SavedContact) => {
-    const nextIsVip = !contact.isVip;
-    handleUpdateContact(contact.phone, { 
-      isVip: nextIsVip,
-      aiEnabled: !nextIsVip // If VIP -> AI Muted (false). If not VIP -> AI Active (true)
-    });
-  };
-
-  // Change Voice Delivery Mode
-  const handleChangeVoiceMode = (contact: SavedContact, voiceMode: 'default' | 'text_only' | 'voice_only') => {
-    handleUpdateContact(contact.phone, { voiceMode });
-  };
-
-  // Start editing contact name inline
-  const handleStartEditing = (contact: SavedContact) => {
-    setEditingPhone(contact.phone);
-    setEditingName(contact.name || contact.verifiedName || contact.notify || '');
-  };
-
-  // Save edited name
-  const handleSaveName = async (phone: string) => {
-    const trimmed = editingName.trim();
-    setEditingPhone(null);
-    if (!trimmed) return;
-    await handleUpdateContact(phone, { name: trimmed });
-  };
-
-  // Start editing real phone inline
-  const handleStartEditingRealPhone = (contact: SavedContact) => {
-    setEditingRealPhoneKey(contact.phone);
-    setEditingRealPhoneValue(contact.realPhone || (contact.phone.length <= 12 ? contact.phone : ''));
-  };
-
-  // Save edited real phone
-  const handleSaveRealPhone = async (phone: string) => {
-    const trimmed = editingRealPhoneValue.replace(/\D/g, '');
-    setEditingRealPhoneKey(null);
-    await handleUpdateContact(phone, { realPhone: trimmed || undefined });
-  };
-
-  // Batch Control
-  const handleBatchUpdate = async (updates: Partial<SavedContact>) => {
-    if (selectedPhones.size === 0) return;
-    const phones = Array.from(selectedPhones);
-
-    // Optimistic UI
-    setContacts((prev) =>
-      prev.map((c) => (selectedPhones.has(c.phone) ? { ...c, ...updates, updatedAt: Date.now() } : c))
-    );
-
-    try {
-      await fetch(`/api/whatsapp/contacts/batch-control?tenantId=${encodeURIComponent(tenantId)}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-tenant-id': tenantId,
-        },
-        body: JSON.stringify({ phones, updates }),
-      });
-      setSelectedPhones(new Set());
-    } catch (err) {
-      console.error('Failed batch update:', err);
-    }
-  };
-
-  // Add Contact to VIP Form Submit
-  const handleAddContactSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanPhone = newPhone.replace(/\D/g, '');
-    if (!cleanPhone || !newName.trim()) return;
-
-    // Added contacts default to VIP (AI Never Replies)
-    await handleUpdateContact(cleanPhone, {
-      name: newName.trim(),
-      isVip: true,
-      aiEnabled: false,
-      voiceMode: newVoiceMode,
-      notes: newNotes.trim() || undefined,
-    });
-
-    setIsAddingContact(false);
-    setNewPhone('');
-    setNewName('');
-    setNewNotes('');
-    setNewVoiceMode('default');
-    loadDirectory(false);
-  };
-
-  // Blocked Number
-  const handleAddBlockedNumber = (e: React.FormEvent) => {
-    e.preventDefault();
-    const clean = blockInput.replace(/\D/g, '');
-    if (!clean || blockedNumbers.includes(clean)) return;
-    onConfigChange({ blockedNumbers: [...blockedNumbers, clean] });
     setBlockInput('');
   };
 
-  const handleRemoveBlockedNumber = (num: string) => {
-    onConfigChange({ blockedNumbers: blockedNumbers.filter((n) => n !== num) });
+  // Remove blocked number
+  const handleRemoveBlocked = (phone: string) => {
+    onConfigChange({
+      blockedNumbers: blockedList.filter((b) => cleanDigits(b) !== cleanDigits(phone)),
+    });
   };
 
-  // Filtered & Searched Contacts
-  const filteredContacts = useMemo(() => {
-    return contacts.filter((c) => {
-      // 1. Search filter
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        const matchesName = c.name?.toLowerCase().includes(q);
-        const matchesNotify = c.notify?.toLowerCase().includes(q);
-        const matchesPhone = c.phone.includes(q);
-        const matchesRealPhone = c.realPhone?.includes(q);
-        const matchesNotes = c.notes?.toLowerCase().includes(q);
-        if (!matchesName && !matchesNotify && !matchesPhone && !matchesRealPhone && !matchesNotes) return false;
-      }
-
-      // 2. Tab filter
-      if (activeFilter === 'vips') return Boolean(c.isVip || c.aiEnabled === false);
-      if (activeFilter === 'ai_active') return !c.isVip && c.aiEnabled !== false;
-      if (activeFilter === 'text_only') return c.voiceMode === 'text_only';
-
-      return true;
+  // Filter VIP list by search query
+  const filteredVips = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return vipList;
+    return vipList.filter((v) => {
+      return (
+        v.name.toLowerCase().includes(q) ||
+        v.phone.includes(q) ||
+        (v.notes && v.notes.toLowerCase().includes(q))
+      );
     });
-  }, [contacts, searchQuery, activeFilter]);
-
-  // Statistics
-  const stats = useMemo(() => {
-    const total = contacts.length;
-    const vips = contacts.filter((c) => c.isVip || c.aiEnabled === false).length;
-    const aiActive = contacts.filter((c) => !c.isVip && c.aiEnabled !== false).length;
-    const textOnly = contacts.filter((c) => c.voiceMode === 'text_only').length;
-    return { total, vips, aiActive, textOnly };
-  }, [contacts]);
+  }, [vipList, searchQuery]);
 
   return (
-    <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-6 pb-28 md:pb-8">
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0F0F0F] border border-white/[0.08] rounded-2xl p-5">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <span className="p-2 rounded-xl bg-white/[0.04] text-white border border-white/[0.08]">
-              <Shield className="w-5 h-5 text-amber-400" />
-            </span>
-            <div>
-              <h2 className="text-lg font-semibold text-white tracking-tight">
-                VIP Protection & Audience Control
+    <div className="space-y-6 max-w-5xl mx-auto">
+      {/* Top Header & Save Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0a0a0c] border border-white/[0.08] p-5 rounded-2xl">
+        <div className="flex items-start gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0 mt-0.5">
+            <Shield className="w-5 h-5 text-amber-400" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-semibold text-white tracking-wide">
+                VIP Protection &amp; Muted Numbers
               </h2>
-              <p className="text-xs text-white/40 mt-0.5">
-                Contacts marked as VIP are strictly protected: the AI will <span className="text-amber-400 font-medium">NEVER reply</span> to them.
-              </p>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 font-mono font-medium">
+                {vipList.length} Protected
+              </span>
             </div>
+            <p className="text-xs text-white/50 mt-1 max-w-xl leading-relaxed">
+              Enter phone numbers that the AI must <strong className="text-amber-300 font-semibold">NEVER</strong> message or reply to. When these numbers text you, AI is completely silenced.
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
-          <button
-            onClick={() => loadDirectory(true)}
-            disabled={syncing || loading}
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-white transition-all disabled:opacity-50"
-            title="Scan WhatsApp sessions and sync contacts"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
-            <span>{syncing ? 'Syncing...' : 'Sync WhatsApp'}</span>
-          </button>
-
-          <button
-            onClick={() => setIsAddingContact(true)}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-medium transition-all"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add VIP</span>
-          </button>
-
+        <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={onSave}
             disabled={saving}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-white/90 text-black font-medium text-xs transition-all shadow-lg disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-black font-semibold text-xs transition-all shadow-md shadow-[#25D366]/20 disabled:opacity-50"
           >
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            <span>{saving ? 'Saving...' : 'Save Settings'}</span>
+            {saving ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-3.5 h-3.5" />
+                <span>Save Changes</span>
+              </>
+            )}
           </button>
         </div>
       </div>
 
-      {/* Metric Counter Filters */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div 
-          onClick={() => setActiveFilter('all')}
-          className={`p-4 rounded-xl border cursor-pointer transition-all ${
-            activeFilter === 'all' 
-              ? 'bg-white/[0.08] border-white/40' 
-              : 'bg-[#0F0F0F] border-white/[0.06] hover:border-white/[0.14]'
-          }`}
-        >
-          <div className="text-[11px] font-medium text-white/50 uppercase tracking-wider">All Contacts</div>
-          <div className="text-2xl font-bold font-mono text-white mt-1">{stats.total}</div>
-          <div className="text-[10px] text-white/30 mt-0.5">Synced WhatsApp phonebook</div>
+      {/* Add VIP Form Card (Clean, Simple, Direct) */}
+      <div className="bg-[#0f0f12] border border-white/[0.08] rounded-2xl p-5 shadow-lg">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <UserCheck className="w-4 h-4 text-amber-400" />
+            <h3 className="text-sm font-semibold text-white">Add Protected Number</h3>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsBulkOpen(!isBulkOpen)}
+            className="text-xs text-amber-400/80 hover:text-amber-300 transition-colors"
+          >
+            {isBulkOpen ? '← Single Number Entry' : '+ Bulk Paste Numbers'}
+          </button>
         </div>
 
-        <div 
-          onClick={() => setActiveFilter('vips')}
-          className={`p-4 rounded-xl border cursor-pointer transition-all ${
-            activeFilter === 'vips' 
-              ? 'bg-amber-500/10 border-amber-500/50' 
-              : 'bg-[#0F0F0F] border-white/[0.06] hover:border-white/[0.14]'
-          }`}
-        >
-          <div className="text-[11px] font-medium text-amber-400 uppercase tracking-wider flex items-center gap-1">
-            <Shield className="w-3 h-3" />
-            VIP Protected
-          </div>
-          <div className="text-2xl font-bold font-mono text-amber-300 mt-1">{stats.vips}</div>
-          <div className="text-[10px] text-amber-400/60 mt-0.5">AI will NEVER reply (Muted)</div>
-        </div>
-
-        <div 
-          onClick={() => setActiveFilter('ai_active')}
-          className={`p-4 rounded-xl border cursor-pointer transition-all ${
-            activeFilter === 'ai_active' 
-              ? 'bg-white/[0.08] border-white/40' 
-              : 'bg-[#0F0F0F] border-white/[0.06] hover:border-white/[0.14]'
-          }`}
-        >
-          <div className="text-[11px] font-medium text-white/70 uppercase tracking-wider">
-            AI Active
-          </div>
-          <div className="text-2xl font-bold font-mono text-white mt-1">{stats.aiActive}</div>
-          <div className="text-[10px] text-white/40 mt-0.5">Automated replies based on prompt</div>
-        </div>
-
-        <div 
-          onClick={() => setActiveFilter('text_only')}
-          className={`p-4 rounded-xl border cursor-pointer transition-all ${
-            activeFilter === 'text_only' 
-              ? 'bg-blue-500/10 border-blue-500/50' 
-              : 'bg-[#0F0F0F] border-white/[0.06] hover:border-white/[0.14]'
-          }`}
-        >
-          <div className="text-[11px] font-medium text-blue-400 uppercase tracking-wider">
-            Text Only
-          </div>
-          <div className="text-2xl font-bold font-mono text-blue-300 mt-1">{stats.textOnly}</div>
-          <div className="text-[10px] text-blue-400/60 mt-0.5">No voice notes dispatched</div>
-        </div>
-      </div>
-
-      {/* Main Contact Directory & VIP Management Table */}
-      <section className="bg-[#0F0F0F] border border-white/[0.08] rounded-2xl p-5 space-y-4">
-        {/* Search & Action Filters */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          {/* Search Input */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name, title, phone, or notes..."
-              className="w-full pl-9 pr-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/40"
-            />
-          </div>
-
-          {/* Filter Pills */}
-          <div className="flex items-center gap-1 bg-white/[0.02] p-1 rounded-xl border border-white/[0.06] text-xs">
-            <button
-              onClick={() => setActiveFilter('all')}
-              className={`px-3 py-1 rounded-lg transition-all ${
-                activeFilter === 'all' ? 'bg-white/[0.1] text-white font-medium' : 'text-white/40 hover:text-white'
-              }`}
-            >
-              All ({stats.total})
-            </button>
-            <button
-              onClick={() => setActiveFilter('vips')}
-              className={`px-3 py-1 rounded-lg transition-all ${
-                activeFilter === 'vips' ? 'bg-amber-500/20 text-amber-300 font-medium' : 'text-white/40 hover:text-white'
-              }`}
-            >
-              VIP Protected ({stats.vips})
-            </button>
-            <button
-              onClick={() => setActiveFilter('ai_active')}
-              className={`px-3 py-1 rounded-lg transition-all ${
-                activeFilter === 'ai_active' ? 'bg-white/[0.1] text-white font-medium' : 'text-white/40 hover:text-white'
-              }`}
-            >
-              AI Active ({stats.aiActive})
-            </button>
-            <button
-              onClick={() => setActiveFilter('text_only')}
-              className={`px-3 py-1 rounded-lg transition-all ${
-                activeFilter === 'text_only' ? 'bg-blue-500/20 text-blue-300 font-medium' : 'text-white/40 hover:text-white'
-              }`}
-            >
-              Text Only ({stats.textOnly})
-            </button>
-          </div>
-        </div>
-
-        {/* Batch Selection Action Bar */}
-        {selectedPhones.size > 0 && (
-          <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-between gap-3 text-xs">
-            <span className="text-white font-medium">
-              {selectedPhones.size} contact{selectedPhones.size > 1 ? 's' : ''} selected
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleBatchUpdate({ isVip: true, aiEnabled: false })}
-                className="px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-medium flex items-center gap-1.5"
-              >
-                <Shield className="w-3 h-3" />
-                <span>Move to VIP (Mute AI)</span>
-              </button>
-              <button
-                onClick={() => handleBatchUpdate({ isVip: false, aiEnabled: true })}
-                className="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-white border border-white/[0.1] font-medium"
-              >
-                Enable AI (Remove VIP)
-              </button>
-              <button
-                onClick={() => handleBatchUpdate({ voiceMode: 'text_only' })}
-                className="px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/30 font-medium"
-              >
-                Set Text Only
-              </button>
-              <button
-                onClick={() => setSelectedPhones(new Set())}
-                className="text-white/40 hover:text-white px-2"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Add Contact Modal / Expanded Form */}
-        {isAddingContact && (
-          <form onSubmit={handleAddContactSubmit} className="p-4 rounded-xl bg-[#080808] border border-amber-500/30 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-amber-400" />
-                <h4 className="text-xs font-semibold text-white uppercase tracking-wider">
-                  Add Contact to VIP (AI Never Replies)
-                </h4>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsAddingContact(false)}
-                className="text-xs text-white/40 hover:text-white"
-              >
-                Cancel
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {!isBulkOpen ? (
+          <form onSubmit={handleAddVip} className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Phone Number */}
               <div>
-                <label className="text-[11px] text-white/50 block mb-1">Saved Name & Honorific Title</label>
-                <input
-                  type="text"
-                  required
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="e.g. Monali ma'am or Dr. Sharma"
-                  className="w-full px-3 py-2 rounded-lg bg-[#141414] border border-white/[0.08] text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/30"
-                />
+                <label className="block text-[11px] font-medium text-white/60 mb-1">
+                  Phone Number <span className="text-amber-400">*</span>
+                </label>
+                <div className="relative">
+                  <Phone className="w-3.5 h-3.5 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="tel"
+                    required
+                    value={phoneInput}
+                    onChange={(e) => setPhoneInput(e.target.value)}
+                    placeholder="e.g. 919876543210"
+                    className="w-full h-10 bg-[#070709] border border-white/[0.08] focus:border-amber-500/60 rounded-xl pl-9 pr-3 text-xs text-white placeholder-white/25 outline-none transition-colors"
+                  />
+                </div>
               </div>
 
+              {/* Name / Title */}
               <div>
-                <label className="text-[11px] text-white/50 block mb-1">Phone Number or WhatsApp LID</label>
-                <input
-                  type="text"
-                  required
-                  value={newPhone}
-                  onChange={(e) => setNewPhone(e.target.value)}
-                  placeholder="e.g. 919876543210"
-                  className="w-full px-3 py-2 rounded-lg bg-[#141414] border border-white/[0.08] text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/30"
-                />
+                <label className="block text-[11px] font-medium text-white/60 mb-1">
+                  Contact Name / Title
+                </label>
+                <div className="relative">
+                  <User className="w-3.5 h-3.5 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    placeholder="e.g. Monali Ma'am, Client X"
+                    className="w-full h-10 bg-[#070709] border border-white/[0.08] focus:border-amber-500/60 rounded-xl pl-9 pr-3 text-xs text-white placeholder-white/25 outline-none transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-[11px] font-medium text-white/60 mb-1">
+                  Relationship / Notes (Optional)
+                </label>
+                <div className="relative">
+                  <FileText className="w-3.5 h-3.5 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={notesInput}
+                    onChange={(e) => setNotesInput(e.target.value)}
+                    placeholder="e.g. Senior Mentor, Family"
+                    className="w-full h-10 bg-[#070709] border border-white/[0.08] focus:border-amber-500/60 rounded-xl pl-9 pr-3 text-xs text-white placeholder-white/25 outline-none transition-colors"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] text-white/50 block mb-1">Voice Delivery</label>
-                <select
-                  value={newVoiceMode}
-                  onChange={(e) => setNewVoiceMode(e.target.value as any)}
-                  style={{ backgroundColor: '#18181b', color: '#ffffff' }}
-                  className="w-full px-3 py-2 rounded-lg bg-[#18181b] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-white/30 cursor-pointer"
-                >
-                  <option value="default" style={{ backgroundColor: '#18181b', color: '#ffffff' }}>Adaptive</option>
-                  <option value="text_only" style={{ backgroundColor: '#18181b', color: '#ffffff' }}>Text Only (Never Voice Notes)</option>
-                  <option value="voice_only" style={{ backgroundColor: '#18181b', color: '#ffffff' }}>Always Voice Notes</option>
-                </select>
+            {formError && (
+              <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg">
+                {formError}
               </div>
+            )}
 
-              <div>
-                <label className="text-[11px] text-white/50 block mb-1">Notes / Relationship (Optional)</label>
-                <input
-                  type="text"
-                  value={newNotes}
-                  onChange={(e) => setNewNotes(e.target.value)}
-                  placeholder="e.g. Senior Mentor, Key Client"
-                  className="w-full px-3 py-2 rounded-lg bg-[#141414] border border-white/[0.08] text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/30"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-1 gap-2">
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[11px] text-white/40">
+                AI will never contact or auto-reply to this number.
+              </span>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-lg bg-amber-500 text-black font-medium text-xs hover:bg-amber-400 transition-all"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs transition-colors"
               >
-                Protect in VIP
+                {addedSuccess ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    <span>Added to VIP!</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>Add to VIP Protection</span>
+                  </>
+                )}
               </button>
             </div>
           </form>
-        )}
-
-        {/* Directory Table */}
-        {loading ? (
-          <div className="py-16 text-center text-xs text-white/40 flex flex-col items-center justify-center gap-2">
-            <Loader2 className="w-5 h-5 animate-spin text-white/60" />
-            <span>Loading contacts...</span>
+        ) : (
+          /* Bulk Paste Mode */
+          <div className="space-y-3">
+            <textarea
+              rows={3}
+              value={bulkInput}
+              onChange={(e) => setBulkInput(e.target.value)}
+              placeholder="Paste numbers separated by commas or newlines:&#10;919876543210, 919822334455, 919811223344"
+              className="w-full bg-[#070709] border border-white/[0.08] focus:border-amber-500/60 rounded-xl p-3 text-xs text-white placeholder-white/25 outline-none transition-colors font-mono"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsBulkOpen(false)}
+                className="px-3 py-1.5 rounded-lg text-xs text-white/50 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkAdd}
+                className="px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs transition-colors"
+              >
+                Add All Numbers to VIP
+              </button>
+            </div>
           </div>
-        ) : filteredContacts.length === 0 ? (
-          <div className="py-12 text-center border border-dashed border-white/[0.08] rounded-xl space-y-2">
-            <BookUser className="w-8 h-8 mx-auto text-white/20" />
-            <p className="text-xs text-white/40">No contacts matching your current filter.</p>
-            <p className="text-[11px] text-white/25">
-              Click &quot;Sync WhatsApp&quot; above to import contacts from active phone sessions.
+        )}
+      </div>
+
+      {/* Protected Numbers List Card */}
+      <div className="bg-[#0a0a0c] border border-white/[0.08] rounded-2xl p-5 shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.06]">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-white">
+              Protected VIP Numbers ({filteredVips.length})
+            </h3>
+            <span className="text-[11px] text-white/40">
+              (AI is strictly silenced for these people)
+            </span>
+          </div>
+
+          {vipList.length > 3 && (
+            <div className="relative w-full sm:w-64">
+              <Search className="w-3.5 h-3.5 text-white/30 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search VIPs by name or number..."
+                className="w-full h-8 bg-[#141416] border border-white/[0.08] focus:border-amber-500/50 rounded-lg pl-8 pr-3 text-xs text-white placeholder-white/30 outline-none transition-colors"
+              />
+            </div>
+          )}
+        </div>
+
+        {filteredVips.length === 0 ? (
+          <div className="py-12 text-center">
+            <Shield className="w-8 h-8 text-amber-400/30 mx-auto mb-2" />
+            <div className="text-xs font-medium text-white/60">No VIP numbers added yet</div>
+            <p className="text-[11px] text-white/35 mt-1 max-w-sm mx-auto">
+              Enter a phone number above (like your mentor, key client, or family) to ensure the AI never replies to them.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-white/[0.08] text-white/40 uppercase tracking-wider text-[10px]">
-                  <th className="py-3 px-3 w-8">
-                    <input
-                      type="checkbox"
-                      checked={selectedPhones.size === filteredContacts.length && filteredContacts.length > 0}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedPhones(new Set(filteredContacts.map((c) => c.phone)));
-                        } else {
-                          setSelectedPhones(new Set());
-                        }
-                      }}
-                      className="rounded bg-white/[0.06] border-white/[0.1] focus:ring-0 cursor-pointer"
-                    />
-                  </th>
-                  <th className="py-3 px-3">Contact Name & Title</th>
-                  <th className="py-3 px-3">AI Reply Status</th>
-                  <th className="py-3 px-3">Voice Notes</th>
-                  <th className="py-3 px-3">Notes</th>
-                  <th className="py-3 px-3 text-right">Protection Control</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.04]">
-                {filteredContacts.map((c) => {
-                  const isSelected = selectedPhones.has(c.phone);
-                  const isEditing = editingPhone === c.phone;
-                  const isSaving = savingPhone === c.phone;
-                  const justSaved = savedSuccessPhone === c.phone;
-                  const displayName = c.name || c.verifiedName || c.notify || (c.realPhone ? `+${c.realPhone}` : c.phone.length <= 12 ? `+${c.phone}` : `Contact`);
-                  const isVip = Boolean(c.isVip || c.aiEnabled === false);
+          <div className="divide-y divide-white/[0.04] mt-2">
+            {filteredVips.map((vip) => {
+              const initials = vip.name
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .toUpperCase()
+                .slice(0, 2) || 'VIP';
 
-                  return (
-                    <tr 
-                      key={c.phone} 
-                      className={`hover:bg-white/[0.02] transition-colors ${
-                        isSelected ? 'bg-white/[0.03]' : ''
-                      }`}
-                    >
-                      {/* Checkbox */}
-                      <td className="py-3.5 px-3">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={(e) => {
-                            const copy = new Set(selectedPhones);
-                            if (e.target.checked) copy.add(c.phone);
-                            else copy.delete(c.phone);
-                            setSelectedPhones(copy);
-                          }}
-                          className="rounded bg-white/[0.06] border-white/[0.1] focus:ring-0 cursor-pointer"
-                        />
-                      </td>
-
-                      {/* Contact Identity & Inline Name Editor */}
-                      <td className="py-3.5 px-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-xs font-semibold text-white/80 shrink-0 uppercase">
-                            {displayName.slice(0, 2)}
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            {isEditing ? (
-                              <div className="flex items-center gap-1.5">
-                                <input
-                                  type="text"
-                                  autoFocus
-                                  value={editingName}
-                                  onChange={(e) => setEditingName(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleSaveName(c.phone);
-                                    if (e.key === 'Escape') setEditingPhone(null);
-                                  }}
-                                  placeholder="e.g. Monali ma'am"
-                                  className="px-2 py-1 rounded bg-[#080808] border border-white/40 text-xs text-white focus:outline-none w-44"
-                                />
-                                <button
-                                  onClick={() => handleSaveName(c.phone)}
-                                  className="p-1 rounded bg-white text-black hover:bg-white/90"
-                                  title="Save Name"
-                                >
-                                  <Check className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => setEditingPhone(null)}
-                                  className="p-1 rounded bg-white/[0.04] text-white/40 hover:text-white"
-                                  title="Cancel"
-                                >
-                                  &times;
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1.5 group/name">
-                                <span 
-                                  onClick={() => handleStartEditing(c)}
-                                  className="font-medium text-white truncate cursor-pointer hover:text-white/80 transition-colors"
-                                  title="Click to edit saved name & title"
-                                >
-                                  {displayName}
-                                </span>
-                                <button
-                                  onClick={() => handleStartEditing(c)}
-                                  className="opacity-0 group-hover/name:opacity-100 p-1 text-white/30 hover:text-white transition-opacity"
-                                  title="Rename / Set Title"
-                                >
-                                  <Edit2 className="w-3 h-3" />
-                                </button>
-                                {justSaved && (
-                                  <span className="text-[10px] text-white/60 font-mono flex items-center gap-0.5">
-                                    <Check className="w-3 h-3" /> Saved
-                                  </span>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Phone number or LID display & editor */}
-                            <div className="flex items-center gap-2 text-[10px] text-white/40 mt-1">
-                              {editingRealPhoneKey === c.phone ? (
-                                <div className="flex items-center gap-1">
-                                  <span className="text-white/40 text-[10px] font-mono">+</span>
-                                  <input
-                                    type="text"
-                                    autoFocus
-                                    value={editingRealPhoneValue}
-                                    onChange={(e) => setEditingRealPhoneValue(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') handleSaveRealPhone(c.phone);
-                                      if (e.key === 'Escape') setEditingRealPhoneKey(null);
-                                    }}
-                                    placeholder="e.g. 919876543210"
-                                    className="px-1.5 py-0.5 rounded bg-[#080808] border border-white/40 text-xs font-mono text-white focus:outline-none w-32"
-                                  />
-                                  <button
-                                    onClick={() => handleSaveRealPhone(c.phone)}
-                                    className="p-1 rounded bg-white text-black hover:bg-white/90"
-                                    title="Save Phone Number"
-                                  >
-                                    <Check className="w-3 h-3" />
-                                  </button>
-                                  <button
-                                    onClick={() => setEditingRealPhoneKey(null)}
-                                    className="p-1 rounded bg-white/[0.04] text-white/40 hover:text-white"
-                                    title="Cancel"
-                                  >
-                                    &times;
-                                  </button>
-                                </div>
-                              ) : c.realPhone ? (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-white/90 font-mono text-[11px] font-medium">
-                                    +{c.realPhone}
-                                  </span>
-                                  <button
-                                    onClick={() => handleStartEditingRealPhone(c)}
-                                    className="text-white/25 hover:text-white"
-                                    title="Edit real phone number"
-                                  >
-                                    <Edit2 className="w-2.5 h-2.5" />
-                                  </button>
-                                  {c.phone.length > 12 && (
-                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/[0.04] text-white/30 font-mono" title="WhatsApp LID">
-                                      LID: {c.phone.slice(-6)}
-                                    </span>
-                                  )}
-                                </div>
-                              ) : c.phone.length <= 12 ? (
-                                <span className="font-mono text-white/70 text-[11px]">+{c.phone}</span>
-                              ) : (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-mono text-white/40 text-[10px]">LID: {c.phone}</span>
-                                  <span className="text-[9px] px-1 py-0.2 rounded bg-white/[0.04] text-white/30 border border-white/[0.08] font-mono">
-                                    LID
-                                  </span>
-                                  <button
-                                    onClick={() => handleStartEditingRealPhone(c)}
-                                    className="text-[10px] text-white/60 hover:text-white hover:underline flex items-center gap-0.5"
-                                    title="Link actual phone number"
-                                  >
-                                    <Plus className="w-2.5 h-2.5" /> Link Phone
-                                  </button>
-                                </div>
-                              )}
-
-                              {c.notify && c.notify !== displayName && (
-                                <span className="text-white/25">({c.notify})</span>
-                              )}
-                            </div>
-                          </div>
+              return (
+                <div
+                  key={vip.phone}
+                  className="flex items-center justify-between py-3 px-2 hover:bg-white/[0.02] rounded-xl transition-colors group"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center font-semibold text-xs text-amber-400 shrink-0">
+                      {initials}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-xs text-white tracking-wide">
+                          {vip.name}
+                        </span>
+                        <span className="text-[11px] font-mono text-white/50">
+                          +{vip.phone}
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 font-mono">
+                          AI Never Replies
+                        </span>
+                      </div>
+                      {vip.notes && (
+                        <div className="text-[11px] text-white/40 truncate mt-0.5">
+                          {vip.notes}
                         </div>
-                      </td>
+                      )}
+                    </div>
+                  </div>
 
-                      {/* VIP Status Badge / One-Click Toggle */}
-                      <td className="py-3.5 px-3">
-                        <button
-                          onClick={() => handleToggleVip(c)}
-                          disabled={isSaving}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all ${
-                            isVip
-                              ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30'
-                              : 'bg-white/[0.04] hover:bg-white/[0.08] text-white/70 border-white/[0.08]'
-                          }`}
-                          title={isVip ? 'Click to remove VIP (Allow AI)' : 'Click to protect in VIP (Mute AI)'}
-                        >
-                          {isVip ? <Shield className="w-3.5 h-3.5 text-amber-400" /> : <UserCheck className="w-3.5 h-3.5 text-white/40" />}
-                          <span>{isVip ? 'VIP (AI Never Replies)' : 'AI Active'}</span>
-                        </button>
-                      </td>
-
-                      {/* Voice Note Delivery Mode */}
-                      <td className="py-3.5 px-3">
-                        <select
-                          value={c.voiceMode || 'default'}
-                          onChange={(e) => handleChangeVoiceMode(c, e.target.value as any)}
-                          style={{ backgroundColor: '#18181b', color: '#ffffff' }}
-                          className={`px-2.5 py-1.5 rounded-xl border text-xs font-medium focus:outline-none transition-all cursor-pointer ${
-                            c.voiceMode === 'text_only'
-                              ? 'bg-blue-500/10 text-blue-300 border-blue-500/30'
-                              : c.voiceMode === 'voice_only'
-                              ? 'bg-purple-500/10 text-purple-300 border-purple-500/30'
-                              : 'bg-[#18181b] text-white/90 border-white/[0.08]'
-                          }`}
-                        >
-                          <option value="default" style={{ backgroundColor: '#18181b', color: '#ffffff' }}>Adaptive</option>
-                          <option value="text_only" style={{ backgroundColor: '#18181b', color: '#ffffff' }}>Text Only (No Voice Notes)</option>
-                          <option value="voice_only" style={{ backgroundColor: '#18181b', color: '#ffffff' }}>Always Voice Notes</option>
-                        </select>
-                      </td>
-
-                      {/* Notes / Relationship */}
-                      <td className="py-3.5 px-3 text-white/40 text-xs">
-                        {c.notes || '-'}
-                      </td>
-
-                      {/* Quick Protection Action */}
-                      <td className="py-3.5 px-3 text-right">
-                        <button
-                          onClick={() => handleToggleVip(c)}
-                          className="text-xs text-white/40 hover:text-white px-2 py-1 rounded transition-colors"
-                          title={isVip ? 'Remove from VIP' : 'Add to VIP'}
-                        >
-                          {isVip ? 'Unprotect' : 'Mute in VIP'}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveVip(vip.phone)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-red-500/15 border border-white/[0.06] hover:border-red-500/30 text-white/50 hover:text-red-300 text-xs transition-colors shrink-0"
+                    title="Remove from VIP Protection"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Unprotect</span>
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
-      </section>
+      </div>
 
-      {/* Blocklist / Blacklisted Numbers */}
-      <section className="bg-[#0F0F0F] border border-white/[0.08] rounded-2xl p-5">
-        <div className="flex items-center gap-2 mb-1">
+      {/* Blocked / Blacklisted Numbers Section (Spam / Dropped) */}
+      <div className="bg-[#0a0a0c] border border-white/[0.08] rounded-2xl p-5 shadow-lg">
+        <div className="flex items-center gap-2 mb-3">
           <UserX className="w-4 h-4 text-red-400" />
-          <h3 className="text-sm font-semibold text-white">Blocked Numbers (Blacklist)</h3>
+          <h3 className="text-sm font-semibold text-white">Blocked Numbers (Spam Drop)</h3>
         </div>
         <p className="text-xs text-white/40 mb-3">
-          Numbers added here will never receive any automated AI messages or voice notes.
+          Messages from these numbers are completely ignored and dropped without processing.
         </p>
 
-        <form onSubmit={handleAddBlockedNumber} className="flex gap-2 mb-3">
+        <div className="flex gap-2 mb-4">
           <input
-            type="text"
+            type="tel"
             value={blockInput}
             onChange={(e) => setBlockInput(e.target.value)}
-            placeholder="Add phone number to block (e.g. 919876543210)"
-            className="flex-1 px-3 py-2 rounded-xl bg-[#141414] border border-white/[0.08] text-xs text-white placeholder-white/30 focus:outline-none focus:border-red-400"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddBlocked();
+              }
+            }}
+            placeholder="Enter number to block (e.g. 919812345678)"
+            className="flex-1 h-9 bg-[#070709] border border-white/[0.08] focus:border-red-500/50 rounded-xl px-3 text-xs text-white placeholder-white/25 outline-none transition-colors"
           />
           <button
-            type="submit"
-            className="px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-medium transition-all shrink-0"
+            type="button"
+            onClick={handleAddBlocked}
+            className="px-4 h-9 bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 rounded-xl text-red-300 text-xs font-medium transition-colors"
           >
             Block Number
           </button>
-        </form>
+        </div>
 
-        {blockedNumbers.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {blockedNumbers.map((num) => (
-              <span
+        {blockedList.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-2 border-t border-white/[0.04]">
+            {blockedList.map((num) => (
+              <div
                 key={num}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/[0.08] border border-red-500/20 text-xs text-red-300"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-white/70"
               >
-                <span>+{num}</span>
+                <span className="font-mono">+{num}</span>
                 <button
                   type="button"
-                  onClick={() => handleRemoveBlockedNumber(num)}
-                  className="hover:text-white"
+                  onClick={() => handleRemoveBlocked(num)}
+                  className="text-white/30 hover:text-red-400 p-0.5 transition-colors"
                 >
-                  &times;
+                  <Trash2 className="w-3 h-3" />
                 </button>
-              </span>
+              </div>
             ))}
           </div>
-        ) : (
-          <p className="text-xs text-white/30 italic">No numbers currently blocked.</p>
         )}
-      </section>
+      </div>
     </div>
   );
 }

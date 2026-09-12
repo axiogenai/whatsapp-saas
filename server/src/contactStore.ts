@@ -62,86 +62,38 @@ export function isOrphanBroadcastArtifact(c: Partial<SavedContact>): boolean {
  * Auto-import past conversations and sessions stored in Baileys auth directory
  */
 export function importSessionsFromDisk(tenantId: string): number {
-  const authDir = getTenantAuthDir(tenantId);
+  // Auto-import of disk sessions disabled: contacts are user-managed numbers
+  const map = loadTenantContacts(tenantId);
   let importedCount = 0;
 
   try {
-    if (!fs.existsSync(authDir)) return 0;
-    const files = fs.readdirSync(authDir);
-    const map = loadTenantContacts(tenantId);
-    const idSet = new Set<string>();
-
-    for (const f of files) {
-      // ONLY import actual WhatsApp session files (exclude broadcast status viewer keys)
-      const sessionMatch = f.match(/^session-(\d+)\./);
-      if (sessionMatch) {
-        idSet.add(sessionMatch[1]);
-        continue;
-      }
-    }
-
-    for (const id of idSet) {
-      if (!id || id.length < 5) continue;
-      const phone = normalizePhone(id);
-      if (!phone) continue;
-
-      if (!map.has(phone)) {
-        const jid = id.length > 13 ? `${id}@lid` : `${id}@s.whatsapp.net`;
-        const newContact: SavedContact = {
-          jid,
-          phone,
-          updatedAt: Date.now(),
-          aiEnabled: true,
-          voiceMode: 'default',
-        };
-        // NOTE: Do NOT apply isOrphanBroadcastArtifact filter here!
-        // A session-*.json file is definitive proof of a real 1:1 conversation.
-        // The orphan filter only applies when loading from persisted JSON.
-
-        map.set(phone, newContact);
-        importedCount++;
-      }
-    }
-
-    // Also import any contacts declared in BotConfig.vipContacts
-    try {
-      const config = getTenantConfig(tenantId);
-      if (config.vipContacts && Array.isArray(config.vipContacts)) {
-        for (const vip of config.vipContacts) {
-          const p = normalizePhone(vip.phone);
-          if (!p) continue;
-          const existing = map.get(p);
-          if (existing) {
-            if (!existing.name && vip.name) existing.name = vip.name;
-            if (existing.isVip === undefined) existing.isVip = true;
-            if (vip.rule === 'human_only') existing.aiEnabled = false;
-            if (vip.rule === 'text_only') existing.voiceMode = 'text_only';
-            if (vip.rule === 'voice_only') existing.voiceMode = 'voice_only';
-            if (vip.notes && !existing.notes) existing.notes = vip.notes;
-          } else {
-            map.set(p, {
-              jid: `${p}@s.whatsapp.net`,
-              phone: p,
-              name: vip.name,
-              aiEnabled: vip.rule !== 'human_only',
-              voiceMode: vip.rule === 'text_only' ? 'text_only' : vip.rule === 'voice_only' ? 'voice_only' : 'default',
-              isVip: true,
-              notes: vip.notes,
-              updatedAt: vip.addedAt || Date.now(),
-            });
-            importedCount++;
-          }
+    const config = getTenantConfig(tenantId);
+    if (config.vipContacts && Array.isArray(config.vipContacts)) {
+      for (const vip of config.vipContacts) {
+        const p = normalizePhone(vip.phone);
+        if (!p) continue;
+        const existing = map.get(p);
+        if (existing) {
+          if (!existing.name && vip.name) existing.name = vip.name;
+          existing.isVip = true;
+          existing.aiEnabled = false;
+          if (vip.notes) existing.notes = vip.notes;
+        } else {
+          map.set(p, {
+            jid: `${p}@s.whatsapp.net`,
+            phone: p,
+            name: vip.name,
+            aiEnabled: false,
+            voiceMode: 'default',
+            isVip: true,
+            notes: vip.notes,
+            updatedAt: vip.addedAt || Date.now(),
+          });
+          importedCount++;
         }
       }
-    } catch (_) {}
-
-    if (importedCount > 0) {
-      console.log(`[ContactStore] Tenant '${tenantId}': Imported ${importedCount} contacts from disk sessions & VIPs.`);
-      scheduleSaveToDisk(tenantId);
     }
-  } catch (err) {
-    console.error(`[ContactStore] Failed to import sessions for tenant ${tenantId}:`, err);
-  }
+  } catch (_) {}
 
   return importedCount;
 }
@@ -161,8 +113,10 @@ export function loadTenantContacts(tenantId: string): Map<string, SavedContact> 
       if (Array.isArray(list)) {
         for (const item of list) {
           if (item && item.phone) {
-            // Filter out any legacy orphan broadcast artifacts stored previously
-            if (isOrphanBroadcastArtifact(item)) continue;
+            // Only keep VIPs or named contacts (do not load unnamed LIDs)
+            const isVip = Boolean(item.isVip);
+            const hasName = Boolean((item.name && item.name.trim() !== '-') || (item.notify && item.notify.trim() !== '-'));
+            if (!isVip && !hasName) continue;
 
             // Default aiEnabled to true if not specified
             if (item.aiEnabled === undefined) item.aiEnabled = true;
@@ -521,7 +475,11 @@ export function getAllTenantSavedContacts(tenantId: string): SavedContact[] {
   const vipPhones = new Set((config.vipContacts || []).map((v) => normalizePhone(v.phone)));
 
   const list = Array.from(map.values())
-    .filter((c) => !isOrphanBroadcastArtifact(c))
+    .filter((c) => {
+      const isVip = vipPhones.has(c.phone) || Boolean(c.isVip);
+      const hasName = Boolean(c.name && c.name.trim().length > 0 && c.name.trim() !== '-');
+      return isVip || hasName;
+    })
     .map((c) => {
     const isVip = vipPhones.has(c.phone) || Boolean(c.isVip);
     const vip = (config.vipContacts || []).find((v) => normalizePhone(v.phone) === c.phone);

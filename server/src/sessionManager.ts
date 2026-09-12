@@ -210,7 +210,7 @@ export async function initTenantBaileys(
     printQRInTerminal: false,
     logger: pino({ level: 'error' }),
     browser: Browsers.macOS('Desktop'),
-    syncFullHistory: true,
+    syncFullHistory: false,
     generateHighQualityLinkPreview: false,
     keepAliveIntervalMs: 30000,
     connectTimeoutMs: 90000,
@@ -617,10 +617,6 @@ export async function bootExistingSessions(): Promise<void> {
     console.log('[Baileys] Found active credentials for default tenant. Starting session...');
     initTenantBaileys('default', false).catch((e) =>
       console.error('[Baileys] Error booting default session:', e)
-    );
-  } else {
-    initTenantBaileys('default', false).catch((e) =>
-      console.error('[Baileys] Error starting default session:', e)
     );
   }
 
