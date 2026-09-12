@@ -392,47 +392,34 @@ export async function handleTenantIncomingMessage(
     }
   }
 
-  // 2. Identify VIP Contact if configured
+  // 2. VIP EXCLUSION & AI MUTE (CRITICAL RULE):
+  // VIP contacts must NEVER be contacted or replied to by AI under any circumstances.
   const vip = config.vipContacts?.find((v) => {
     const vPhone = v.phone.replace(/\D/g, '');
     return vPhone === phoneOnly || phoneOnly.endsWith(vPhone) || vPhone.endsWith(phoneOnly);
   });
 
-  // 3. Check Audience Mode
+  const isVipContact = Boolean(vip) || !isAiEnabledForContact(tenantId, jid);
+  if (isVipContact) {
+    console.log(`[Bot VIP] Tenant '${tenantId}': Contact ${phoneOnly} (${vip?.name || 'VIP'}) is in VIP mode. AI reply strictly blocked.`);
+    setTenantHumanTakeover(tenantId, jid, 120);
+    return;
+  }
+
+  // 3. Check Audience Whitelist if configured
   const audienceMode = config.audienceMode || 'all';
   if (audienceMode === 'whitelist_only') {
     const isAllowed =
-      (config.allowedNumbers &&
-        config.allowedNumbers.some((a) => {
-          const cleanA = a.replace(/\D/g, '');
-          return cleanA === phoneOnly || phoneOnly.endsWith(cleanA) || cleanA.endsWith(phoneOnly);
-        })) ||
-      Boolean(vip);
+      config.allowedNumbers &&
+      config.allowedNumbers.some((a) => {
+        const cleanA = a.replace(/\D/g, '');
+        return cleanA === phoneOnly || phoneOnly.endsWith(cleanA) || cleanA.endsWith(phoneOnly);
+      });
 
     if (!isAllowed) {
-      console.log(`[Bot Audience] Tenant '${tenantId}': Skipping ${phoneOnly} (audienceMode: whitelist_only).`);
+      console.log(`[Bot Audience] Tenant '${tenantId}': Skipping ${phoneOnly} (not in whitelist).`);
       return;
     }
-  } else if (audienceMode === 'exclude_vip') {
-    if (vip) {
-      console.log(`[Bot Audience] Tenant '${tenantId}': VIP contact ${phoneOnly} (${vip.name}) received message while audienceMode is exclude_vip. Flagging for human takeover.`);
-      setTenantHumanTakeover(tenantId, jid, 60);
-      return;
-    }
-  }
-
-  // 4. Check VIP Specific Delivery Rule or Contact-level AI mute
-  if (vip && vip.rule === 'human_only') {
-    console.log(`[Bot VIP] Tenant '${tenantId}': VIP contact ${phoneOnly} (${vip.name}) is 'human_only'. Pausing bot for 60m.`);
-    setTenantHumanTakeover(tenantId, jid, 60);
-    return;
-  }
-
-  // Check if contact specifically has AI disabled in directory (Human Only)
-  if (!isAiEnabledForContact(tenantId, jid)) {
-    console.log(`[Bot Filter] Tenant '${tenantId}': Contact ${phoneOnly} has AI disabled (Human Only). Pausing bot for 60m.`);
-    setTenantHumanTakeover(tenantId, jid, 60);
-    return;
   }
 
   // 5. Fallback check for allowedNumbers if audienceMode is 'all'

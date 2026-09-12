@@ -25,6 +25,7 @@ export interface VipContact {
 export interface SavedContact {
   jid: string;
   phone: string;
+  realPhone?: string;
   name?: string;
   notify?: string;
   verifiedName?: string;

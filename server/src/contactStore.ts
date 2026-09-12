@@ -5,6 +5,7 @@ import { getTenantConfig, saveTenantConfig, VipContact } from './config';
 export interface SavedContact {
   jid: string;
   phone: string;
+  realPhone?: string; // Real phone number when JID/phone is a 15-digit WhatsApp LID
   name?: string; // Exact saved name and title (e.g. "Monali ma'am", "Dr. Sharma")
   notify?: string; // WhatsApp public push name
   verifiedName?: string;
@@ -39,6 +40,23 @@ export function normalizePhone(raw: string): string {
 }
 
 /**
+ * Helper to identify WhatsApp broadcast viewer encryption artifacts
+ * (e.g. 14-16 digit internal IDs with no name, no pushName, no VIP status, and no notes)
+ */
+export function isOrphanBroadcastArtifact(c: Partial<SavedContact>): boolean {
+  if (c.name && c.name.trim().length > 0 && c.name.trim() !== '-') return false;
+  if (c.notify && c.notify.trim().length > 0) return false;
+  if (c.isVip) return false;
+  if (c.notes && c.notes.trim().length > 0) return false;
+  if (c.realPhone && c.realPhone.trim().length > 0) return false;
+  // If it's a genuine E.164 phone number (7-12 digits, e.g. 919876543210), keep it
+  const phone = c.phone || '';
+  if (phone.length >= 7 && phone.length <= 12) return false;
+  // Any 13+ digit entry without a saved name, push name, VIP, or real phone is a broadcast artifact
+  return true;
+}
+
+/**
  * Auto-import past conversations and sessions stored in Baileys auth directory
  */
 export function importSessionsFromDisk(tenantId: string): number {
@@ -52,14 +70,10 @@ export function importSessionsFromDisk(tenantId: string): number {
     const idSet = new Set<string>();
 
     for (const f of files) {
+      // ONLY import actual WhatsApp session files (exclude broadcast status viewer keys)
       const sessionMatch = f.match(/^session-(\d+)\./);
       if (sessionMatch) {
         idSet.add(sessionMatch[1]);
-        continue;
-      }
-      const broadcastMatch = f.match(/^sender-key-status@broadcast--(\d+)--/);
-      if (broadcastMatch) {
-        idSet.add(broadcastMatch[1]);
         continue;
       }
     }
@@ -78,6 +92,9 @@ export function importSessionsFromDisk(tenantId: string): number {
           aiEnabled: true,
           voiceMode: 'default',
         };
+        // Don't import if it's an orphan broadcast artifact
+        if (isOrphanBroadcastArtifact(newContact)) continue;
+
         map.set(phone, newContact);
         importedCount++;
       }
@@ -141,6 +158,9 @@ export function loadTenantContacts(tenantId: string): Map<string, SavedContact> 
       if (Array.isArray(list)) {
         for (const item of list) {
           if (item && item.phone) {
+            // Filter out any legacy orphan broadcast artifacts stored previously
+            if (isOrphanBroadcastArtifact(item)) continue;
+
             // Default aiEnabled to true if not specified
             if (item.aiEnabled === undefined) item.aiEnabled = true;
             if (!item.voiceMode) item.voiceMode = 'default';
@@ -334,9 +354,16 @@ export function updateContactControl(
   };
 
   if (updates.name !== undefined) existing.name = updates.name.trim() || undefined;
+  if (updates.realPhone !== undefined) existing.realPhone = updates.realPhone.trim() || undefined;
   if (updates.aiEnabled !== undefined) existing.aiEnabled = Boolean(updates.aiEnabled);
   if (updates.voiceMode !== undefined) existing.voiceMode = updates.voiceMode;
-  if (updates.isVip !== undefined) existing.isVip = Boolean(updates.isVip);
+  if (updates.isVip !== undefined) {
+    existing.isVip = Boolean(updates.isVip);
+    // CRITICAL: VIP contacts must NEVER receive AI replies. Mute AI immediately when marked VIP.
+    if (existing.isVip) {
+      existing.aiEnabled = false;
+    }
+  }
   if (updates.notes !== undefined) existing.notes = updates.notes;
 
   existing.updatedAt = Date.now();
@@ -350,19 +377,11 @@ export function updateContactControl(
 
     const existingVipIdx = vipList.findIndex((v) => normalizePhone(v.phone) === cleanPhone);
 
-    if (existing.isVip || existing.aiEnabled === false || existing.voiceMode === 'text_only' || existing.voiceMode === 'voice_only') {
-      const rule = existing.aiEnabled === false
-        ? 'human_only'
-        : existing.voiceMode === 'text_only'
-        ? 'text_only'
-        : existing.voiceMode === 'voice_only'
-        ? 'voice_only'
-        : 'ai_allowed';
-
+    if (existing.isVip || existing.aiEnabled === false) {
       const entry: VipContact = {
         phone: cleanPhone,
         name: existing.name || existing.notify || `+${cleanPhone}`,
-        rule,
+        rule: 'human_only', // VIP is always human-only!
         notes: existing.notes,
         addedAt: Date.now(),
       };
@@ -387,19 +406,24 @@ export function updateContactControl(
 
 /**
  * Check if AI reply is authorized for this contact
+ * (Returns FALSE if contact is in VIP list or AI is disabled)
  */
 export function isAiEnabledForContact(tenantId: string, jid: string): boolean {
   const phone = normalizePhone(jid);
   const map = loadTenantContacts(tenantId);
   const contact = map.get(phone);
 
-  if (contact && contact.aiEnabled === false) {
+  // VIP contacts MUST NEVER receive AI replies
+  if (contact && (contact.isVip || contact.aiEnabled === false)) {
     return false;
   }
 
   const config = getTenantConfig(tenantId);
-  const vip = config.vipContacts?.find((v) => normalizePhone(v.phone) === phone);
-  if (vip && vip.rule === 'human_only') {
+  const vip = config.vipContacts?.find((v) => {
+    const vPhone = normalizePhone(v.phone);
+    return vPhone === phone || phone.endsWith(vPhone) || vPhone.endsWith(phone);
+  });
+  if (vip) {
     return false;
   }
 
@@ -471,8 +495,18 @@ export function getResolvedContactName(
     return { name: incomingPushName.trim(), isSavedName: false, isVip: false };
   }
 
-  // 6. Default to formatted phone
-  return { name: `+${phone}`, isSavedName: false, isVip: false };
+  // 6. Check real phone if known
+  if (saved && saved.realPhone && saved.realPhone.trim().length > 0) {
+    return { name: `+${saved.realPhone.trim()}`, isSavedName: false, isVip: false };
+  }
+
+  // 7. If genuine E.164 phone number (7-12 digits)
+  if (phone.length >= 7 && phone.length <= 12) {
+    return { name: `+${phone}`, isSavedName: false, isVip: false };
+  }
+
+  // 8. If LID without name
+  return { name: 'WhatsApp Contact', isSavedName: false, isVip: false };
 }
 
 /**
@@ -483,7 +517,9 @@ export function getAllTenantSavedContacts(tenantId: string): SavedContact[] {
   const config = getTenantConfig(tenantId);
   const vipPhones = new Set((config.vipContacts || []).map((v) => normalizePhone(v.phone)));
 
-  const list = Array.from(map.values()).map((c) => {
+  const list = Array.from(map.values())
+    .filter((c) => !isOrphanBroadcastArtifact(c))
+    .map((c) => {
     const isVip = vipPhones.has(c.phone) || Boolean(c.isVip);
     const vip = (config.vipContacts || []).find((v) => normalizePhone(v.phone) === c.phone);
     let aiEnabled = c.aiEnabled !== false;
