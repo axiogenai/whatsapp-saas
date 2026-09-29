@@ -60,6 +60,7 @@ export interface TenantBotConfig {
   useSavedContactNames?: boolean;
   blockedNumbers?: string[];
   allowedNumbers?: string[];
+  personalityPreset?: string;
 }
 
 export interface TenantSessionStatus {

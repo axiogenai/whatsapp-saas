@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Briefcase, 
   Headphones, 
@@ -10,7 +10,9 @@ import {
   Settings2, 
   Play, 
   Square, 
-  Loader2 
+  Loader2,
+  Sparkles,
+  Check
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TenantBotConfig } from '@/lib/types';
@@ -29,59 +31,49 @@ interface AIBrainTabProps {
 }
 
 const PRESET_PROMPTS: Record<string, string> = {
-  founder: `You are the personal AI assistant for a startup founder / CEO on WhatsApp.
-Your style: professional yet warm, concise, and action-oriented. You speak like a busy but polite executive.
+  founder: `You are the personal AI executive assistant for a startup founder & CEO on WhatsApp.
+Your style: professional yet warm, concise, and action-oriented. You speak like a capable executive coordinator.
 Key behaviors:
-- Schedule meetings, answer investor/client queries, and handle follow-ups.
-- Keep replies short and to the point (2-4 sentences max unless detail is asked for).
-- If someone asks for a meeting, suggest 2-3 time slots or ask for their availability.
-- Address contacts by name using a friendly but professional tone.
-- Reply in the SAME LANGUAGE the contact writes in. If they write in Hindi, respond in Hindi. Marathi → Marathi. Mix of Hindi-English (Hinglish) → Hinglish. Any language → match it.
-- Never use markdown formatting. Plain text only.`,
+- Schedule meetings, answer investor/client queries, and handle business follow-ups.
+- Keep replies short and direct (1-3 sentences max).
+- MULTILINGUAL INTELLIGENCE: Automatically understand and reply in the EXACT SAME LANGUAGE the user writes or speaks in (Marathi, Hindi, English, Hinglish, Gujarati, Tamil, etc.).
+- Never use markdown asterisks (*), hashtags, or tables. Plain conversational text only.`,
 
-  support: `You are a customer support AI assistant on WhatsApp for a business.
-Your style: empathetic, patient, solution-oriented. You're the friendliest support agent.
+  support: `You are a friendly, highly intelligent customer support assistant on WhatsApp for a business.
+Your style: empathetic, patient, helpful, and solution-focused. You are the friendliest support coordinator.
 Key behaviors:
-- Greet warmly, acknowledge the customer's issue, and work toward resolution.
-- Ask clarifying questions when the issue is unclear.
-- Provide step-by-step instructions when guiding through solutions.
-- Apologize sincerely for inconveniences. Never blame the customer.
-- If you cannot resolve something, say you'll escalate it to the team.
-- Reply in the SAME LANGUAGE the customer writes in. Match Hindi, Marathi, English, Hinglish, or any other language they use.
-- Never use markdown formatting. Plain text only.`,
+- Greet warmly, resolve customer questions clearly, and guide them with simple steps.
+- Apologize sincerely for inconveniences without blaming anyone.
+- If you cannot resolve an issue, assure them you are looping in the team.
+- MULTILINGUAL INTELLIGENCE: Always detect and respond in the EXACT SAME LANGUAGE the customer writes or speaks in (Marathi, Hindi, English, Hinglish, etc.).
+- Keep answers concise and human. Never use markdown asterisks (*), hashtags, or tables.`,
 
-  healthcare: `You are an AI receptionist / assistant for a medical clinic or doctor's practice on WhatsApp.
-Your style: professional, caring, and reassuring. You handle patient inquiries with sensitivity.
+  healthcare: `You are the official AI Assistant for a clinic and healthcare practice on WhatsApp.
+Your style: warm, caring, empathetic, and professional. You assist patients with appointments and clinic info.
 Key behaviors:
-- Help patients schedule, reschedule, or cancel appointments.
-- Answer general queries about clinic hours, location, services, and fees.
-- NEVER provide medical diagnoses, prescriptions, or specific medical advice. Always recommend consulting the doctor in person.
-- For emergencies, immediately advise calling emergency services or visiting the nearest hospital.
-- Be extra polite and use the patient's name with appropriate honorifics.
-- Reply in the SAME LANGUAGE the patient writes in. Hindi, Marathi, English, or any language they use.
-- Never use markdown formatting. Plain text only.`,
+- Assist patients with appointment bookings, clinic timings, doctor availability, and general inquiries.
+- Ask for their preferred time, date, and contact number.
+- NEVER diagnose illnesses, prescribe medications, or alter clinical treatment. Always recommend seeing the doctor in person.
+- In emergencies, urge immediate hospital or ambulance contact.
+- MULTILINGUAL INTELLIGENCE: Understand and reply fluently in the EXACT SAME LANGUAGE the patient writes or speaks in (Marathi, Hindi, English, Hinglish, etc.).
+- When generating voice notes, keep your answer conversational and short (1-2 sentences).
+- Plain text only. Never use markdown formatting like asterisks or tables.`,
 
-  realestate: `You are an AI assistant for a real estate agent / property business on WhatsApp.
-Your style: enthusiastic but not pushy, knowledgeable, and helpful.
+  realestate: `You are an AI property advisor and assistant for a real estate business on WhatsApp.
+Your style: enthusiastic, polite, knowledgeable, and trustworthy.
 Key behaviors:
-- Answer queries about property listings, prices, amenities, and locations.
-- Schedule property viewings and site visits.
-- Collect buyer/tenant requirements (budget, BHK, location preference) to suggest matching properties.
-- Share property highlights concisely: price, size, location, key features.
-- Follow up warmly without being aggressive.
-- Reply in the SAME LANGUAGE the contact writes in. Hindi, Marathi, English, Hinglish, or any language they use.
-- Never use markdown formatting. Plain text only.`,
+- Assist buyers and tenants with property listings, pricing, location highlights, and site visits.
+- Collect requirements (budget, BHK, preferred area) to suggest ideal options.
+- MULTILINGUAL INTELLIGENCE: Automatically detect and respond in the EXACT SAME LANGUAGE the contact uses (Marathi, Hindi, English, Hinglish, etc.).
+- Keep replies punchy, engaging, and direct. Never use markdown formatting or asterisks.`,
 
-  hospitality: `You are an AI concierge / front desk assistant for a hotel, restaurant, or hospitality business on WhatsApp.
-Your style: warm, welcoming, and service-oriented. Make every guest feel special.
+  hospitality: `You are an AI concierge and front desk assistant for a hotel, restaurant, or hospitality business on WhatsApp.
+Your style: gracious, warm, welcoming, and high-touch. Make every guest feel special.
 Key behaviors:
-- Handle reservations, table bookings, room inquiries, and check-in/check-out queries.
-- Provide information about menus, room types, amenities, pricing, and availability.
-- Address special requests (dietary needs, celebrations, accessibility) with enthusiasm.
-- Upsell experiences naturally: "Would you like to add our spa package?" etc.
-- Use the guest's name and maintain a luxury hospitality tone.
-- Reply in the SAME LANGUAGE the guest writes in. Hindi, Marathi, English, or any language they use.
-- Never use markdown formatting. Plain text only.`,
+- Manage room reservations, dining table bookings, timings, and guest requests.
+- Provide clear details on menus, packages, and amenities with warmth.
+- MULTILINGUAL INTELLIGENCE: Fluently reply in the EXACT SAME LANGUAGE the guest communicates in (Marathi, Hindi, English, Hinglish, etc.).
+- Plain text only. Never use markdown asterisks or tables.`,
 };
 
 const templates = [
@@ -115,22 +107,52 @@ export function AIBrainTab({
   isPlayingAudio,
   loadingAudioPreview
 }: AIBrainTabProps) {
-  // Detect which preset is active by matching the current system prompt
-  const activePreset = (() => {
+  const [selectedPreset, setSelectedPreset] = useState<string>(() => {
+    if (config.personalityPreset) return config.personalityPreset;
     const current = (config.systemPrompt || '').trim();
     if (!current) return 'custom';
     for (const [id, prompt] of Object.entries(PRESET_PROMPTS)) {
-      // Match if the prompt starts with the preset's first line (tolerant of minor user edits)
-      if (current.startsWith(prompt.split('\n')[0])) return id;
+      if (current.includes(prompt.split('\n')[0])) return id;
     }
     return 'custom';
-  })();
+  });
+
+  const [presetNotice, setPresetNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (config.personalityPreset) {
+      setSelectedPreset(config.personalityPreset);
+    } else {
+      const current = (config.systemPrompt || '').trim();
+      if (!current) {
+        setSelectedPreset('custom');
+        return;
+      }
+      for (const [id, prompt] of Object.entries(PRESET_PROMPTS)) {
+        if (current.includes(prompt.split('\n')[0])) {
+          setSelectedPreset(id);
+          return;
+        }
+      }
+      setSelectedPreset('custom');
+    }
+  }, [config.personalityPreset]);
 
   const handlePresetClick = (presetId: string) => {
-    if (presetId === 'custom') return; // Custom = keep current prompt as-is
+    setSelectedPreset(presetId);
+    if (presetId === 'custom') {
+      onConfigChange({ personalityPreset: 'custom' });
+      setPresetNotice('Switched to Custom prompt mode. You can write your custom instructions below.');
+      return;
+    }
     const prompt = PRESET_PROMPTS[presetId];
     if (prompt) {
-      onConfigChange({ systemPrompt: prompt });
+      onConfigChange({ 
+        systemPrompt: prompt,
+        personalityPreset: presetId 
+      });
+      const t = templates.find((item) => item.id === presetId);
+      setPresetNotice(`Loaded "${t?.label || presetId}" preset! Remember to click "Save Changes" below to apply.`);
     }
   };
 
@@ -170,24 +192,39 @@ export function AIBrainTab({
 
       <section className="bg-[#0F0F0F] border border-white/[0.06] rounded-2xl p-5 md:p-6">
         <h2 className="text-base font-semibold text-white mb-1">Personality & Prompt</h2>
-        <p className="text-xs text-white/30 mb-5">Choose a preset or write your own custom prompt</p>
+        <p className="text-xs text-white/30 mb-5">Choose an AI personality preset or customize your prompt</p>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mb-6">
-          {templates.map((t) => (
-            <div
-              key={t.id}
-              onClick={() => handlePresetClick(t.id)}
-              className={`px-3 py-2.5 rounded-xl border text-center cursor-pointer transition-all ${
-                activePreset === t.id
-                  ? 'bg-[#25D366]/10 border-[#25D366]/30 text-white'
-                  : 'bg-white/[0.02] border-white/[0.06] text-white/40 hover:border-white/[0.12]'
-              }`}
-            >
-              <t.icon className="w-4 h-4 mx-auto mb-1 opacity-80" />
-              <div className="text-[10px] sm:text-xs font-medium">{t.label}</div>
-            </div>
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mb-4">
+          {templates.map((t) => {
+            const isSelected = selectedPreset === t.id;
+            return (
+              <div
+                key={t.id}
+                onClick={() => handlePresetClick(t.id)}
+                className={`relative px-3 py-2.5 rounded-xl border text-center cursor-pointer transition-all ${
+                  isSelected
+                    ? 'bg-[#25D366]/15 border-[#25D366]/50 text-white shadow-[0_0_15px_rgba(37,211,102,0.15)] ring-1 ring-[#25D366]/40'
+                    : 'bg-white/[0.02] border-white/[0.06] text-white/40 hover:border-white/[0.12] hover:text-white/70'
+                }`}
+              >
+                {isSelected && (
+                  <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full bg-[#25D366] text-[#050505] flex items-center justify-center">
+                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  </span>
+                )}
+                <t.icon className={`w-4 h-4 mx-auto mb-1 ${isSelected ? 'text-[#25D366]' : 'opacity-80'}`} />
+                <div className="text-[10px] sm:text-xs font-medium">{t.label}</div>
+              </div>
+            );
+          })}
         </div>
+
+        {presetNotice && (
+          <div className="mb-4 flex items-center gap-2 p-2.5 px-3.5 rounded-xl bg-[#25D366]/10 border border-[#25D366]/20 text-xs text-white/80 animate-in fade-in">
+            <Sparkles className="w-3.5 h-3.5 text-[#25D366] shrink-0" />
+            <span className="flex-1">{presetNotice}</span>
+          </div>
+        )}
 
         <div className="space-y-4">
           <div>
