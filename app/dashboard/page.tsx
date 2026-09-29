@@ -349,13 +349,37 @@ export default function DashboardPage() {
 
     setLoadingAudioPreview(true);
     try {
-      const greeting = `Hello, this is ${config.botName || user?.businessName || 'your AI assistant'}. How may I help you today?`;
+      const voiceId = config.voicePersona || 'am_adam';
+      const NATIVE_PREVIEWS: Record<string, string> = {
+        'meta:hin': 'नमस्ते! मैं आपका एआई असिस्टेंट हूँ। आज मैं आपकी क्या सहायता कर सकता हूँ?',
+        'meta:mar': 'नमस्कार! मी तुमचा एआय असिस्टंट आहे. आज मी तुम्हाला कशी मदत करू शकतो?',
+        'meta:tam': 'வணக்கம்! நான் உங்கள் AI குரல் உதவியாளர். இன்று நான் உங்களுக்கு எவ்வாறு உதவ முடியும்?',
+        'meta:tel': 'నమస్కారం! నేను మీ AI వాయిస్ అసిస్టెంట్‌ని. ఈరోజు నేను మీకు ఎలా సహాయపడగలను?',
+        'meta:guj': 'નમસ્તે! હું તમારો AI વૉઇસ સહાયક છું. આજે હું તમને કેવી રીતે મદદ કરી શકું?',
+        'meta:ben': 'নমস্কার! আমি আপনার এআই ভয়েস সহকারী। আজ আমি আপনাকে কীভাবে সাহায্য করতে পারি?',
+        'meta:kan': 'ನಮಸ್ಕಾರ! ನಾನು ನಿಮ್ಮ AI ಧ್ವನಿ ಸಹಾಯಕ. ಇಂದು ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಹುದು?',
+        'meta:mal': 'നമസ്കാരം! ഞാൻ നിങ്ങളുടെ AI വോയ്‌സ് അസിസ്റ്റന്റാണ്. ಇಂದು ഞാൻ നിങ്ങളെ എങ്ങനെ സഹായിക്കും?',
+        'meta:pan': 'ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ ਤੁਹਾਡਾ AI ਵੌਇਸ ਅਸਿਸਟੈਂਟ ਹਾਂ। ਅੱਜ ਮੈਂ ਤੁਹਾਡੀ ਕਿਵੇਂ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ?',
+        'meta:urd': 'السلام علیکم! میں آپ کا اے آئی وائس اسسٹنٹ ہوں۔ آج میں آپ کی کیا مدد کر سکتا ہوں؟',
+        'meta:spa': '¡Hola! Soy tu asistente de voz con inteligencia artificial. ¿En qué te puedo ayudar hoy?',
+        'meta:fra': 'Bonjour! Je suis votre assistant vocal IA. Comment puis-je vous aider aujourd\'hui?',
+        'meta:deu': 'Hallo! Ich bin Ihr KI-Sprachassistent. Wie kann ich Ihnen heute helfen?',
+        'meta:ita': 'Ciao! Sono il tuo assistente vocale IA. Come posso aiutarti oggi?',
+        'meta:por': 'Olá! Eu sou o seu assistente de voz com IA. Como posso ajudar você hoje?',
+        'meta:ara': 'مرحبًا! أنا مساعدك الصوتي الذكي. كيف يمكنني مساعدتك اليوم؟',
+        'meta:rus': 'Здравствуйте! Я ваш голосовой ИИ-помощник. Чем я могу помочь вам сегодня?',
+        'meta:jpn': 'こんにちは！私はあなたのAI音声アシスタントです。本日はどのようなご用件でしょうか？',
+        'meta:kor': '안녕하세요! 저는 당신의 AI 음성 비서입니다. 오늘 어떤 도움이 필요하신가요?',
+        'meta:zho': '你好！我是你的人工智能语音助手。今天有什么我可以帮你的吗？',
+      };
+
+      const greeting = NATIVE_PREVIEWS[voiceId] || `Hello, this is ${config.botName || user?.businessName || 'your AI assistant'}. How may I help you today?`;
       const res = await fetch('/api/whatsapp/preview-voice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: greeting,
-          voice: config.voicePersona || 'am_adam',
+          voice: voiceId,
           speed: config.voiceSpeed || 1.0,
         }),
       });

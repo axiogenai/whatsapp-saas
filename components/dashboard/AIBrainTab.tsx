@@ -303,7 +303,7 @@ export function AIBrainTab({
             <label className="block text-xs font-medium text-white/50 mb-1.5">Voice Persona</label>
             <div className="flex gap-2 items-center">
               <VoicePicker
-                value={config.voicePersona || 'af_bella'}
+                value={config.voicePersona || 'am_adam'}
                 onChange={(voiceId) => onConfigChange({ voicePersona: voiceId })}
                 className="flex-1 min-w-0"
               />
