@@ -31,29 +31,7 @@ export async function GET(request: Request) {
     if (vmRes.ok) {
       const vmData = await vmRes.json();
       if (vmData.success && Array.isArray(vmData.tenants)) {
-        const vmTenants: AdminTenant[] = vmData.tenants;
-        const localTenants = getAdminTenants();
-        const mergedMap = new Map<string, AdminTenant>();
-
-        for (const t of vmTenants) {
-          mergedMap.set(t.tenantId, t);
-        }
-
-        for (const loc of localTenants) {
-          if (!mergedMap.has(loc.tenantId)) {
-            mergedMap.set(loc.tenantId, loc);
-          } else {
-            const existing = mergedMap.get(loc.tenantId)!;
-            mergedMap.set(loc.tenantId, {
-              ...existing,
-              name: loc.name || existing.name,
-              email: loc.email || existing.email,
-              businessName: loc.businessName || existing.businessName,
-            });
-          }
-        }
-
-        tenants = Array.from(mergedMap.values());
+        tenants = vmData.tenants;
         saveAdminTenants(tenants);
       }
     }

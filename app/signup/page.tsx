@@ -36,51 +36,44 @@ export default function SignUpPage() {
     setLoading(true);
     try {
       const cleanEmail = email.trim().toLowerCase();
-      const isPrivileged = cleanEmail === 'aditaypatil07@gmail.com' || cleanEmail === 'aditay26patil@gmail.com';
-      const initialLimit = isPrivileged ? 100000 : 70;
-      const tenantId = slugify(businessName);
+      const tenantId = slugify(businessName) || `tenant-${Date.now()}`;
+
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: cleanEmail,
+          password,
+          name: name.trim(),
+          businessName: businessName.trim(),
+          tenantId,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setError(data.error || 'Registration failed. Please try again.');
+        return;
+      }
 
       const user: TenantUser = {
-        id: `usr_${Date.now()}`,
-        email: cleanEmail,
-        name: name.trim(),
-        businessName: businessName.trim(),
-        tenantId,
-        createdAt: new Date().toISOString(),
-        plan: isPrivileged ? 'agency' : 'free_trial',
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name,
+        businessName: data.user.businessName,
+        tenantId: data.user.tenantId,
+        createdAt: data.user.createdAt,
+        plan: data.user.plan || 'free_trial',
         messagesUsed: 0,
-        trialLimit: initialLimit,
+        trialLimit: data.user.trialLimit || 70,
+        isAdmin: Boolean(data.user.isAdmin),
       };
-
-      // Automatically register new upcoming tenant into admin platform store
-      try {
-        await fetch('/api/admin/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'tenant',
-            tenant: {
-              id: user.id,
-              tenantId: user.tenantId,
-              businessName: user.businessName,
-              name: user.name,
-              email: user.email,
-              plan: user.plan,
-              messagesUsed: 0,
-              trialLimit: initialLimit,
-              whatsappStatus: 'disconnected',
-              phone: '',
-              createdAt: user.createdAt,
-              updatedAt: user.createdAt,
-            },
-          }),
-        });
-      } catch (_) {}
 
       setStoredUser(user);
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Registration failed.');
+      setError(err.message || 'Registration failed. Please check your connection.');
     } finally {
       setLoading(false);
     }

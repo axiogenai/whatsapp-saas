@@ -261,6 +261,30 @@ export default function DashboardPage() {
     }
   };
 
+  // Handle Explicit Force Fresh QR Generation
+  const handleForceNewQr = async () => {
+    setRestartingSession(true);
+    setStatusData({ status: 'connecting', qrCodeUrl: '' });
+    showToast('Requesting fresh WhatsApp QR code...', 'success');
+    try {
+      await fetch('/api/whatsapp/restart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-tenant-id': tenantId },
+        body: JSON.stringify({ tenantId, force: true }),
+      });
+      
+      // Fast polling cycle to pick up the new QR in real-time
+      for (let i = 0; i < 6; i++) {
+        await new Promise((r) => setTimeout(r, 1000));
+        await fetchStatus();
+      }
+    } catch {
+      showToast('QR generation request failed. Check server status.', 'error');
+    } finally {
+      setRestartingSession(false);
+    }
+  };
+
   // Handle Pairing Code Request
   const handleRequestPairCode = async () => {
     if (!pairPhone || pairPhone.trim().length < 8) {
@@ -589,6 +613,7 @@ export default function DashboardPage() {
               status={statusData}
               user={user}
               onRestart={handleRestart}
+              onForceNewQr={handleForceNewQr}
               restartingSession={restartingSession}
               pairPhone={pairPhone}
               onPairPhoneChange={setPairPhone}

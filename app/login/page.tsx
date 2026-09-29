@@ -31,49 +31,45 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const cleanEmail = email.trim().toLowerCase();
-      const isAdmin =
-        cleanEmail === 'aditay26patil@gmail.com' ||
-        cleanEmail === 'aditya26patil@gmail.com';
 
-      const existingUser = getStoredUser();
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: cleanEmail,
+          password,
+        }),
+      });
 
-      // Determine tenantId:
-      // 1. Explicit custom tenant if provided
-      // 2. Existing stored tenant if email matches
-      // 3. If admin (Aditya), default to the primary connected session 'aditaypatil07'
-      // 4. Fallback to slug of email username
-      let targetTenant = customTenant.trim() ? slugify(customTenant) : '';
-      if (!targetTenant && existingUser && existingUser.email === cleanEmail && existingUser.tenantId) {
-        targetTenant = existingUser.tenantId;
-      }
-      if (!targetTenant) {
-        targetTenant = isAdmin ? 'aditaypatil07' : (slugify(cleanEmail.split('@')[0]) || 'default');
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setError(data.error || 'Invalid email or password.');
+        return;
       }
 
       const user: TenantUser = {
-        id: existingUser?.id || (isAdmin ? 'admin_master' : `usr_${Date.now()}`),
-        email: cleanEmail,
-        name: isAdmin ? 'Aditya Patil' : existingUser?.name || cleanEmail.split('@')[0].toUpperCase(),
-        businessName: isAdmin
-          ? (customTenant.trim() || 'Team Axiogen')
-          : customTenant.trim() || existingUser?.businessName || `${cleanEmail.split('@')[0].toUpperCase()} Bot`,
-        tenantId: targetTenant,
-        createdAt: existingUser?.createdAt || new Date().toISOString(),
-        plan: isAdmin ? 'agency' : existingUser?.plan || 'free_trial',
-        messagesUsed: existingUser?.messagesUsed || 0,
-        trialLimit: isAdmin ? 100000 : (cleanEmail === 'aditaypatil07@gmail.com' ? 100000 : (existingUser?.trialLimit || 70)),
-        isAdmin,
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name,
+        businessName: data.user.businessName,
+        tenantId: customTenant.trim() ? slugify(customTenant) : data.user.tenantId,
+        createdAt: data.user.createdAt,
+        plan: data.user.plan || 'free_trial',
+        messagesUsed: data.user.messagesUsed || 0,
+        trialLimit: data.user.trialLimit || 70,
+        isAdmin: Boolean(data.user.isAdmin),
       };
 
       setStoredUser(user);
 
-      if (isAdmin) {
+      if (user.isAdmin) {
         router.push('/admin');
       } else {
         router.push('/dashboard');
       }
     } catch (err: any) {
-      setError(err.message || 'Login failed.');
+      setError(err.message || 'Login request failed. Please check your connection.');
     } finally {
       setLoading(false);
     }
