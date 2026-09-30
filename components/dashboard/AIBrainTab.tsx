@@ -298,6 +298,42 @@ export function AIBrainTab({
           })}
         </div>
 
+        {/* Default Response Language */}
+        <div className="mb-6">
+          <label className="block text-xs font-medium text-white/50 mb-1.5">Default Response Language</label>
+          <p className="text-[10px] text-white/25 mb-2">Force AI to always reply in this language, or set to Auto to match the contact&apos;s language.</p>
+          <select
+            value={config.defaultLanguage || 'auto'}
+            onChange={(e) => onConfigChange({ defaultLanguage: e.target.value })}
+            className="w-full md:w-1/2 h-[42px] bg-[#050505] border border-white/[0.08] hover:border-white/[0.18] rounded-xl px-3.5 text-sm text-white outline-none focus:border-[#25D366]/50 transition-colors appearance-none cursor-pointer"
+          >
+            <option value="auto">🌐 Auto (Match contact&apos;s language)</option>
+            <option value="English">🇬🇧 English</option>
+            <option value="Hindi">🇮🇳 Hindi (हिन्दी)</option>
+            <option value="Marathi">🇮🇳 Marathi (मराठी)</option>
+            <option value="Tamil">🇮🇳 Tamil (தமிழ்)</option>
+            <option value="Telugu">🇮🇳 Telugu (తెలుగు)</option>
+            <option value="Gujarati">🇮🇳 Gujarati (ગુજરાતી)</option>
+            <option value="Bengali">🇮🇳 Bengali (বাংলা)</option>
+            <option value="Kannada">🇮🇳 Kannada (ಕನ್ನಡ)</option>
+            <option value="Malayalam">🇮🇳 Malayalam (മലയാളം)</option>
+            <option value="Punjabi">🇮🇳 Punjabi (ਪੰਜਾਬੀ)</option>
+            <option value="Urdu">🇵🇰 Urdu (اردو)</option>
+            <option value="Hinglish">🇮🇳 Hinglish</option>
+            <option value="Spanish">🇪🇸 Spanish (Español)</option>
+            <option value="French">🇫🇷 French (Français)</option>
+            <option value="German">🇩🇪 German (Deutsch)</option>
+            <option value="Italian">🇮🇹 Italian (Italiano)</option>
+            <option value="Portuguese">🇧🇷 Portuguese (Português)</option>
+            <option value="Arabic">🇸🇦 Arabic (العربية)</option>
+            <option value="Japanese">🇯🇵 Japanese (日本語)</option>
+            <option value="Korean">🇰🇷 Korean (한국어)</option>
+            <option value="Chinese">🇨🇳 Chinese (中文)</option>
+            <option value="Russian">🇷🇺 Russian (Русский)</option>
+            <option value="Turkish">🇹🇷 Turkish (Türkçe)</option>
+          </select>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-xs font-medium text-white/50 mb-1.5">Voice Persona</label>

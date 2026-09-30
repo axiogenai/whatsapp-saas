@@ -61,6 +61,7 @@ export interface TenantBotConfig {
   blockedNumbers?: string[];
   allowedNumbers?: string[];
   personalityPreset?: string;
+  defaultLanguage?: string;
 }
 
 export interface TenantSessionStatus {

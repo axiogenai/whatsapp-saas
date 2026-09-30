@@ -37,6 +37,7 @@ const DEFAULT_CONFIG: TenantBotConfig = {
   useSavedContactNames: true,
   blockedNumbers: [],
   allowedNumbers: [],
+  defaultLanguage: 'auto',
 };
 
 export default function DashboardPage() {
