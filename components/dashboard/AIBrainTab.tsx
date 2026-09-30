@@ -17,6 +17,7 @@ import {
 import { motion } from 'framer-motion';
 import { TenantBotConfig } from '@/lib/types';
 import { VoicePicker } from './VoicePicker';
+import { ALL_VOICES } from '@/lib/voices';
 
 interface AIBrainTabProps {
   config: TenantBotConfig;
@@ -304,7 +305,21 @@ export function AIBrainTab({
           <p className="text-[10px] text-white/25 mb-2">Force AI to always reply in this language, or set to Auto to match the contact&apos;s language.</p>
           <select
             value={config.defaultLanguage || 'auto'}
-            onChange={(e) => onConfigChange({ defaultLanguage: e.target.value })}
+            onChange={(e) => {
+              const lang = e.target.value;
+              const updates: Partial<TenantBotConfig> = { defaultLanguage: lang };
+              if (lang === 'Marathi' && (!config.voicePersona || !config.voicePersona.startsWith('mr-'))) {
+                updates.voicePersona = 'mr-IN-AarohiNeural';
+                setPresetNotice('Default language set to Marathi. Voice persona automatically matched to Aarohi (Marathi - Real Human). Click "Save Changes" below to apply.');
+              } else if (lang === 'Hindi' && (!config.voicePersona || !config.voicePersona.startsWith('hi-'))) {
+                updates.voicePersona = 'hi-IN-SwaraNeural';
+                setPresetNotice('Default language set to Hindi. Voice persona automatically matched to Swara (Hindi - Real Human). Click "Save Changes" below to apply.');
+              } else if (lang === 'English' && (!config.voicePersona || (!config.voicePersona.startsWith('en-') && !config.voicePersona.startsWith('a')))) {
+                updates.voicePersona = 'en-IN-NeerjaNeural';
+                setPresetNotice('Default language set to English. Voice persona matched to Neerja (Indian English - Human). Click "Save Changes" below to apply.');
+              }
+              onConfigChange(updates);
+            }}
             className="w-full md:w-1/2 h-[42px] bg-[#050505] border border-white/[0.08] hover:border-white/[0.18] rounded-xl px-3.5 text-sm text-white outline-none focus:border-[#25D366]/50 transition-colors appearance-none cursor-pointer"
           >
             <option value="auto">🌐 Auto (Match contact&apos;s language)</option>
@@ -340,7 +355,11 @@ export function AIBrainTab({
             <div className="flex gap-2 items-center">
               <VoicePicker
                 value={config.voicePersona || 'mr-IN-AarohiNeural'}
-                onChange={(voiceId) => onConfigChange({ voicePersona: voiceId })}
+                onChange={(voiceId) => {
+                  onConfigChange({ voicePersona: voiceId });
+                  const v = ALL_VOICES.find((item) => item.id === voiceId);
+                  setPresetNotice(`Selected voice "${v?.name || voiceId}"! Click "Save Changes" below to apply.`);
+                }}
                 className="flex-1 min-w-0"
               />
               <button
