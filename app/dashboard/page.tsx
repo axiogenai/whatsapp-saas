@@ -29,7 +29,7 @@ const DEFAULT_CONFIG: TenantBotConfig = {
   debounceWaitMs: 3000,
   humanTakeoverCooldownMinutes: 15,
   voiceReplyMode: 'adaptive',
-  voicePersona: 'mr-IN-AarohiNeural',
+  voicePersona: 'en-IN-NeerjaNeural',
   voiceSpeed: 1.0,
   vipModeEnabled: true,
   audienceMode: 'all',

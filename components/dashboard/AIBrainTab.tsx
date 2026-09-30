@@ -342,7 +342,7 @@ export function AIBrainTab({
             <label className="block text-xs font-medium text-white/50 mb-1.5">Voice Persona</label>
             <div className="flex gap-2 items-center">
               <VoicePicker
-                value={config.voicePersona || 'mr-IN-AarohiNeural'}
+                value={config.voicePersona || ALL_VOICES[0]?.id || ''}
                 onChange={(voiceId) => {
                   onConfigChange({ voicePersona: voiceId });
                   const v = ALL_VOICES.find((item) => item.id === voiceId);

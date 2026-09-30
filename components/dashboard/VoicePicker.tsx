@@ -21,7 +21,7 @@ export function VoicePicker({ value, onChange, className = '' }: VoicePickerProp
 
   // Current selected voice persona
   const selectedVoice: VoicePersona = useMemo(() => {
-    return getVoiceById(value) || ALL_VOICES.find((v) => v.id === 'mr-IN-AarohiNeural') || ALL_VOICES[0];
+    return getVoiceById(value) || ALL_VOICES.find((v) => v.id === value) || ALL_VOICES[0];
   }, [value]);
 
   // Click outside listener
