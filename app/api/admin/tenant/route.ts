@@ -26,43 +26,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Tenant ID required.' }, { status: 400 });
     }
 
-    const tenants = getAdminTenants();
-    const idx = tenants.findIndex((t) => t.tenantId === tenantId);
+    // Determine target plan and quota limit
+    let targetLimit: number | undefined = undefined;
+    if (plan === 'starter') targetLimit = 1500;
+    else if (plan === 'pro') targetLimit = 8000;
+    else if (plan === 'agency') targetLimit = 30000;
+    else if (plan === 'free_trial') targetLimit = 70;
 
-    if (idx === -1) {
-      return NextResponse.json({ success: false, error: 'Tenant not found.' }, { status: 404 });
-    }
-
-    const current = tenants[idx];
-    const updated: AdminTenant = { ...current };
-
-    if (plan && ['free_trial', 'starter', 'pro', 'agency'].includes(plan)) {
-      updated.plan = plan;
-      if (plan === 'starter') updated.trialLimit = 1500;
-      else if (plan === 'pro') updated.trialLimit = 8000;
-      else if (plan === 'agency') updated.trialLimit = 30000;
-    }
-
-    if (typeof addCredits === 'number' && addCredits > 0) {
-      updated.trialLimit = (updated.trialLimit || 70) + addCredits;
-    }
-
-    if (resetQuota) {
-      updated.messagesUsed = 0;
-    }
-
-    if (disconnect) {
-      updated.whatsappStatus = 'disconnected';
-      updated.phone = '';
-    }
-
-    updated.updatedAt = new Date().toISOString();
-    tenants[idx] = updated;
-    saveAdminTenants(tenants);
-
-    // Forward to VM backend gateway
+    // 1. Forward directly to Oracle VM Gateway FIRST and AWAIT it
+    let vmSuccess = false;
+    let vmTenant: any = null;
     try {
-      fetch(`${GATEWAY_URL}/api/admin/tenant/update`, {
+      const vmRes = await fetch(`${GATEWAY_URL}/api/admin/tenant/update`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -70,18 +45,68 @@ export async function POST(request: Request) {
         },
         body: JSON.stringify({
           tenantId,
-          plan: updated.plan,
-          trialLimit: updated.trialLimit,
+          plan,
+          trialLimit: targetLimit,
         }),
-        signal: AbortSignal.timeout(3000),
-      }).catch(() => {});
-    } catch {}
+        signal: AbortSignal.timeout(5000),
+      });
 
-    return NextResponse.json({ success: true, tenant: updated });
+      if (vmRes.ok) {
+        const vmData = await vmRes.json();
+        if (vmData.success && vmData.tenant) {
+          vmSuccess = true;
+          vmTenant = vmData.tenant;
+        }
+      }
+    } catch (err) {
+      console.error('[Admin Tenant Update] Failed to call VM gateway:', err);
+    }
+
+    // 2. Synchronize local admin store (update or record)
+    let tenants = getAdminTenants();
+    const idx = tenants.findIndex((t) => t.tenantId === tenantId);
+    let updated: AdminTenant;
+
+    if (idx >= 0) {
+      updated = { ...tenants[idx] };
+      if (plan) updated.plan = plan;
+      if (targetLimit !== undefined) updated.trialLimit = targetLimit;
+      if (typeof addCredits === 'number' && addCredits > 0) {
+        updated.trialLimit = (updated.trialLimit || 70) + addCredits;
+      }
+      if (resetQuota) updated.messagesUsed = 0;
+      if (disconnect) {
+        updated.whatsappStatus = 'disconnected';
+        updated.phone = '';
+      }
+      updated.updatedAt = new Date().toISOString();
+      tenants[idx] = updated;
+      saveAdminTenants(tenants);
+    } else {
+      updated = {
+        id: vmTenant?.id || `usr_${tenantId}`,
+        tenantId,
+        businessName: vmTenant?.businessName || tenantId,
+        name: vmTenant?.ownerName || 'Workspace Owner',
+        email: vmTenant?.ownerEmail || `${tenantId}@axiogen.in`,
+        plan: plan || 'free_trial',
+        messagesUsed: 0,
+        trialLimit: targetLimit || 70,
+        whatsappStatus: 'disconnected',
+        phone: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      tenants.unshift(updated);
+      saveAdminTenants(tenants);
+    }
+
+    return NextResponse.json({ success: true, tenant: updated, vmSynced: vmSuccess });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
+
 
 export async function DELETE(request: Request) {
   if (!verifyAdmin(request)) {

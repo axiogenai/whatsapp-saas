@@ -157,6 +157,22 @@ export default function AdminPage() {
       if (data.success) {
         showToast(`Tenant plan updated to ${newPlan.toUpperCase()}`, 'success');
         setSelectedTenant(null);
+
+        const targetLimit =
+          newPlan === 'starter'
+            ? 1500
+            : newPlan === 'pro'
+            ? 8000
+            : newPlan === 'agency'
+            ? 30000
+            : 70;
+
+        setTenants((prev) =>
+          prev.map((t) =>
+            t.tenantId === tenantId ? { ...t, plan: newPlan, trialLimit: targetLimit } : t
+          )
+        );
+
         fetchAdminData();
       } else {
         showToast(data.error || 'Failed to update plan.', 'error');
