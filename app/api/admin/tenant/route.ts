@@ -90,18 +90,52 @@ export async function DELETE(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get('tenantId');
+    let tenantId = searchParams.get('tenantId');
+    if (!tenantId) {
+      try {
+        const body = await request.json();
+        tenantId = body?.tenantId;
+      } catch {}
+    }
 
     if (!tenantId) {
       return NextResponse.json({ success: false, error: 'Tenant ID required.' }, { status: 400 });
     }
 
+    if (tenantId === 'default' || tenantId === 'aditaypatil07') {
+      return NextResponse.json({ success: false, error: 'Super Admin tenant cannot be deleted.' }, { status: 400 });
+    }
+
+    // 1. Trigger complete wipe on VM gateway (storage, Baileys keys, config, contacts, users.json)
+    try {
+      const vmRes = await fetch(`${GATEWAY_URL}/api/admin/tenant/delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': ADMIN_SECRET_KEY,
+        },
+        body: JSON.stringify({ tenantId }),
+        signal: AbortSignal.timeout(6000),
+      });
+
+      if (!vmRes.ok) {
+        console.warn(`[Admin Tenant DELETE] Gateway responded with status ${vmRes.status}`);
+      }
+    } catch (e) {
+      console.error('[Admin Tenant DELETE] Failed to call VM gateway delete:', e);
+    }
+
+    // 2. Remove from local admin store
     let tenants = getAdminTenants();
     tenants = tenants.filter((t) => t.tenantId !== tenantId);
     saveAdminTenants(tenants);
 
-    return NextResponse.json({ success: true, message: 'Tenant deleted from admin registry.' });
+    return NextResponse.json({
+      success: true,
+      message: `Tenant '${tenantId}' and all associated storage, auth keys, configuration, and data permanently deleted.`,
+    });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
+

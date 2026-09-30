@@ -71,6 +71,10 @@ export default function AdminPage() {
   const [editPlan, setEditPlan] = useState<'free_trial' | 'starter' | 'pro' | 'agency'>('free_trial');
   const [savingChanges, setSavingChanges] = useState(false);
 
+  // Tenant Deletion Modal
+  const [deletingTenant, setDeletingTenant] = useState<AdminTenant | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Toast
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const showToast = (msg: string, type: 'success' | 'error') => {
@@ -201,6 +205,28 @@ export default function AdminPage() {
       }
     } catch {
       showToast('Failed to reset quota.', 'error');
+    }
+  };
+
+  // Quick Action: Permanently Delete Tenant & Data Forever
+  const handleDeleteTenantForever = async (tenantId: string) => {
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/tenant?tenantId=${encodeURIComponent(tenantId)}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message || `Tenant ${tenantId} and all data permanently deleted.`, 'success');
+        setDeletingTenant(null);
+        fetchAdminData();
+      } else {
+        showToast(data.error || 'Failed to delete tenant.', 'error');
+      }
+    } catch {
+      showToast('Error requesting tenant deletion.', 'error');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -656,7 +682,18 @@ export default function AdminPage() {
                                 >
                                   <ExternalLink className="w-3.5 h-3.5" />
                                 </button>
+
+                                {t.tenantId !== 'aditaypatil07' && t.tenantId !== 'default' && (
+                                  <button
+                                    onClick={() => setDeletingTenant(t)}
+                                    className="p-1.5 rounded-lg bg-zinc-900 hover:bg-rose-950 border border-zinc-800 hover:border-rose-800 text-zinc-400 hover:text-rose-400 transition-colors"
+                                    title="Permanently Delete User & All Data"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
                               </div>
+
                             </td>
                           </tr>
                         );
@@ -885,6 +922,69 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* PERMANENT DELETE TENANT MODAL */}
+      {deletingTenant && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="max-w-md w-full bg-zinc-900 border border-rose-900/60 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <div className="flex items-center gap-2 text-rose-400">
+                <Trash2 className="w-4 h-4" />
+                <h3 className="text-sm font-semibold text-zinc-100">Permanently Delete User &amp; Data</h3>
+              </div>
+              <button
+                onClick={() => setDeletingTenant(null)}
+                disabled={isDeleting}
+                className="p-1 text-zinc-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-800/60 text-xs text-rose-300 space-y-2">
+              <p className="font-semibold flex items-center gap-1.5 text-rose-400">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>IRREVERSIBLE ACTION — COMPLETE WIPE</span>
+              </p>
+              <p className="text-[11px] text-rose-200/80 leading-relaxed font-sans">
+                This will permanently delete everything for <strong>{deletingTenant.businessName}</strong> (<code className="font-mono text-rose-300">{deletingTenant.tenantId}</code>):
+              </p>
+              <ul className="list-disc pl-4 text-[11px] text-rose-200/70 space-y-0.5 font-sans">
+                <li>User registration and login credentials</li>
+                <li>WhatsApp session, pairing keys, and auth storage</li>
+                <li>Tenant configuration and bot prompt files</li>
+                <li>Contact books, chat history, and telemetry</li>
+                <li>Active WhatsApp socket connections</li>
+              </ul>
+            </div>
+
+            <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 text-xs space-y-1 font-mono text-zinc-400">
+              <div>Email: <span className="text-zinc-200">{deletingTenant.email}</span></div>
+              <div>Tenant ID: <span className="text-zinc-200">{deletingTenant.tenantId}</span></div>
+              <div>Plan: <span className="text-zinc-200 uppercase">{deletingTenant.plan}</span></div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                onClick={() => handleDeleteTenantForever(deletingTenant.tenantId)}
+                disabled={isDeleting}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-lg shadow-rose-950/50"
+              >
+                {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                <span>{isDeleting ? 'Wiping All Data Forever...' : 'Permanently Delete User'}</span>
+              </button>
+              <button
+                onClick={() => setDeletingTenant(null)}
+                disabled={isDeleting}
+                className="px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
