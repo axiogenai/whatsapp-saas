@@ -5,6 +5,7 @@ import { initiateRazorpayPayment } from './razorpay';
 export * from './types';
 export * from './phonepe';
 export * from './razorpay';
+export * from './fulfillment';
 
 export function getActivePaymentGateway(): 'phonepe' | 'razorpay' {
   const provider = (process.env.PAYMENT_GATEWAY_PROVIDER || 'phonepe').toLowerCase();

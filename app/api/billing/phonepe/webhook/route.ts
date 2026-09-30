@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { verifyPhonePeWebhook } from '@/lib/payments';
+import { verifyPhonePeWebhook, fulfillPaidTenantPlan } from '@/lib/payments';
 
 export async function POST(request: Request) {
   try {
@@ -17,15 +17,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Invalid signature' }, { status: 401 });
     }
 
+    const txn = data?.data?.merchantTransactionId || '';
+    const code = data?.code;
+
     console.log('[PhonePe Webhook] Verified callback received:', {
-      code: data?.code,
-      txn: data?.data?.merchantTransactionId,
+      code,
+      txn,
       state: data?.data?.state,
       amount: data?.data?.amount,
     });
 
-    // Here background fulfillment occurs:
-    // If data.code === 'PAYMENT_SUCCESS', active subscriptions are updated in tenant database.
+    // Background fulfillment:
+    if (code === 'PAYMENT_SUCCESS' && txn.startsWith('TXN_')) {
+      const parts = txn.split('_');
+      // format: TXN_<plan>_<cleanTenant>_<timestamp>
+      if (parts.length >= 3) {
+        const plan = parts[1];
+        const tenantId = parts[2];
+        await fulfillPaidTenantPlan(tenantId, plan, txn);
+      }
+    }
 
     return NextResponse.json({ success: true, message: 'Webhook processed' });
   } catch (err: any) {

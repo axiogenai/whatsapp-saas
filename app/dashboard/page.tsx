@@ -29,7 +29,7 @@ const DEFAULT_CONFIG: TenantBotConfig = {
   debounceWaitMs: 3000,
   humanTakeoverCooldownMinutes: 15,
   voiceReplyMode: 'adaptive',
-  voicePersona: 'am_adam',
+  voicePersona: 'mr-IN-AarohiNeural',
   voiceSpeed: 1.0,
   vipModeEnabled: true,
   audienceMode: 'all',
@@ -91,6 +91,25 @@ export default function DashboardPage() {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 4000);
   }, []);
+
+  // Check URL query parameters for active tab and payment results
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const targetTab = params.get('tab');
+    if (targetTab) {
+      setTab(targetTab === 'subscription' ? 'billing' : targetTab);
+    }
+    const payment = params.get('payment');
+    if (payment === 'success') {
+      const paidPlan = params.get('plan') || 'Pro';
+      showToast(`Payment successful! Your ${paidPlan.toUpperCase()} plan is now active.`, 'success');
+      window.history.replaceState({}, '', window.location.pathname + (targetTab ? `?tab=${targetTab === 'subscription' ? 'billing' : targetTab}` : ''));
+    } else if (payment === 'failed') {
+      const reason = params.get('reason') || 'Transaction failed or was declined.';
+      showToast(`Payment failed: ${reason}`, 'error');
+    }
+  }, [showToast]);
 
   // 1. Initial auth check
   useEffect(() => {
@@ -350,8 +369,16 @@ export default function DashboardPage() {
 
     setLoadingAudioPreview(true);
     try {
-      const voiceId = config.voicePersona || 'am_adam';
+      const voiceId = config.voicePersona || 'mr-IN-AarohiNeural';
       const NATIVE_PREVIEWS: Record<string, string> = {
+        // Real Human Neural Voices (Ultra-Realistic)
+        'mr-IN-AarohiNeural': 'नमस्कार! मी आपल्या क्लिनिकची सहाय्यक आहे. मी तुम्हाला कशी मदत करू शकते?',
+        'mr-IN-ManoharNeural': 'नमस्कार! मी डॉक्टर यांचा सहाय्यक बोलत आहे. सांगा, मी आपली काय सेवा करू शकतो?',
+        'hi-IN-SwaraNeural': 'नमस्ते! मैं आपकी असिस्टेंट बात कर रही हूँ। बताइए, आज मैं आपकी क्या सहायता करूँ?',
+        'hi-IN-MadhurNeural': 'नमस्ते! मैं आपका पर्सनल असिस्टेंट हूँ। बताइए, आज क्या काम है?',
+        'en-IN-NeerjaNeural': 'Hello! I am your AI assistant. How may I help you today?',
+        'en-IN-PrabhatNeural': 'Hello there! I am your AI executive assistant. How can I assist you today?',
+        // Meta & Regional Voices
         'meta:hin': 'नमस्ते! मैं आपका एआई असिस्टेंट हूँ। आज मैं आपकी क्या सहायता कर सकता हूँ?',
         'meta:mar': 'नमस्कार! मी तुमचा एआय असिस्टंट आहे. आज मी तुम्हाला कशी मदत करू शकतो?',
         'meta:tam': 'வணக்கம்! நான் உங்கள் AI குரல் உதவியாளர். இன்று நான் உங்களுக்கு எவ்வாறு உதவ முடியும்?',
@@ -374,7 +401,16 @@ export default function DashboardPage() {
         'meta:zho': '你好！我是你的人工智能语音助手。今天有什么我可以帮你的吗？',
       };
 
-      const greeting = NATIVE_PREVIEWS[voiceId] || `Hello, this is ${config.botName || user?.businessName || 'your AI assistant'}. How may I help you today?`;
+      let greeting = NATIVE_PREVIEWS[voiceId];
+      if (!greeting) {
+        if (voiceId.includes('mar') || voiceId.startsWith('mr-')) {
+          greeting = 'नमस्कार! मी आपल्या क्लिनिकची सहाय्यक आहे. मी तुम्हाला कशी मदत करू शकते?';
+        } else if (voiceId.includes('hin') || voiceId.startsWith('hi-')) {
+          greeting = 'नमस्ते! मैं आपका एआई असिस्टेंट हूँ। आज मैं आपकी क्या सहायता कर सकता हूँ?';
+        } else {
+          greeting = `Hello, this is ${config.botName || user?.businessName || 'your AI assistant'}. How may I help you today?`;
+        }
+      }
       const res = await fetch('/api/whatsapp/preview-voice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

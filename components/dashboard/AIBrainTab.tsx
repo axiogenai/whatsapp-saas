@@ -11,7 +11,7 @@ import {
   Play, 
   Square, 
   Loader2,
-  Sparkles,
+  CheckCircle2,
   Check
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -221,7 +221,7 @@ export function AIBrainTab({
 
         {presetNotice && (
           <div className="mb-4 flex items-center gap-2 p-2.5 px-3.5 rounded-xl bg-[#25D366]/10 border border-[#25D366]/20 text-xs text-white/80 animate-in fade-in">
-            <Sparkles className="w-3.5 h-3.5 text-[#25D366] shrink-0" />
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#25D366] shrink-0" />
             <span className="flex-1">{presetNotice}</span>
           </div>
         )}
@@ -339,7 +339,7 @@ export function AIBrainTab({
             <label className="block text-xs font-medium text-white/50 mb-1.5">Voice Persona</label>
             <div className="flex gap-2 items-center">
               <VoicePicker
-                value={config.voicePersona || 'am_adam'}
+                value={config.voicePersona || 'mr-IN-AarohiNeural'}
                 onChange={(voiceId) => onConfigChange({ voicePersona: voiceId })}
                 className="flex-1 min-w-0"
               />

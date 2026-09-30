@@ -1,0 +1,58 @@
+[
+  {
+    "id": "admin_master",
+    "email": "aditay26patil@gmail.com",
+    "name": "Aditya Patil",
+    "businessName": "Team Axiogen",
+    "tenantId": "aditaypatil07",
+    "passwordHash": "e060c71aec8b74be539e4323e12eab8aed1c472b4f9bdacd3e5ff1d41b0ae1a7f13e2db50b00478da88cefe922a2897f58aee8be54aed017ddd9c38b4a0200f7",
+    "salt": "5bb2b35d3ff263b7e021868be454814d",
+    "plan": "agency",
+    "trialLimit": 100000,
+    "isAdmin": true,
+    "createdAt": "2026-09-29T16:10:19.900Z",
+    "updatedAt": "2026-09-30T04:49:54.408Z"
+  },
+  {
+    "id": "admin_master",
+    "email": "aditya26patil@gmail.com",
+    "name": "Aditya Patil",
+    "businessName": "Team Axiogen",
+    "tenantId": "aditaypatil07",
+    "passwordHash": "8d0a17aaa85b12a14ca694cf4644131fa2bd17bfc2366279bcf1f67791c9f2715a1490c8fdaa9246dc67a86cc55bf6cd3b3785153d63823d3e06f452c9f8f7d1",
+    "salt": "337f89aef7e0a881df312827ff77503d",
+    "plan": "agency",
+    "trialLimit": 100000,
+    "isAdmin": true,
+    "createdAt": "2026-09-29T16:10:19.981Z",
+    "updatedAt": "2026-09-30T04:49:54.408Z"
+  },
+  {
+    "id": "usr_1790742817578",
+    "email": "aditaypatil07@gmail.com",
+    "name": "Aditya patil",
+    "businessName": "Team axiogen",
+    "tenantId": "team-axiogen",
+    "passwordHash": "cbffc5d57a6cefe0954b9e4e5ca56ae9d13fb266f94a58577cbafaa2229b3f5877db25c47ee515aacaba17e0dad4bc3e7d36ea300d10b57ae6052e9ea8b8ed15",
+    "salt": "b915bce7d3e82b2e00f6ac958c5d90a9",
+    "plan": "agency",
+    "trialLimit": 30000,
+    "isAdmin": false,
+    "createdAt": "2026-09-30T04:33:37.497Z",
+    "updatedAt": "2026-09-30T04:33:37.497Z"
+  },
+  {
+    "id": "usr_mshete85",
+    "email": "mshete85@gmail.com",
+    "name": "Dr. Monali Shete",
+    "businessName": "Dr. Monali's Clinic",
+    "tenantId": "mshete85",
+    "passwordHash": "6b9e66f79ce0eb1c911f3dd5ca6eaf6e9ac7f7ff1fb009903e8e8f234873a773dfaad6e67b5bef8f32da45158ebc456e96ba64cced393ea97954038ce2104a16",
+    "salt": "2bd3682ab4a89067b162791eb0a3694b",
+    "plan": "agency",
+    "trialLimit": 30000,
+    "isAdmin": false,
+    "createdAt": "2026-09-30T06:53:57.244Z",
+    "updatedAt": "2026-09-30T06:53:57.244Z"
+  }
+]

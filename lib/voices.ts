@@ -12,6 +12,66 @@ export interface VoicePersona {
 
 export const ALL_VOICES: VoicePersona[] = [
   {
+    "id": "mr-IN-AarohiNeural",
+    "name": "Aarohi (Marathi - Real Human)",
+    "accent": "Marathi",
+    "gender": "Female",
+    "style": "Natural Clinic / Doctor Voice",
+    "engine": "edge-neural",
+    "lang": "mr",
+    "country": "India"
+  },
+  {
+    "id": "mr-IN-ManoharNeural",
+    "name": "Manohar (Marathi - Real Human)",
+    "accent": "Marathi",
+    "gender": "Male",
+    "style": "Deep Natural Doctor Voice",
+    "engine": "edge-neural",
+    "lang": "mr",
+    "country": "India"
+  },
+  {
+    "id": "hi-IN-SwaraNeural",
+    "name": "Swara (Hindi - Real Human)",
+    "accent": "Hindi",
+    "gender": "Female",
+    "style": "Studio Quality Natural Hindi",
+    "engine": "edge-neural",
+    "lang": "hi",
+    "country": "India"
+  },
+  {
+    "id": "hi-IN-MadhurNeural",
+    "name": "Madhur (Hindi - Real Human)",
+    "accent": "Hindi",
+    "gender": "Male",
+    "style": "Professional Natural Hindi",
+    "engine": "edge-neural",
+    "lang": "hi",
+    "country": "India"
+  },
+  {
+    "id": "en-IN-NeerjaNeural",
+    "name": "Neerja (Indian English - Human)",
+    "accent": "Indian English",
+    "gender": "Female",
+    "style": "Conversational Executive",
+    "engine": "edge-neural",
+    "lang": "en-in",
+    "country": "India"
+  },
+  {
+    "id": "en-IN-PrabhatNeural",
+    "name": "Prabhat (Indian English - Human)",
+    "accent": "Indian English",
+    "gender": "Male",
+    "style": "Professional Consultant",
+    "engine": "edge-neural",
+    "lang": "en-in",
+    "country": "India"
+  },
+  {
     "id": "af_bella",
     "name": "Bella",
     "accent": "American",

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { checkPhonePePaymentStatus } from '@/lib/payments';
+import { checkPhonePePaymentStatus, fulfillPaidTenantPlan } from '@/lib/payments';
 
 function getAppUrl(request: Request): string {
   const host = request.headers.get('host') || 'whatsapp-saas-jet.vercel.app';
@@ -44,6 +44,19 @@ async function handlePhonePeCallback(request: Request) {
   const resolvedPlan = verification.plan || plan || 'starter';
 
   if (verification.status === 'SUCCESS') {
+    // If tenant wasn't in query params, extract it from txn: TXN_<plan>_<cleanTenant>_<timestamp>
+    let targetTenant = tenant;
+    if (!targetTenant && txn.startsWith('TXN_')) {
+      const parts = txn.split('_');
+      if (parts.length >= 3) {
+        targetTenant = parts[2];
+      }
+    }
+
+    if (targetTenant) {
+      await fulfillPaidTenantPlan(targetTenant, resolvedPlan, txn);
+    }
+
     const successUrl = new URL(`${appUrl}/dashboard`);
     successUrl.searchParams.set('tab', 'subscription');
     successUrl.searchParams.set('payment', 'success');
