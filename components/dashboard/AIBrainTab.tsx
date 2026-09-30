@@ -306,19 +306,7 @@ export function AIBrainTab({
           <select
             value={config.defaultLanguage || 'auto'}
             onChange={(e) => {
-              const lang = e.target.value;
-              const updates: Partial<TenantBotConfig> = { defaultLanguage: lang };
-              if (lang === 'Marathi' && (!config.voicePersona || !config.voicePersona.startsWith('mr-'))) {
-                updates.voicePersona = 'mr-IN-AarohiNeural';
-                setPresetNotice('Default language set to Marathi. Voice persona automatically matched to Aarohi (Marathi - Real Human). Click "Save Changes" below to apply.');
-              } else if (lang === 'Hindi' && (!config.voicePersona || !config.voicePersona.startsWith('hi-'))) {
-                updates.voicePersona = 'hi-IN-SwaraNeural';
-                setPresetNotice('Default language set to Hindi. Voice persona automatically matched to Swara (Hindi - Real Human). Click "Save Changes" below to apply.');
-              } else if (lang === 'English' && (!config.voicePersona || (!config.voicePersona.startsWith('en-') && !config.voicePersona.startsWith('a')))) {
-                updates.voicePersona = 'en-IN-NeerjaNeural';
-                setPresetNotice('Default language set to English. Voice persona matched to Neerja (Indian English - Human). Click "Save Changes" below to apply.');
-              }
-              onConfigChange(updates);
+              onConfigChange({ defaultLanguage: e.target.value });
             }}
             className="w-full md:w-1/2 h-[42px] bg-[#050505] border border-white/[0.08] hover:border-white/[0.18] rounded-xl px-3.5 text-sm text-white outline-none focus:border-[#25D366]/50 transition-colors appearance-none cursor-pointer"
           >
