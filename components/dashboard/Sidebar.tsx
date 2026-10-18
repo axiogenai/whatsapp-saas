@@ -27,7 +27,7 @@ interface SidebarProps {
   onTabChange: (tab: string) => void;
   collapsed: boolean;
   onToggleCollapse: () => void;
-  user: { name: string; email: string; businessName: string; plan?: string } | null;
+  user: { name: string; email: string; businessName: string; plan?: string; tenantId?: string } | null;
   connectionStatus: 'connected' | 'connecting' | 'disconnected';
   onLogout: () => void;
 }
