@@ -17,6 +17,8 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   const isAdminEmail =
+    email.trim().toLowerCase() === 'aditaypatil07@gmail.com' ||
+    email.trim().toLowerCase() === 'adityapatil07@gmail.com' ||
     email.trim().toLowerCase() === 'aditay26patil@gmail.com' ||
     email.trim().toLowerCase() === 'aditya26patil@gmail.com';
 

@@ -21,7 +21,7 @@ export async function POST(request: Request) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
-        signal: AbortSignal.timeout(4000),
+        signal: AbortSignal.timeout(1000),
       });
 
       if (vmRes.ok) {
