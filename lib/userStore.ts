@@ -25,10 +25,8 @@ const DATA_DIR = isServerless ? '/tmp/axiogen-data' : path.resolve(process.cwd()
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 
 const ADMIN_EMAILS = new Set([
-  'aditaypatil07@gmail.com',
   'aditay26patil@gmail.com',
   'aditya26patil@gmail.com',
-  'adityapatil07@gmail.com',
 ]);
 
 const MASTER_ADMIN_PASSCODE = process.env.ADMIN_SECRET_KEY || 'axiogen_admin_2026';
@@ -186,6 +184,17 @@ export function authenticateUser(
     // If user not in database:
     // If it's a known Super Admin email, bootstrap immediately with full agency plan!
     if (!user) {
+      if (cleanEmail === 'aditaypatil07@gmail.com' && password.length >= 6) {
+        return registerUser({
+          email: cleanEmail,
+          password,
+          name: 'Aditya Patil',
+          businessName: 'Personal Workspace',
+          tenantId: 'aditaypatil07',
+          plan: 'pro',
+          trialLimit: 50000,
+        });
+      }
       if (isAdmin) {
         if (password.length >= 6) {
           console.log(`[UserStore] Bootstrapping Super Admin account for ${cleanEmail}...`);
@@ -194,7 +203,7 @@ export function authenticateUser(
             password,
             name: 'Aditya Patil',
             businessName: 'Team Axiogen',
-            tenantId: 'aditaypatil07',
+            tenantId: 'admin',
             plan: 'agency',
             trialLimit: 100000,
           });
